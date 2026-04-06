@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>운명의 길잡이 — 사주 & MBTI AI 분석</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background-color: #06060f; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; justify-content: center; color: #e8e8ee; }
+        #app { width: 100%; max-width: 480px; min-height: 100dvh; background: linear-gradient(180deg, #0d0d1a 0%, #12101f 100%); display: flex; flex-direction: column; position: relative; }
+        header { padding: 14px 20px; background: rgba(13,13,26,0.95); border-bottom: 1px solid rgba(201,168,76,0.15); display: flex; justify-content: space-between; align-items: center; backdrop-filter: blur(10px); z-index: 10; position: sticky; top: 0; }
+        .header-title { font-weight: 700; font-size: 0.9rem; color: #c9a84c; letter-spacing: 2px; }
+        
+        .lang-switch { display: flex; gap: 4px; background: rgba(255,255,255,0.05); padding: 4px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); }
+        .lang-btn { padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; cursor: pointer; border: none; background: transparent; color: #7a7a9a; transition: all 0.2s; }
+        .lang-btn.active { background: #c9a84c; color: #0d0d1a; }
+
+        .screen { display: none; padding: 24px; }
+        .screen.active { display: block; }
+        .intro-title { font-size: 1.6rem; font-weight: 800; line-height: 1.4; margin-bottom: 8px; background: linear-gradient(135deg, #c9a84c, #f0d78c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .intro-sub { color: #7a7a9a; font-size: 0.9rem; margin-bottom: 32px; }
+        .form-section { margin-bottom: 20px; }
+        .form-label { display: block; margin-bottom: 8px; font-size: 0.85rem; color: #9a9ab0; font-weight: 600; }
+        .form-input, .form-select { width: 100%; padding: 14px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; color: #e8e8ee; font-size: 1rem; outline: none; transition: all 0.2s; }
+        .form-select { 
+            appearance: none; 
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23c9a84c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            background-size: 18px;
+            padding-right: 40px;
+            cursor: pointer;
+        }
+        .form-select:focus { border-color: #c9a84c; background-color: rgba(255,255,255,0.08); }
+        .form-select option { background-color: #12101f; color: #e8e8ee; padding: 12px; }
+        .start-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, #c9a84c, #a8893a); color: #0d0d1a; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: 800; cursor: pointer; margin-top: 10px; }
+
+        /* Report Screen Styles */
+        .report-section { background: rgba(255,255,255,0.03); border: 1px solid rgba(201,168,76,0.1); border-radius: 20px; padding: 24px; margin-bottom: 24px; animation: fadeIn 0.6s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .report-label { color: #c9a84c; font-size: 0.75rem; font-weight: 700; letter-spacing: 1px; margin-bottom: 12px; text-transform: uppercase; }
+        .report-title { font-size: 1.4rem; font-weight: 800; margin-bottom: 12px; color: #f0d78c; }
+        .report-desc { font-size: 0.95rem; line-height: 1.7; color: #aaa; margin-bottom: 16px; }
+        .pillar-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
+        .pillar-item { background: rgba(201,168,76,0.08); padding: 12px 4px; border-radius: 12px; text-align: center; border: 1px solid rgba(201,168,76,0.15); }
+        .pillar-item .p-label { font-size: 0.65rem; color: #7a7a9a; margin-bottom: 4px; }
+        .pillar-item .p-value { font-size: 1.1rem; font-weight: 800; color: #c9a84c; }
+        .oheng-row { display: flex; gap: 8px; flex-wrap: wrap; }
+        .oheng-badge { padding: 6px 12px; border-radius: 100px; font-size: 0.8rem; font-weight: 700; }
+        
+        /* Result Card Button */
+        .card-preview-btn { width: 100%; padding: 18px; background: rgba(201,168,76,0.1); border: 1px dashed #c9a84c; border-radius: 16px; color: #c9a84c; font-weight: 700; cursor: pointer; text-align: center; margin-bottom: 12px; }
+
+        /* Share Buttons */
+        .share-container { display: flex; gap: 8px; margin-bottom: 40px; }
+        .share-btn { flex: 1; padding: 14px; border-radius: 12px; font-weight: 700; cursor: pointer; border: none; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .share-btn.kakao { background: #FEE500; color: #3c1e1e; }
+        .share-btn.threads { background: #ffffff; color: #000000; }
+        .share-btn.facebook { background: #1877F2; color: #ffffff; }
+        .share-btn.copy { background: rgba(255,255,255,0.05); color: #9a9ab0; border: 1px solid rgba(255,255,255,0.1); }
+
+        /* Result Modal */
+        #result-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(6,6,15,0.95); z-index: 100; justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(10px); }
+        #result-card { width: 100%; max-width: 360px; background: linear-gradient(160deg, #151528, #1a1530); border: 1px solid rgba(201,168,76,0.2); border-radius: 24px; padding: 32px 24px; text-align: center; position: relative; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
+        .card-name { font-size: 1.4rem; font-weight: 800; color: #f0d78c; margin-bottom: 4px; }
+        .card-mbti { display: inline-block; padding: 4px 12px; border: 1px solid #c9a84c; border-radius: 20px; font-size: 0.8rem; color: #c9a84c; margin-bottom: 16px; font-weight: 700; }
+        .btn-save { width: 100%; padding: 14px; background: linear-gradient(135deg, #c9a84c, #a8893a); color: #0d0d1a; border: none; border-radius: 12px; font-size: 1rem; font-weight: 700; cursor: pointer; margin-top: 16px; }
+
+        /* Oheng Colors */
+        .木 { background: rgba(76,175,80,0.2); color: #81c784; }
+        .火 { background: rgba(244,67,54,0.2); color: #e57373; }
+        .土 { background: rgba(255,193,7,0.2); color: #ffd54f; }
+        .金 { background: rgba(224,224,224,0.2); color: #f5f5f5; }
+        .水 { background: rgba(33,150,243,0.2); color: #64b5f6; }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <header>
+        <div class="header-title">✦ DESTINY GUIDE</div>
+        <div class="lang-switch">
+            <button class="lang-btn active" id="btn-ko" onclick="setLanguage('ko')">KO</button>
+            <button class="lang-btn" id="btn-en" onclick="setLanguage('en')">EN</button>
+        </div>
+    </header>
+
+    <!-- ─── INTRO ─── -->
+    <div id="intro-screen" class="screen active">
+        <div class="intro-title" id="t-intro-title">당신의 운명을<br>새롭게 읽어드립니다.</div>
+        <p class="intro-sub" id="t-intro-sub">사주와 MBTI의 결합, 무료 분석 리포트</p>
+
+        <div class="form-section">
+            <label class="form-label" id="t-label-birth">생년월일 (양력)</label>
+            <input type="date" class="form-input" id="birth_date" value="1995-05-15">
+        </div>
+        <div class="form-section">
+            <label class="form-label" id="t-label-time">태어난 시간</label>
+            <div style="display: flex; gap: 8px;">
+                <select class="form-select" id="birth_ampm" style="flex: 1;">
+                    <option value="AM">AM</option>
+                    <option value="PM" selected>PM</option>
+                </select>
+                <select class="form-select" id="birth_hour" style="flex: 1;">
+                    <option value="12">12</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                    <option value="10">10</option>
+                    <option value="11">11</option>
+                </select>
+                <select class="form-select" id="birth_min" style="flex: 1;">
+                    <option value="00">00</option>
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="30">30</option>
+                    <option value="40">40</option>
+                    <option value="50">50</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-section">
+            <label class="form-label">MBTI</label>
+            <select class="form-select" id="mbti">
+                <option value="INTJ">INTJ</option><option value="INTP">INTP</option>
+                <option value="ENTJ">ENTJ</option><option value="ENTP">ENTP</option>
+                <option value="INFJ">INFJ</option><option value="INFP">INFP</option>
+                <option value="ENFJ">ENFJ</option><option value="ENFP" selected>ENFP</option>
+                <option value="ISTJ">ISTJ</option><option value="ISFJ">ISFJ</option>
+                <option value="ESTJ">ESTJ</option><option value="ESFJ">ESFJ</option>
+                <option value="ISTP">ISTP</option><option value="ISFP">ISFP</option>
+                <option value="ESTP">ESTP</option><option value="ESFP">ESFP</option>
+            </select>
+        </div>
+        <button class="start-btn" id="t-btn-start" onclick="getReport()">✦ 무제한 무료 분석 시작</button>
+    </div>
+
+    <!-- ─── REPORT ─── -->
+    <div id="report-screen" class="screen">
+        <div class="report-section">
+            <div class="report-label" id="t-label-saju">나의 사주 팔자</div>
+            <div class="pillar-grid" id="pillar-grid"></div>
+        </div>
+
+        <div class="report-section">
+            <div class="report-label" id="t-label-core">핵심 기운 분석</div>
+            <div class="report-title" id="ilgan-title"></div>
+            <div class="report-desc" id="ilgan-desc"></div>
+            <div class="oheng-row" id="oheng-row"></div>
+        </div>
+
+        <div class="report-section">
+            <div class="report-label" id="t-label-synergy">사주 & MBTI 시너지</div>
+            <div class="report-title" id="synergy-title"></div>
+            <div class="report-desc" id="synergy-desc"></div>
+        </div>
+
+        <div class="report-section">
+            <div class="report-label" id="t-label-compatibility">최고의 궁합 MBTI</div>
+            <div class="report-title" id="compatibility-title"></div>
+            <div class="report-desc" id="compatibility-desc"></div>
+        </div>
+
+        <div class="report-section">
+            <div class="report-label" id="t-label-lucky">오늘의 행운 키워드</div>
+            <div class="report-desc" id="lucky-desc"></div>
+        </div>
+
+        <button class="card-preview-btn" id="t-btn-card" onclick="showResultCard()">✨ 분석 결과 카드 저장하기</button>
+        
+        <div class="share-container">
+            <button class="share-btn kakao" id="t-btn-kakao" onclick="shareKakao()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.558 1.712 4.8 4.312 6.111l-.817 2.99c-.046.17.144.315.29.227l3.521-2.285c.227.022.458.04.694.04 4.97 0 9-3.186 9-7.116S16.97 3 12 3z"/></svg>
+                카톡
+            </button>
+            <button class="share-btn threads" id="t-btn-threads" onclick="shareThreads()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"/><path d="M12 6c-3.314 0-6 2.686-6 6s2.686 6 6 6 6-2.686 6-6-2.686-6-6-6zm0 10c-2.206 0-4-1.794-4-4s1.794-4 4-4 4 1.794 4 4-1.794 4-4 4z"/></svg>
+                Threads
+            </button>
+            <button class="share-btn facebook" id="t-btn-facebook" onclick="shareFacebook()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                페북
+            </button>
+            <button class="share-btn copy" id="t-btn-copy" onclick="copyLink()">
+                🔗 링크
+            </button>
+        </div>
+
+        <button class="start-btn" id="t-btn-retry" style="background: rgba(255,255,255,0.05); color: #9a9ab0; margin-bottom: 40px;" onclick="location.reload()">다시 분석하기</button>
+    </div>
+</div>
+
+<!-- ─── RESULT MODAL ─── -->
+<div id="result-modal" onclick="closeModal()">
+    <div onclick="event.stopPropagation()" style="width:100%; max-width:360px;">
+        <div id="result-card">
+            <div style="font-size:0.6rem; color:#c9a84c; letter-spacing:3px; margin-bottom:12px;">✦ DESTINY CARD</div>
+            <div class="card-name" id="rc-name"></div>
+            <div class="card-mbti" id="rc-mbti"></div>
+            
+            <div class="pillar-grid" id="rc-pillars" style="margin-bottom:16px;"></div>
+            
+            <div style="background:rgba(201,168,76,0.05); padding:16px; border-radius:16px; font-size:0.85rem; color:#aaa; line-height:1.6; text-align:left;" id="rc-desc"></div>
+            
+            <div style="margin-top:16px; font-size:0.65rem; color:#444460;" id="t-card-footer">운명의 길잡이 — AI 사주 & MBTI</div>
+        </div>
+        <button class="btn-save" id="t-btn-save-img" onclick="saveCard()">📸 이미지로 저장하기</button>
+        <button class="btn-save" id="t-btn-close" style="background:none; color:#7a7a9a; font-size:0.8rem;" onclick="closeModal()">닫기</button>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.0/kakao.min.js"></script>
+<script>
+    const API_URL = "http://127.0.0.1:8000";
+    let reportData = null;
+    let currentLang = 'ko';
+
+    const translations = {
+        ko: {
+            introTitle: "당신의 운명을<br>새롭게 읽어드립니다.",
+            introSub: "사주와 MBTI의 결합, 무료 분석 리포트",
+            labelBirth: "생년월일 (양력)",
+            labelTime: "태어난 시간",
+            btnStart: "✦ 무제한 무료 분석 시작",
+            labelSaju: "나의 사주 팔자",
+            labelCore: "핵심 기운 분석",
+            labelSynergy: "사주 & MBTI 시너지",
+            labelCompatibility: "최고의 궁합 MBTI",
+            labelLucky: "오늘의 행운 키워드",
+            btnCard: "✨ 분석 결과 카드 저장하기",
+            btnKakao: "카톡",
+            btnThreads: "Threads",
+            btnFacebook: "페북",
+            btnCopy: "🔗 링크",
+            btnRetry: "다시 분석하기",
+            cardFooter: "운명의 길잡이 — AI 사주 & MBTI",
+            btnSaveImg: "📸 이미지로 저장하기",
+            btnClose: "닫기",
+            pillars: ["년주", "월주", "일주", "시주"],
+            luckyLabels: ["🎨 행운의 컬러", "🔢 행운의 숫자", "🧭 행운의 방향", "🍽️ 행운의 음식"],
+            alertInput: "정보를 입력해주세요.",
+            alertFail: "서버 연결 실패!",
+            alertNoData: "분석 결과가 없습니다. 먼저 분석을 진행해주세요.",
+            alertCopy: "링크가 복사되었습니다!"
+        },
+        en: {
+            introTitle: "Reading Your Destiny<br>in a New Way.",
+            introSub: "Saju & MBTI Synergy, Free Analysis Report",
+            labelBirth: "Birth Date (Solar)",
+            labelTime: "Birth Time",
+            btnStart: "✦ Start Free Analysis",
+            labelSaju: "My Saju Pillars",
+            labelCore: "Core Energy Analysis",
+            labelSynergy: "Saju & MBTI Synergy",
+            labelCompatibility: "Best MBTI Compatibility",
+            labelLucky: "Today's Lucky Keywords",
+            btnCard: "✨ Save Result Card",
+            btnKakao: "Talk",
+            btnThreads: "Threads",
+            btnFacebook: "FB",
+            btnCopy: "🔗 Link",
+            btnRetry: "Analyze Again",
+            cardFooter: "Destiny Guide — AI Saju & MBTI",
+            btnSaveImg: "📸 Save as Image",
+            btnClose: "Close",
+            pillars: ["Year", "Month", "Day", "Time"],
+            luckyLabels: ["🎨 Lucky Color", "🔢 Lucky Number", "🧭 Lucky Direction", "🍽️ Lucky Food"],
+            alertInput: "Please enter your information.",
+            alertFail: "Server connection failed!",
+            alertNoData: "No analysis result. Please run analysis first.",
+            alertCopy: "Link copied to clipboard!"
+        }
+    };
+
+    function setLanguage(lang) {
+        currentLang = lang;
+        document.getElementById('btn-ko').classList.toggle('active', lang === 'ko');
+        document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+        updateUI();
+    }
+
+    function updateUI() {
+        const t = translations[currentLang];
+        document.getElementById('t-intro-title').innerHTML = t.introTitle;
+        document.getElementById('t-intro-sub').innerText = t.introSub;
+        document.getElementById('t-label-birth').innerText = t.labelBirth;
+        document.getElementById('t-label-time').innerText = t.labelTime;
+        document.getElementById('t-btn-start').innerText = t.btnStart;
+        document.getElementById('t-label-saju').innerText = t.labelSaju;
+        document.getElementById('t-label-core').innerText = t.labelCore;
+        document.getElementById('t-label-synergy').innerText = t.labelSynergy;
+        document.getElementById('t-label-compatibility').innerText = t.labelCompatibility;
+        document.getElementById('t-label-lucky').innerText = t.labelLucky;
+        document.getElementById('t-btn-card').innerText = t.btnCard;
+        document.getElementById('t-btn-kakao').innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.558 1.712 4.8 4.312 6.111l-.817 2.99c-.046.17.144.315.29.227l3.521-2.285c.227.022.458.04.694.04 4.97 0 9-3.186 9-7.116S16.97 3 12 3z"/></svg> ${t.btnKakao}`;
+        document.getElementById('t-btn-threads').innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"/><path d="M12 6c-3.314 0-6 2.686-6 6s2.686 6 6 6 6-2.686 6-6-2.686-6-6-6zm0 10c-2.206 0-4-1.794-4-4s1.794-4 4-4 4 1.794 4 4-1.794 4-4 4z"/></svg> ${t.btnThreads}`;
+        document.getElementById('t-btn-facebook').innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg> ${t.btnFacebook}`;
+        document.getElementById('t-btn-copy').innerText = t.btnCopy;
+        document.getElementById('t-btn-retry').innerText = t.btnRetry;
+        document.getElementById('t-card-footer').innerText = t.cardFooter;
+        document.getElementById('t-btn-save-img').innerText = t.btnSaveImg;
+        document.getElementById('t-btn-close').innerText = t.btnClose;
+
+        if (reportData) renderReport();
+    }
+
+    async function getReport() {
+        const bd = document.getElementById("birth_date").value;
+        const ampm = document.getElementById("birth_ampm").value;
+        let hour = parseInt(document.getElementById("birth_hour").value);
+        const min = document.getElementById("birth_min").value;
+        
+        // 12-hour to 24-hour conversion
+        if (ampm === "PM" && hour !== 12) hour += 12;
+        if (ampm === "AM" && hour === 12) hour = 0;
+        const bt = `${hour.toString().padStart(2, '0')}:${min}`;
+        
+        const mbti = document.getElementById("mbti").value;
+        if(!bd || !bt) return alert(translations[currentLang].alertInput);
+
+        try {
+            const res = await fetch(`${API_URL}/get-report`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({ birth_date: bd, birth_time: bt, mbti, lang: currentLang })
+            });
+            reportData = await res.json();
+            renderReport();
+            document.getElementById("intro-screen").classList.remove("active");
+            document.getElementById("report-screen").classList.add("active");
+            window.scrollTo(0, 0);
+        } catch(e) { alert(translations[currentLang].alertFail); }
+    }
+
+    function renderReport() {
+        const r = reportData;
+        const t = translations[currentLang];
+        
+        // Pillars
+        const pillarsHTML = ['year','month','day','time'].map((k, i) => `
+            <div class="pillar-item">
+                <div class="p-label">${t.pillars[i]}</div>
+                <div class="p-value">${r.pillars[k].label}</div>
+            </div>
+        `).join('');
+        document.getElementById("pillar-grid").innerHTML = pillarsHTML;
+
+        // Ilgan
+        document.getElementById("ilgan-title").innerText = r.ilgan.title;
+        document.getElementById("ilgan-desc").innerText = r.ilgan.desc;
+
+        // Oheng
+        document.getElementById("oheng-row").innerHTML = Object.entries(r.oheng).map(([k, v]) => 
+            `<span class="oheng-badge ${k}">${k} ${v}</span>`
+        ).join('');
+
+        // Synergy
+        document.getElementById("synergy-title").innerText = r.synergy.title;
+        document.getElementById("synergy-desc").innerText = r.synergy.desc;
+
+        // Compatibility
+        document.getElementById("compatibility-title").innerText = r.compatibility.title;
+        document.getElementById("compatibility-desc").innerText = r.compatibility.desc;
+
+        // Lucky
+        const l = r.lucky;
+        document.getElementById("lucky-desc").innerHTML = `
+            ${t.luckyLabels[0]}: ${l.color}<br>
+            ${t.luckyLabels[1]}: ${l.num}<br>
+            ${t.luckyLabels[2]}: ${l.dir}<br>
+            ${t.luckyLabels[3]}: ${l.food}
+        `;
+    }
+
+    function showResultCard() {
+        const r = reportData;
+        document.getElementById("rc-name").innerText = r.ilgan.title;
+        document.getElementById("rc-mbti").innerText = `MBTI: ${r.mbti}`;
+        document.getElementById("rc-pillars").innerHTML = document.getElementById("pillar-grid").innerHTML;
+        document.getElementById("rc-desc").innerText = r.ilgan.desc;
+        document.getElementById("result-modal").style.display = "flex";
+    }
+
+    function closeModal() { document.getElementById("result-modal").style.display = "none"; }
+
+    async function saveCard() {
+        const card = document.getElementById("result-card");
+        const canvas = await html2canvas(card, { backgroundColor: "#151528", scale: 2 });
+        const link = document.createElement("a");
+        link.download = `destiny-card.png`;
+        link.href = canvas.toDataURL();
+        link.click();
+    }
+
+    // --- SHARE FUNCTIONS ---
+    function shareKakao() {
+        if (!window.Kakao) return alert("카카오 SDK 로딩 중...");
+        if (!Kakao.isInitialized()) {
+            try {
+                Kakao.init('9b06dc85b339014203d8ddc90db3b4cf'); 
+            } catch (e) {
+                console.error("Kakao Init Error:", e);
+                return alert("카카오 초기화에 실패했습니다.");
+            }
+        }
+
+        if (!reportData) return alert(translations[currentLang].alertNoData);
+
+        Kakao.Share.sendDefault({
+            objectType: 'feed',
+            content: {
+                title: '운명의 길잡이 — 사주 & MBTI AI 분석',
+                description: currentLang === 'ko' 
+                    ? `나의 일간: ${reportData.ilgan.title}\n나의 MBTI: ${reportData.mbti}\n당신의 운명도 확인해보세요!`
+                    : `My Pillar: ${reportData.ilgan.title}\nMy MBTI: ${reportData.mbti}\nCheck your destiny too!`,
+                imageUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=1000',
+                link: {
+                    mobileWebUrl: window.location.href,
+                    webUrl: window.location.href,
+                },
+            },
+            buttons: [
+                {
+                    title: currentLang === 'ko' ? '지금 분석하기' : 'Analyze Now',
+                    link: {
+                        mobileWebUrl: window.location.href,
+                        webUrl: window.location.href,
+                    },
+                },
+            ],
+        });
+    }
+
+    function shareThreads() {
+        const t = translations[currentLang];
+        const text = currentLang === 'ko'
+            ? `✨ 운명의 길잡이 ✨\n\n나의 일간: ${reportData.ilgan.title}\n나의 MBTI: ${reportData.mbti}\n\n당신의 사주와 MBTI 시너지는 어떤가요? 지금 확인해보세요!\n\n${window.location.href}`
+            : `✨ Destiny Guide ✨\n\nMy Pillar: ${reportData.ilgan.title}\nMy MBTI: ${reportData.mbti}\n\nWhat's your Saju & MBTI synergy? Check it out now!\n\n${window.location.href}`;
+        window.open(`https://www.threads.net/intent/post?text=${encodeURIComponent(text)}`);
+    }
+
+    function shareFacebook() {
+        const url = window.location.href;
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`);
+    }
+
+    function copyLink() {
+        const url = window.location.href;
+        navigator.clipboard.writeText(url).then(() => {
+            alert(translations[currentLang].alertCopy);
+        });
+    }
+</script>
+
+</body>
+</html>
