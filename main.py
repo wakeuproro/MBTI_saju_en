@@ -239,12 +239,18 @@ class ReportInput(BaseModel):
     birth_time: str
     mbti: str
     lang: str = 'ko'
+    name: str = ''
+    gender: str = 'F'  # 'F' or 'M'
+    time_unknown: bool = False
 
 class PremiumReportInput(BaseModel):
     birth_date: str
     birth_time: str
     mbti: str
     lang: str = 'ko'
+    name: str = ''
+    gender: str = 'F'
+    time_unknown: bool = False
 
 @app.post("/get-report")
 async def get_report(input_data: ReportInput):
@@ -306,9 +312,6 @@ PREMIUM_PROMPT_TEMPLATE = """당신은 30년 경력의 명리학 전문가이자
 
 @app.post("/get-premium-report")
 async def get_premium_report(input_data: PremiumReportInput):
-    if not gemini_model:
-        raise HTTPException(status_code=503, detail="프리미엄 분석 서비스가 준비 중입니다. GOOGLE_API_KEY를 설정해주세요.")
-
     try:
         year, month, day = map(int, input_data.birth_date.split('-'))
         hour = int(input_data.birth_time.split(':')[0])
@@ -323,34 +326,51 @@ async def get_premium_report(input_data: PremiumReportInput):
         ilgan = day_p[0]
         ilgan_name = ILGAN_NAMES['ko'][ilgan]
 
-        prompt = PREMIUM_PROMPT_TEMPLATE.format(
-            birth_date=input_data.birth_date,
-            birth_time=input_data.birth_time,
-            year_p=f"{year_p[0]}{year_p[1]}",
-            month_p=f"{month_p[0]}{month_p[1]}",
-            day_p=f"{day_p[0]}{day_p[1]}",
-            time_p=f"{time_p[0]}{time_p[1]}",
-            ilgan_name=ilgan_name,
-            oh_wood=oheng['木'], oh_fire=oheng['火'], oh_earth=oheng['土'],
-            oh_metal=oheng['金'], oh_water=oheng['水'],
-            mbti=input_data.mbti
-        )
+        # 1) JSON 기반 라이프스타일 (항상 응답) — 풍수/악세사리/향기
+        ilgan_detailed = ANALYSIS_DATA.get("ilgan_detailed", {}).get(ilgan, {}) if ANALYSIS_DATA else {}
+        lifestyle = {
+            "fengshui": ilgan_detailed.get("fengshui"),
+            "accessory": ilgan_detailed.get("accessory"),
+            "scent": ilgan_detailed.get("scent"),
+        }
 
-        response = gemini_model.generate_content(prompt)
-        text = response.text.strip()
+        # 2) Gemini 심층 분석 (옵셔널 — 실패해도 라이프스타일은 응답)
+        premium_data = None
+        ai_error = None
+        if gemini_model:
+            try:
+                prompt = PREMIUM_PROMPT_TEMPLATE.format(
+                    birth_date=input_data.birth_date,
+                    birth_time=input_data.birth_time,
+                    year_p=f"{year_p[0]}{year_p[1]}",
+                    month_p=f"{month_p[0]}{month_p[1]}",
+                    day_p=f"{day_p[0]}{day_p[1]}",
+                    time_p=f"{time_p[0]}{time_p[1]}",
+                    ilgan_name=ilgan_name,
+                    oh_wood=oheng['木'], oh_fire=oheng['火'], oh_earth=oheng['土'],
+                    oh_metal=oheng['金'], oh_water=oheng['水'],
+                    mbti=input_data.mbti
+                )
+                response = gemini_model.generate_content(prompt)
+                text = response.text.strip()
+                if text.startswith("```"):
+                    text = text.split("```")[1]
+                    if text.startswith("json"):
+                        text = text[4:]
+                text = text.strip()
+                premium_data = json.loads(text)
+            except Exception as e:
+                ai_error = f"AI 심층 분석은 일시적으로 사용할 수 없어요. (사유: {str(e)[:80]}…)"
+        else:
+            ai_error = "AI 심층 분석 키가 아직 연결되지 않았어요. 라이프스타일 추천은 정상 제공됩니다."
 
-        # JSON 추출 (코드블록 제거)
-        if text.startswith("```"):
-            text = text.split("```")[1]
-            if text.startswith("json"):
-                text = text[4:]
-        text = text.strip()
+        return {
+            "status": "ok",
+            "premium": premium_data,
+            "lifestyle": lifestyle,
+            "ai_error": ai_error,
+        }
 
-        premium_data = json.loads(text)
-        return {"status": "ok", "premium": premium_data}
-
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=500, detail="AI 응답 파싱에 실패했습니다. 다시 시도해주세요.")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

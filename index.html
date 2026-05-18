@@ -169,8 +169,11 @@
         .premium-unlock-price { font-size: 0.7rem; color: #9E9E9E; margin-top: 8px; }
 
         /* Premium result (unlocked) */
-        .premium-section { background: linear-gradient(135deg, #F3E5F5, #fff); border: 1.5px solid #CE93D8; border-radius: 16px; margin-bottom: 10px; overflow: hidden; }
+        .premium-section { background: linear-gradient(135deg, #F3E5F5, #fff); border: 1.5px solid #CE93D8; border-radius: 16px; margin-bottom: 10px; overflow: hidden; transition: all 0.3s; }
         .premium-section .accordion-header { background: transparent; }
+        .premium-section .accordion-body { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
+        .premium-section.open .accordion-body { max-height: 5000px; }
+        .premium-section.open .accordion-arrow { transform: rotate(180deg); }
         .premium-badge { font-size: 0.6rem; background: #7B1FA2; color: #fff; padding: 2px 8px; border-radius: 10px; font-weight: 700; }
 
         /* Referral share section */
@@ -179,6 +182,21 @@
         .referral-desc { font-size: 0.8rem; color: #558B2F; margin-bottom: 14px; line-height: 1.5; }
         .referral-btn { padding: 12px 24px; background: linear-gradient(135deg, #43A047, #66BB6A); color: #fff; border: none; border-radius: 12px; font-size: 0.9rem; font-weight: 700; cursor: pointer; }
         .referral-code { font-family: monospace; background: #fff; padding: 6px 14px; border-radius: 8px; border: 1px solid #A5D6A7; font-size: 0.85rem; color: #2E7D32; font-weight: 700; margin-top: 10px; display: none; }
+
+        /* Lifestyle cards (fengshui/accessory/scent unlocked) */
+        .lifestyle-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+        .lifestyle-item { background: #FFF8F0; border: 1px solid #FFE0B2; border-radius: 10px; padding: 10px 12px; }
+        .lifestyle-item-title { font-weight: 800; font-size: 0.85rem; color: #6A1B9A; margin-bottom: 4px; }
+        .lifestyle-item-sub { font-size: 0.78rem; color: #8D6E63; margin-bottom: 4px; }
+        .lifestyle-item-reason { font-size: 0.78rem; color: #5D4037; line-height: 1.5; }
+        .lifestyle-meta { background: linear-gradient(135deg, #F3E5F5, #fff); border: 1px solid #CE93D8; border-radius: 10px; padding: 10px 12px; margin-top: 10px; font-size: 0.82rem; color: #6A1B9A; font-weight: 600; }
+        .lifestyle-avoid { background: #FBE9E7; border: 1px solid #FFCCBC; border-radius: 10px; padding: 10px 12px; margin-top: 8px; font-size: 0.8rem; color: #BF360C; }
+        .lifestyle-tip { background: #E8F5E9; border: 1px solid #C8E6C9; border-radius: 10px; padding: 10px 12px; margin-top: 8px; font-size: 0.8rem; color: #2E7D32; }
+
+        /* Gender select buttons */
+        .gender-btn { flex: 1; padding: 14px; background: #fff; border: 2px solid #FFE0B2; border-radius: 14px; color: #8D6E63; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+        .gender-btn.active { background: linear-gradient(135deg, #FF6D00, #FF8F00); color: #fff; border-color: #FF6D00; box-shadow: 0 4px 12px rgba(255,109,0,0.2); }
+        .gender-btn:active { transform: scale(0.97); }
 
         /* Life cycle period cards */
         .lifecycle-periods { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
@@ -220,12 +238,30 @@
         </div>
 
         <div class="form-section">
+            <label class="form-label">이름 또는 닉네임</label>
+            <input type="text" class="form-input" id="user_name" placeholder="예: 김지수" maxlength="20">
+        </div>
+        <div class="form-section">
+            <label class="form-label">성별</label>
+            <div style="display: flex; gap: 8px;">
+                <button type="button" class="gender-btn active" data-gender="F" onclick="selectGender('F')">여자</button>
+                <button type="button" class="gender-btn" data-gender="M" onclick="selectGender('M')">남자</button>
+            </div>
+            <input type="hidden" id="user_gender" value="F">
+        </div>
+        <div class="form-section">
             <label class="form-label" id="t-label-birth">생년월일 (양력)</label>
             <input type="date" class="form-input" id="birth_date" value="1995-05-15">
         </div>
         <div class="form-section">
-            <label class="form-label" id="t-label-time">태어난 시간</label>
-            <div style="display: flex; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <label class="form-label" id="t-label-time" style="margin-bottom: 0;">태어난 시간</label>
+                <label style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: #8D6E63; cursor: pointer;">
+                    <input type="checkbox" id="time_unknown" onchange="toggleTimeUnknown()" style="width: 14px; height: 14px; accent-color: #FF6D00;">
+                    <span>시간 모름</span>
+                </label>
+            </div>
+            <div style="display: flex; gap: 8px;" id="time_inputs">
                 <select class="form-select" id="birth_ampm" style="flex: 1;">
                     <option value="AM">AM</option>
                     <option value="PM" selected>PM</option>
@@ -241,6 +277,9 @@
                     <option value="00">00</option><option value="10">10</option><option value="20">20</option>
                     <option value="30">30</option><option value="40">40</option><option value="50">50</option>
                 </select>
+            </div>
+            <div id="time_unknown_notice" style="display:none; background:#FFF3E0; border:1px solid #FFE0B2; border-radius:10px; padding:10px 12px; font-size:0.78rem; color:#8D6E63; line-height:1.5;">
+                ℹ️ 시간 모를 때는 정오(낮 12시)로 분석합니다. 시주(時柱)는 참고용으로만 봐주세요.
             </div>
         </div>
         <div class="form-section">
@@ -442,16 +481,42 @@
         section.classList.toggle('open');
     }
 
+    function selectGender(g) {
+        document.getElementById('user_gender').value = g;
+        document.querySelectorAll('.gender-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.gender === g);
+        });
+    }
+
+    function toggleTimeUnknown() {
+        const unknown = document.getElementById('time_unknown').checked;
+        document.getElementById('time_inputs').style.display = unknown ? 'none' : 'flex';
+        document.getElementById('time_unknown_notice').style.display = unknown ? 'block' : 'none';
+    }
+
+    let userInfo = { name: '', gender: 'F', timeUnknown: false };
+
     async function getReport() {
         const bd = document.getElementById("birth_date").value;
-        const ampm = document.getElementById("birth_ampm").value;
-        let hour = parseInt(document.getElementById("birth_hour").value);
-        const min = document.getElementById("birth_min").value;
-        if (ampm === "PM" && hour !== 12) hour += 12;
-        if (ampm === "AM" && hour === 12) hour = 0;
-        const bt = `${hour.toString().padStart(2, '0')}:${min}`;
+        const timeUnknown = document.getElementById("time_unknown").checked;
+        let bt;
+        if (timeUnknown) {
+            bt = "12:00"; // 시간 모를 때 정오로 처리
+        } else {
+            const ampm = document.getElementById("birth_ampm").value;
+            let hour = parseInt(document.getElementById("birth_hour").value);
+            const min = document.getElementById("birth_min").value;
+            if (ampm === "PM" && hour !== 12) hour += 12;
+            if (ampm === "AM" && hour === 12) hour = 0;
+            bt = `${hour.toString().padStart(2, '0')}:${min}`;
+        }
         const mbti = document.getElementById("mbti").value;
-        if (!bd || !bt) return alert("정보를 입력해주세요.");
+        const name = document.getElementById("user_name").value.trim() || '당신';
+        const gender = document.getElementById("user_gender").value;
+        if (!bd) return alert("생년월일을 입력해주세요.");
+
+        // 사용자 정보 보관 (렌더링용)
+        userInfo = { name, gender, timeUnknown };
 
         // 무료 횟수 체크
         if (freeUsed) {
@@ -465,7 +530,7 @@
             const res = await fetch(`${API_URL}/get-report`, {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({ birth_date: bd, birth_time: bt, mbti, lang: currentLang })
+                body: JSON.stringify({ birth_date: bd, birth_time: bt, mbti, lang: currentLang, name, gender, time_unknown: timeUnknown })
             });
             reportData = await res.json();
             renderReport();
@@ -488,10 +553,15 @@
         const r = reportData;
 
         // Header
-        document.getElementById("report-name-display").textContent = `${r.ilgan.name} x ${r.mbti}`;
+        const greetName = userInfo.name && userInfo.name !== '당신' ? `${userInfo.name}님의` : '당신의';
+        document.getElementById("report-name-display").textContent = `${greetName} 사주 — ${r.ilgan.name} × ${r.mbti}`;
+        const genderChip = userInfo.gender === 'M' ? '♂ 남자' : '♀ 여자';
+        const timeChip = userInfo.timeUnknown ? '⏰ 시간 모름' : '';
         document.getElementById("report-birth-info").innerHTML = `
+            <span class="info-chip">${genderChip}</span>
             <span class="info-chip">${r.mbti}</span>
             <span class="info-chip">일간: ${r.ilgan.name}</span>
+            ${timeChip ? `<span class="info-chip" style="background:#FFF3E0;color:#BF360C;">${timeChip}</span>` : ''}
         `;
 
         // Pillars with colors
@@ -814,7 +884,7 @@
             }
 
             const data = await res.json();
-            renderPremiumResult(data.premium);
+            renderPremiumResult(data.premium, data.lifestyle, data.ai_error);
 
         } catch(e) {
             alert("서버 연결에 실패했습니다. 다시 시도해주세요.");
@@ -824,7 +894,7 @@
         }
     }
 
-    function renderPremiumResult(premium) {
+    function renderPremiumResult(premium, lifestyle, aiError) {
         // 티저와 배너 숨기기
         document.getElementById('premium-teaser-area').style.display = 'none';
         document.getElementById('premium-unlock-banner').style.display = 'none';
@@ -832,28 +902,83 @@
         const area = document.getElementById('premium-result-area');
         area.style.display = 'block';
 
-        const sections = Object.values(premium);
-        area.innerHTML = sections.map(s => `
-            <div class="premium-section fade-in">
-                <div class="accordion-header" onclick="toggleAccordion(this)">
-                    <div class="accordion-icon" style="background:#F3E5F5;">💎</div>
-                    <div class="accordion-title">${s.title} <span class="premium-badge">PREMIUM</span></div>
-                    <div class="accordion-arrow">▼</div>
-                </div>
-                <div class="accordion-body">
-                    <div class="accordion-content">
-                        <div class="accordion-desc">${s.desc}</div>
-                    </div>
-                </div>
-            </div>
-        `).join('');
+        let html = '';
 
-        // 첫 번째 섹션 자동 열기
+        // AI 에러 메시지 (있을 때만)
+        if (aiError) {
+            html += `<div style="background:#FFF3E0; border:1px solid #FFCC80; border-radius:12px; padding:12px 14px; margin-bottom:10px; font-size:0.82rem; color:#BF360C;">⚠️ ${aiError}</div>`;
+        }
+
+        // 1) 풍수/악세사리/향기 (JSON 데이터)
+        if (lifestyle) {
+            if (lifestyle.fengshui) {
+                const f = lifestyle.fengshui;
+                const rooms = (f.room_tips || []).map(r =>
+                    `<div class="lifestyle-item"><div class="lifestyle-item-title">🏠 ${r.area}</div><div class="lifestyle-item-reason">${r.tip}</div></div>`
+                ).join('');
+                const body = `
+                    <div class="accordion-desc">${f.desc}</div>
+                    <div class="lifestyle-list">${rooms}</div>
+                    <div class="lifestyle-meta">🎨 추천 컬러: ${f.color_scheme}</div>
+                    <div class="lifestyle-meta">💡 핵심 아이템: ${f.item}</div>
+                    <div class="lifestyle-avoid">⚠️ ${f.avoid}</div>`;
+                html += buildPremiumSection('🏠', f.title, body);
+            }
+            if (lifestyle.accessory) {
+                const a = lifestyle.accessory;
+                const recs = (a.recommendations || []).map(r =>
+                    `<div class="lifestyle-item"><div class="lifestyle-item-title">💎 ${r.item}</div><div class="lifestyle-item-sub">소재: ${r.material}</div><div class="lifestyle-item-reason">${r.reason}</div></div>`
+                ).join('');
+                const body = `
+                    <div class="accordion-desc">${a.desc}</div>
+                    <div class="lifestyle-list">${recs}</div>
+                    <div class="lifestyle-avoid">⚠️ ${a.avoid_material}</div>
+                    <div class="lifestyle-tip">💡 ${a.tip}</div>`;
+                html += buildPremiumSection('💎', a.title, body);
+            }
+            if (lifestyle.scent) {
+                const s = lifestyle.scent;
+                const recs = (s.recommendations || []).map(r =>
+                    `<div class="lifestyle-item"><div class="lifestyle-item-title">🌸 ${r.scent}</div><div class="lifestyle-item-sub">계열: ${r.type}</div><div class="lifestyle-item-reason">${r.reason}</div></div>`
+                ).join('');
+                const body = `
+                    <div class="accordion-desc">${s.desc}</div>
+                    <div class="lifestyle-list">${recs}</div>
+                    <div class="lifestyle-meta">🌙 ${s.mood}</div>
+                    <div class="lifestyle-tip">💡 ${s.tip}</div>`;
+                html += buildPremiumSection('🌸', s.title, body);
+            }
+        }
+
+        // 2) AI 심층 분석 (Gemini)
+        if (premium) {
+            Object.values(premium).forEach(s => {
+                html += buildPremiumSection('💎', s.title, `<div class="accordion-desc">${s.desc}</div>`);
+            });
+        }
+
+        area.innerHTML = html;
+
+        // 첫 번째 섹션 자동 열기 + 스크롤
         const first = area.querySelector('.premium-section');
         if (first) {
             first.classList.add('open');
             first.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
+    }
+
+    function buildPremiumSection(icon, title, bodyHTML) {
+        return `
+            <div class="premium-section fade-in">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <div class="accordion-icon" style="background:#F3E5F5;">${icon}</div>
+                    <div class="accordion-title">${title} <span class="premium-badge">PREMIUM</span></div>
+                    <div class="accordion-arrow">▼</div>
+                </div>
+                <div class="accordion-body">
+                    <div class="accordion-content">${bodyHTML}</div>
+                </div>
+            </div>`;
     }
 
     // ═══════════════════════════════════════════════
