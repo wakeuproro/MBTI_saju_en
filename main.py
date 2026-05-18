@@ -1,5 +1,6 @@
 import os
 import json
+import uuid
 from datetime import date
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
@@ -12,8 +13,10 @@ load_dotenv()
 
 # Gemini API 설정
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-genai.configure(api_key=GOOGLE_API_KEY)
-model = genai.GenerativeModel('gemini-2.0-flash')
+gemini_model = None
+if GOOGLE_API_KEY:
+    genai.configure(api_key=GOOGLE_API_KEY)
+    gemini_model = genai.GenerativeModel('gemini-2.0-flash')
 
 app = FastAPI()
 
@@ -146,26 +149,57 @@ async def get_report_analysis(birth_date: str, birth_time: str, mbti: str, lang:
     if ANALYSIS_DATA:
         # 1. 핵심 기운 분석
         ilgan_data = ANALYSIS_DATA["ilgan_analysis"].get(ilgan, {"title": ilgan_name_lang, "desc": f"{ilgan_name_lang}의 기운을 타고나셨군요."})
-        
-        # 2. 사주 & MBTI 시너지 (MBTI 각 글자별 설명 조합)
-        synergy_desc = f"{ilgan_name_lang}의 기운과 {mbti} 성향이 조화롭게 어우러집니다. "
-        for char in mbti:
-            synergy_desc += ANALYSIS_DATA["synergy_base"].get(char, "") + " "
-        
+
+        # 2. 사주 & MBTI 시너지 (일간+MBTI 조합 데이터 우선, 없으면 글자별 조합)
+        combo_key = f"{ilgan}_{mbti}"
+        combo_data = ANALYSIS_DATA.get("ilgan_mbti_combinations", {}).get(combo_key)
+        if combo_data:
+            synergy_title = combo_data["title"]
+            synergy_desc = combo_data["desc"]
+        else:
+            synergy_desc = f"{ilgan_name_lang}의 기운과 {mbti} 성향이 조화롭게 어우러집니다. "
+            for char in mbti:
+                synergy_desc += ANALYSIS_DATA["synergy_base"].get(char, "") + " "
+            synergy_title = f"{ilgan_name_lang} x {mbti} 시너지"
+            synergy_desc = synergy_desc.strip()
+
         # 3. 최고의 궁합
         comp_data = ANALYSIS_DATA["compatibility_data"].get(ilgan, {"types": ["특정 유형"], "desc": "당신과 잘 맞는 인연이 기다리고 있습니다."})
         comp_types = ", ".join(comp_data["types"])
-        
+
+        # 4. 상세 섹션 데이터 (ilgan_detailed)
+        detailed = ANALYSIS_DATA.get("ilgan_detailed", {}).get(ilgan, {})
+
+        # 5. MBTI 연애 스타일
+        mbti_love = ANALYSIS_DATA.get("mbti_love_style", {}).get(mbti, {})
+
+        # 6. 일간+MBTI 조합 상세 (강점, 약점, 커리어, 성장팁)
+        combo_detail = {}
+        if combo_data:
+            combo_detail = {
+                "strength": combo_data.get("strength", ""),
+                "weakness": combo_data.get("weakness", ""),
+                "career": combo_data.get("career", ""),
+                "growth_tip": combo_data.get("growth_tip", "")
+            }
+
+        # 7. 계절 운세
+        ilgan_oheng = CHEONGAN_OHENG[ilgan]
+        fortune = ANALYSIS_DATA.get("monthly_fortune_base", {}).get(ilgan_oheng, {})
+
         analysis = {
             "ilgan_title": ilgan_data["title"],
             "ilgan_desc": ilgan_data["desc"],
-            "synergy_title": f"{ilgan_name_lang} x {mbti} 시너지",
-            "synergy_desc": synergy_desc.strip(),
+            "synergy_title": synergy_title,
+            "synergy_desc": synergy_desc,
             "compatibility_title": f"최고의 궁합: {comp_types}",
             "compatibility_desc": comp_data["desc"]
         }
     else:
-        # 폴백 데이터
+        detailed = {}
+        mbti_love = {}
+        combo_detail = {}
+        fortune = {}
         analysis = {
             "ilgan_title": ilgan_name_lang,
             "ilgan_desc": f"{ilgan_name_lang}의 기운을 타고나셨군요. (데이터 로드 실패)",
@@ -174,6 +208,10 @@ async def get_report_analysis(birth_date: str, birth_time: str, mbti: str, lang:
             "compatibility_title": "추천 궁합",
             "compatibility_desc": "당신의 포용력을 이해해줄 수 있는 유형과 좋은 인연이 될 것입니다."
         }
+
+    # 결과 섹션 설정
+    result_sections = ANALYSIS_DATA.get("result_sections", []) if ANALYSIS_DATA else []
+    payment_config = ANALYSIS_DATA.get("payment_config", {}) if ANALYSIS_DATA else {}
 
     return {
         'pillars': {
@@ -187,10 +225,22 @@ async def get_report_analysis(birth_date: str, birth_time: str, mbti: str, lang:
         'mbti': mbti,
         'synergy': {'title': analysis['synergy_title'], 'desc': analysis['synergy_desc']},
         'compatibility': {'title': analysis['compatibility_title'], 'desc': analysis['compatibility_desc']},
-        'lucky': lucky
+        'lucky': lucky,
+        'detailed': detailed,
+        'mbti_love': mbti_love,
+        'combo_detail': combo_detail,
+        'fortune': fortune,
+        'result_sections': result_sections,
+        'payment_config': payment_config
     }
 
 class ReportInput(BaseModel):
+    birth_date: str
+    birth_time: str
+    mbti: str
+    lang: str = 'ko'
+
+class PremiumReportInput(BaseModel):
     birth_date: str
     birth_time: str
     mbti: str
@@ -203,6 +253,140 @@ async def get_report(input_data: ReportInput):
         return report
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# ═══════════════════════════════════════════════
+# 💎 프리미엄 LLM 분석 (유료)
+# ═══════════════════════════════════════════════
+
+PREMIUM_PROMPT_TEMPLATE = """당신은 30년 경력의 명리학 전문가이자 MBTI 전문 상담사입니다.
+아래 사주 정보와 MBTI를 바탕으로, 이 사람만을 위한 깊이 있는 사주 해석을 작성해주세요.
+
+[사주 정보]
+- 생년월일: {birth_date}
+- 태어난 시간: {birth_time}
+- 사주 팔자: 년주({year_p}) 월주({month_p}) 일주({day_p}) 시주({time_p})
+- 일간: {ilgan_name}
+- 오행 분포: 木={oh_wood} 火={oh_fire} 土={oh_earth} 金={oh_metal} 水={oh_water}
+- MBTI: {mbti}
+
+[작성 규칙]
+1. 반드시 사주 원국 8글자의 관계(충, 합, 형, 파, 생, 극)를 분석하세요
+2. MBTI 성향과 사주 기운이 어떻게 시너지/충돌하는지 연결하세요
+3. 존댓말로, 따뜻하지만 솔직하게 말하세요
+4. 비유와 은유를 풍부하게 사용하되 과장은 금지
+5. 각 섹션은 3~5문장으로 작성하세요
+
+[출력 형식 - 반드시 아래 JSON 형식으로만 응답]
+{{
+  "deep_personality": {{
+    "title": "이 사람의 본질을 한 문장으로",
+    "desc": "사주 원국 전체를 읽은 성격 분석 (팔자 8글자 관계 포함)"
+  }},
+  "hidden_pattern": {{
+    "title": "숨겨진 패턴 제목",
+    "desc": "일반 분석에서는 보이지 않는, 충/합/형 등 특수 관계 해석"
+  }},
+  "life_turning_point": {{
+    "title": "인생 전환점 제목",
+    "desc": "대운/세운 흐름에서 주목할 시기와 조언"
+  }},
+  "deep_love": {{
+    "title": "깊은 연애/인연 분석 제목",
+    "desc": "사주 원국 기반의 연애 패턴과 배우자운 분석"
+  }},
+  "deep_wealth": {{
+    "title": "재물/사업운 심층 분석 제목",
+    "desc": "재성의 위치와 상태에 따른 재물 흐름 분석"
+  }},
+  "advice": {{
+    "title": "명리학자가 전하는 한마디",
+    "desc": "이 사주를 가진 사람에게 꼭 해주고 싶은 핵심 조언"
+  }}
+}}"""
+
+@app.post("/get-premium-report")
+async def get_premium_report(input_data: PremiumReportInput):
+    if not gemini_model:
+        raise HTTPException(status_code=503, detail="프리미엄 분석 서비스가 준비 중입니다. GOOGLE_API_KEY를 설정해주세요.")
+
+    try:
+        year, month, day = map(int, input_data.birth_date.split('-'))
+        hour = int(input_data.birth_time.split(':')[0])
+
+        year_p = calc_year_pillar(year)
+        month_p = calc_month_pillar(year, month)
+        day_p = calc_day_pillar(year, month, day)
+        time_p = calc_time_pillar(day_p[0], hour)
+
+        pillars = [year_p, month_p, day_p, time_p]
+        oheng = analyze_oheng(pillars)
+        ilgan = day_p[0]
+        ilgan_name = ILGAN_NAMES['ko'][ilgan]
+
+        prompt = PREMIUM_PROMPT_TEMPLATE.format(
+            birth_date=input_data.birth_date,
+            birth_time=input_data.birth_time,
+            year_p=f"{year_p[0]}{year_p[1]}",
+            month_p=f"{month_p[0]}{month_p[1]}",
+            day_p=f"{day_p[0]}{day_p[1]}",
+            time_p=f"{time_p[0]}{time_p[1]}",
+            ilgan_name=ilgan_name,
+            oh_wood=oheng['木'], oh_fire=oheng['火'], oh_earth=oheng['土'],
+            oh_metal=oheng['金'], oh_water=oheng['水'],
+            mbti=input_data.mbti
+        )
+
+        response = gemini_model.generate_content(prompt)
+        text = response.text.strip()
+
+        # JSON 추출 (코드블록 제거)
+        if text.startswith("```"):
+            text = text.split("```")[1]
+            if text.startswith("json"):
+                text = text[4:]
+        text = text.strip()
+
+        premium_data = json.loads(text)
+        return {"status": "ok", "premium": premium_data}
+
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="AI 응답 파싱에 실패했습니다. 다시 시도해주세요.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ═══════════════════════════════════════════════
+# 🔗 리퍼럴 시스템 (공유 보상)
+# ═══════════════════════════════════════════════
+
+# 메모리 기반 간단한 리퍼럴 저장소 (프로덕션에서는 DB로 교체)
+referral_store = {}
+
+@app.post("/create-referral")
+async def create_referral():
+    code = str(uuid.uuid4())[:8]
+    referral_store[code] = {"uses": 0, "bonus_granted": False}
+    return {"code": code}
+
+@app.post("/use-referral")
+async def use_referral(data: dict):
+    code = data.get("code", "")
+    if code not in referral_store:
+        raise HTTPException(status_code=404, detail="유효하지 않은 추천 코드입니다.")
+
+    ref = referral_store[code]
+    ref["uses"] += 1
+
+    # 공유자에게 보너스 부여 (1회)
+    bonus_for_sharer = False
+    if not ref["bonus_granted"]:
+        ref["bonus_granted"] = True
+        bonus_for_sharer = True
+
+    return {
+        "valid": True,
+        "bonus_for_sharer": bonus_for_sharer,
+        "message": "추천 코드가 적용되었습니다! 무료 분석 1회가 제공됩니다."
+    }
 
 if __name__ == "__main__":
     import uvicorn

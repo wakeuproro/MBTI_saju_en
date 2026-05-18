@@ -5,90 +5,219 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>운명의 길잡이 — 사주 & MBTI AI 분석</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800;900&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background-color: #06060f; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; justify-content: center; color: #e8e8ee; }
-        #app { width: 100%; max-width: 480px; min-height: 100dvh; background: linear-gradient(180deg, #0d0d1a 0%, #12101f 100%); display: flex; flex-direction: column; position: relative; }
-        header { padding: 14px 20px; background: rgba(13,13,26,0.95); border-bottom: 1px solid rgba(201,168,76,0.15); display: flex; justify-content: space-between; align-items: center; backdrop-filter: blur(10px); z-index: 10; position: sticky; top: 0; }
-        .header-title { font-weight: 700; font-size: 0.9rem; color: #c9a84c; letter-spacing: 2px; }
-        
-        .lang-switch { display: flex; gap: 4px; background: rgba(255,255,255,0.05); padding: 4px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); }
-        .lang-btn { padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; cursor: pointer; border: none; background: transparent; color: #7a7a9a; transition: all 0.2s; }
-        .lang-btn.active { background: #c9a84c; color: #0d0d1a; }
+        body { background-color: #FFF8F0; font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; justify-content: center; color: #2D2D2D; }
+        #app { width: 100%; max-width: 480px; min-height: 100dvh; background: #FFF8F0; display: flex; flex-direction: column; position: relative; padding-bottom: 80px; }
 
-        .screen { display: none; padding: 24px; }
+        /* Header */
+        header { padding: 14px 20px; background: rgba(255,248,240,0.95); border-bottom: 2px solid #FFE0B2; display: flex; justify-content: space-between; align-items: center; backdrop-filter: blur(10px); z-index: 10; position: sticky; top: 0; }
+        .header-title { font-weight: 900; font-size: 1rem; color: #E65100; letter-spacing: 1px; }
+        .header-logo { font-size: 1.2rem; }
+        .lang-switch { display: flex; gap: 4px; background: #FFF3E0; padding: 4px; border-radius: 8px; border: 1px solid #FFE0B2; }
+        .lang-btn { padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; cursor: pointer; border: none; background: transparent; color: #BF360C; transition: all 0.2s; }
+        .lang-btn.active { background: #FF6D00; color: #fff; }
+
+        /* Screens */
+        .screen { display: none; padding: 24px 20px; }
         .screen.active { display: block; }
-        .intro-title { font-size: 1.6rem; font-weight: 800; line-height: 1.4; margin-bottom: 8px; background: linear-gradient(135deg, #c9a84c, #f0d78c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .intro-sub { color: #7a7a9a; font-size: 0.9rem; margin-bottom: 32px; }
-        .form-section { margin-bottom: 20px; }
-        .form-label { display: block; margin-bottom: 8px; font-size: 0.85rem; color: #9a9ab0; font-weight: 600; }
-        .form-input, .form-select { width: 100%; padding: 14px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; color: #e8e8ee; font-size: 1rem; outline: none; transition: all 0.2s; }
-        .form-select { 
-            appearance: none; 
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23c9a84c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 14px center;
-            background-size: 18px;
-            padding-right: 40px;
-            cursor: pointer;
+
+        /* Intro */
+        .intro-hero { text-align: center; padding: 40px 0 30px; }
+        .intro-emoji { font-size: 3.5rem; margin-bottom: 12px; }
+        .intro-title { font-size: 1.6rem; font-weight: 900; line-height: 1.4; margin-bottom: 8px; color: #BF360C; }
+        .intro-sub { color: #8D6E63; font-size: 0.9rem; margin-bottom: 32px; }
+        .form-section { margin-bottom: 16px; }
+        .form-label { display: block; margin-bottom: 8px; font-size: 0.85rem; color: #6D4C41; font-weight: 700; }
+        .form-input, .form-select { width: 100%; padding: 14px; background: #fff; border: 2px solid #FFE0B2; border-radius: 14px; color: #2D2D2D; font-size: 1rem; outline: none; transition: all 0.2s; font-family: inherit; }
+        .form-input:focus, .form-select:focus { border-color: #FF6D00; box-shadow: 0 0 0 3px rgba(255,109,0,0.1); }
+        .form-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23FF6D00' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 14px center; background-size: 18px; padding-right: 40px; cursor: pointer;
         }
-        .form-select:focus { border-color: #c9a84c; background-color: rgba(255,255,255,0.08); }
-        .form-select option { background-color: #12101f; color: #e8e8ee; padding: 12px; }
-        .start-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, #c9a84c, #a8893a); color: #0d0d1a; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: 800; cursor: pointer; margin-top: 10px; }
+        .start-btn { width: 100%; padding: 18px; background: linear-gradient(135deg, #FF6D00, #FF8F00); color: #fff; border: none; border-radius: 16px; font-size: 1.1rem; font-weight: 900; cursor: pointer; margin-top: 10px; box-shadow: 0 4px 15px rgba(255,109,0,0.3); transition: transform 0.2s; }
+        .start-btn:active { transform: scale(0.98); }
+        .free-badge { display: inline-block; background: #E8F5E9; color: #2E7D32; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; margin-bottom: 16px; }
 
-        /* Report Screen Styles */
-        .report-section { background: rgba(255,255,255,0.03); border: 1px solid rgba(201,168,76,0.1); border-radius: 20px; padding: 24px; margin-bottom: 24px; animation: fadeIn 0.6s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .report-label { color: #c9a84c; font-size: 0.75rem; font-weight: 700; letter-spacing: 1px; margin-bottom: 12px; text-transform: uppercase; }
-        .report-title { font-size: 1.4rem; font-weight: 800; margin-bottom: 12px; color: #f0d78c; }
-        .report-desc { font-size: 0.95rem; line-height: 1.7; color: #aaa; margin-bottom: 16px; }
-        .pillar-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
-        .pillar-item { background: rgba(201,168,76,0.08); padding: 12px 4px; border-radius: 12px; text-align: center; border: 1px solid rgba(201,168,76,0.15); }
-        .pillar-item .p-label { font-size: 0.65rem; color: #7a7a9a; margin-bottom: 4px; }
-        .pillar-item .p-value { font-size: 1.1rem; font-weight: 800; color: #c9a84c; }
-        .oheng-row { display: flex; gap: 8px; flex-wrap: wrap; }
-        .oheng-badge { padding: 6px 12px; border-radius: 100px; font-size: 0.8rem; font-weight: 700; }
-        
-        /* Result Card Button */
-        .card-preview-btn { width: 100%; padding: 18px; background: rgba(201,168,76,0.1); border: 1px dashed #c9a84c; border-radius: 16px; color: #c9a84c; font-weight: 700; cursor: pointer; text-align: center; margin-bottom: 12px; }
+        /* Report - Header Card */
+        .report-header-card { background: linear-gradient(135deg, #FFF3E0, #FFE0B2); border-radius: 20px; padding: 24px; margin-bottom: 20px; text-align: center; border: 2px solid #FFCC80; }
+        .report-name { font-size: 1.1rem; font-weight: 700; color: #E65100; margin-bottom: 8px; }
+        .report-birth-info { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 12px; }
+        .info-chip { background: #fff; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; color: #6D4C41; font-weight: 600; border: 1px solid #FFCC80; }
 
-        /* Share Buttons */
-        .share-container { display: flex; gap: 8px; margin-bottom: 40px; }
-        .share-btn { flex: 1; padding: 14px; border-radius: 12px; font-weight: 700; cursor: pointer; border: none; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        /* Pillar Grid */
+        .pillar-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 16px 0; }
+        .pillar-item { border-radius: 12px; text-align: center; overflow: hidden; }
+        .pillar-label { font-size: 0.7rem; color: #6D4C41; padding: 6px 0 2px; font-weight: 600; background: #FFF3E0; }
+        .pillar-gan { padding: 10px 4px 2px; font-size: 1.8rem; font-weight: 900; }
+        .pillar-gan-sub { font-size: 0.65rem; padding-bottom: 6px; }
+        .pillar-ji { padding: 2px 4px 10px; font-size: 1.8rem; font-weight: 900; }
+        .pillar-ji-sub { font-size: 0.65rem; padding-bottom: 8px; }
+        .p-wood { background: #E8F5E9; color: #2E7D32; }
+        .p-fire { background: #FCE4EC; color: #C62828; }
+        .p-earth { background: #FFF8E1; color: #F57F17; }
+        .p-metal { background: #F3E5F5; color: #6A1B9A; }
+        .p-water { background: #E3F2FD; color: #1565C0; }
+
+        /* Oheng Chart */
+        .oheng-chart { display: flex; gap: 6px; margin: 12px 0; align-items: flex-end; height: 100px; }
+        .oheng-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; }
+        .oheng-bar { width: 100%; border-radius: 8px 8px 0 0; transition: height 0.5s ease; min-height: 8px; }
+        .oheng-bar-label { font-size: 0.75rem; font-weight: 700; margin-top: 4px; }
+        .oheng-bar-count { font-size: 0.7rem; color: #8D6E63; }
+
+        /* Accordion Sections */
+        .section-guide { text-align: center; color: #8D6E63; font-size: 0.8rem; margin: 16px 0 12px; }
+        .accordion-section { background: #fff; border: 1.5px solid #FFE0B2; border-radius: 16px; margin-bottom: 10px; overflow: hidden; transition: all 0.3s; }
+        .accordion-section:hover { border-color: #FFAB40; }
+        .accordion-header { display: flex; align-items: center; gap: 12px; padding: 16px 18px; cursor: pointer; user-select: none; }
+        .accordion-icon { font-size: 1.3rem; flex-shrink: 0; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 10px; }
+        .accordion-title { flex: 1; font-size: 0.9rem; font-weight: 700; color: #2D2D2D; line-height: 1.4; }
+        .accordion-arrow { font-size: 0.8rem; color: #BDBDBD; transition: transform 0.3s; flex-shrink: 0; }
+        .accordion-section.open .accordion-arrow { transform: rotate(180deg); }
+        .accordion-body { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
+        .accordion-section.open .accordion-body { max-height: 2000px; }
+        .accordion-content { padding: 0 18px 18px; }
+        .accordion-desc { font-size: 0.88rem; line-height: 1.8; color: #5D4037; }
+        .accordion-sub { margin-top: 12px; }
+        .accordion-sub-item { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; font-size: 0.82rem; color: #6D4C41; }
+        .accordion-sub-label { font-weight: 700; color: #E65100; white-space: nowrap; min-width: 70px; }
+        .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .tag { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+
+        /* Lucky Items Grid */
+        .lucky-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+        .lucky-card { background: linear-gradient(135deg, #FFF8E1, #FFF3E0); border: 1.5px solid #FFE0B2; border-radius: 14px; padding: 14px; text-align: center; }
+        .lucky-card-icon { font-size: 1.5rem; margin-bottom: 4px; }
+        .lucky-card-label { font-size: 0.7rem; color: #8D6E63; font-weight: 600; }
+        .lucky-card-value { font-size: 0.85rem; font-weight: 700; color: #E65100; margin-top: 2px; }
+
+        /* Share & Actions */
+        .share-container { display: flex; gap: 8px; margin: 20px 0; }
+        .share-btn { flex: 1; padding: 12px; border-radius: 12px; font-weight: 700; cursor: pointer; border: none; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 4px; transition: transform 0.2s; }
+        .share-btn:active { transform: scale(0.96); }
         .share-btn.kakao { background: #FEE500; color: #3c1e1e; }
-        .share-btn.threads { background: #ffffff; color: #000000; }
-        .share-btn.facebook { background: #1877F2; color: #ffffff; }
-        .share-btn.copy { background: rgba(255,255,255,0.05); color: #9a9ab0; border: 1px solid rgba(255,255,255,0.1); }
+        .share-btn.copy { background: #E8EAF6; color: #283593; }
+        .retry-btn { width: 100%; padding: 14px; background: #fff; border: 2px solid #FFE0B2; color: #8D6E63; border-radius: 14px; font-size: 0.9rem; font-weight: 700; cursor: pointer; margin-bottom: 20px; }
+
+        /* Floating CTA */
+        .floating-cta { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; z-index: 50; padding: 0; display: none; }
+        .floating-cta-btn { width: 100%; padding: 18px; background: linear-gradient(135deg, #FF4081, #F50057); color: #fff; border: none; font-size: 1.05rem; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 -4px 20px rgba(245,0,87,0.3); }
+        .floating-cta-btn:active { opacity: 0.9; }
+
+        /* Payment Modal */
+        #payment-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: flex-end; }
+        .payment-sheet { width: 100%; max-width: 480px; background: #fff; border-radius: 24px 24px 0 0; padding: 28px 24px 40px; animation: slideUp 0.3s ease; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .payment-handle { width: 40px; height: 4px; background: #E0E0E0; border-radius: 2px; margin: 0 auto 20px; }
+        .payment-title { font-size: 1.2rem; font-weight: 900; margin-bottom: 6px; color: #2D2D2D; }
+        .payment-sub { font-size: 0.85rem; color: #8D6E63; margin-bottom: 20px; }
+        .payment-option { background: #FFF8F0; border: 2px solid #FFE0B2; border-radius: 16px; padding: 18px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
+        .payment-option:hover { border-color: #FF6D00; background: #FFF3E0; }
+        .payment-option-row { display: flex; justify-content: space-between; align-items: center; }
+        .payment-option-label { font-weight: 700; font-size: 0.95rem; }
+        .payment-option-price { font-weight: 900; color: #FF6D00; font-size: 1.1rem; }
+        .payment-option-desc { font-size: 0.78rem; color: #8D6E63; margin-top: 4px; }
+        .payment-close { width: 100%; padding: 14px; background: none; border: 2px solid #E0E0E0; border-radius: 14px; color: #8D6E63; font-size: 0.9rem; font-weight: 700; cursor: pointer; margin-top: 8px; }
 
         /* Result Modal */
-        #result-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(6,6,15,0.95); z-index: 100; justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(10px); }
-        #result-card { width: 100%; max-width: 360px; background: linear-gradient(160deg, #151528, #1a1530); border: 1px solid rgba(201,168,76,0.2); border-radius: 24px; padding: 32px 24px; text-align: center; position: relative; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
-        .card-name { font-size: 1.4rem; font-weight: 800; color: #f0d78c; margin-bottom: 4px; }
-        .card-mbti { display: inline-block; padding: 4px 12px; border: 1px solid #c9a84c; border-radius: 20px; font-size: 0.8rem; color: #c9a84c; margin-bottom: 16px; font-weight: 700; }
-        .btn-save { width: 100%; padding: 14px; background: linear-gradient(135deg, #c9a84c, #a8893a); color: #0d0d1a; border: none; border-radius: 12px; font-size: 1rem; font-weight: 700; cursor: pointer; margin-top: 16px; }
+        #result-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(5px); }
+        #result-card { width: 100%; max-width: 360px; background: linear-gradient(160deg, #FFF8F0, #FFE0B2); border: 2px solid #FFCC80; border-radius: 24px; padding: 32px 24px; text-align: center; position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.15); }
+        .card-name { font-size: 1.3rem; font-weight: 900; color: #BF360C; margin-bottom: 4px; }
+        .card-mbti { display: inline-block; padding: 4px 14px; border: 2px solid #FF6D00; border-radius: 20px; font-size: 0.8rem; color: #FF6D00; margin-bottom: 16px; font-weight: 700; }
+        .btn-save { width: 100%; padding: 14px; background: linear-gradient(135deg, #FF6D00, #FF8F00); color: #fff; border: none; border-radius: 12px; font-size: 1rem; font-weight: 700; cursor: pointer; margin-top: 12px; }
 
-        /* Oheng Colors */
-        .木 { background: rgba(76,175,80,0.2); color: #81c784; }
-        .火 { background: rgba(244,67,54,0.2); color: #e57373; }
-        .土 { background: rgba(255,193,7,0.2); color: #ffd54f; }
-        .金 { background: rgba(224,224,224,0.2); color: #f5f5f5; }
-        .水 { background: rgba(33,150,243,0.2); color: #64b5f6; }
+        /* Oheng colors for bars */
+        .bar-wood { background: linear-gradient(180deg, #66BB6A, #43A047); }
+        .bar-fire { background: linear-gradient(180deg, #EF5350, #C62828); }
+        .bar-earth { background: linear-gradient(180deg, #FFCA28, #F9A825); }
+        .bar-metal { background: linear-gradient(180deg, #AB47BC, #7B1FA2); }
+        .bar-water { background: linear-gradient(180deg, #42A5F5, #1565C0); }
+
+        /* Loading */
+        .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,248,240,0.9); z-index: 200; justify-content: center; align-items: center; flex-direction: column; }
+        .loading-overlay.active { display: flex; }
+        .loading-spinner { width: 50px; height: 50px; border: 4px solid #FFE0B2; border-top: 4px solid #FF6D00; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { font-size: 0.95rem; color: #8D6E63; font-weight: 600; }
+
+        /* Travel place cards */
+        .travel-places { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+        .travel-place { display: flex; align-items: flex-start; gap: 8px; background: #FFF8F0; padding: 10px 12px; border-radius: 10px; border: 1px solid #FFE0B2; }
+        .travel-place-flag { font-size: 1.1rem; flex-shrink: 0; }
+        .travel-place-name { font-weight: 700; font-size: 0.82rem; color: #BF360C; }
+        .travel-place-reason { font-size: 0.78rem; color: #6D4C41; margin-top: 2px; }
+        .travel-avoid { background: #FBE9E7; border: 1px solid #FFCCBC; border-radius: 10px; padding: 10px 12px; margin-top: 10px; font-size: 0.82rem; color: #BF360C; }
+        .travel-tip { background: #E8F5E9; border: 1px solid #C8E6C9; border-radius: 10px; padding: 10px 12px; margin-top: 8px; font-size: 0.82rem; color: #2E7D32; }
+
+        /* Dev mode button */
+        .dev-badge { position: fixed; top: 60px; right: 8px; z-index: 999; background: #FF6D00; color: #fff; border: none; padding: 4px 10px; border-radius: 8px; font-size: 0.65rem; font-weight: 700; cursor: pointer; opacity: 0.7; }
+        .dev-badge:hover { opacity: 1; }
+
+        /* Premium locked teaser */
+        .premium-teaser { background: #fff; border: 1.5px solid #E0E0E0; border-radius: 16px; margin-bottom: 10px; overflow: hidden; position: relative; }
+        .premium-teaser-header { display: flex; align-items: center; gap: 12px; padding: 16px 18px; }
+        .premium-teaser-icon { font-size: 1.3rem; flex-shrink: 0; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: #F5F5F5; }
+        .premium-teaser-title { flex: 1; font-size: 0.9rem; font-weight: 700; color: #9E9E9E; line-height: 1.4; }
+        .premium-teaser-lock { font-size: 0.75rem; color: #BDBDBD; }
+        .premium-teaser-blur { padding: 0 18px 16px; filter: blur(6px); user-select: none; pointer-events: none; font-size: 0.85rem; color: #BDBDBD; line-height: 1.6; }
+        .premium-unlock-banner { background: linear-gradient(135deg, #F3E5F5, #EDE7F6); border: 1.5px solid #CE93D8; border-radius: 16px; padding: 20px; text-align: center; margin: 16px 0; }
+        .premium-unlock-title { font-size: 0.95rem; font-weight: 800; color: #6A1B9A; margin-bottom: 6px; }
+        .premium-unlock-desc { font-size: 0.8rem; color: #7B1FA2; margin-bottom: 14px; line-height: 1.5; }
+        .premium-unlock-btn { padding: 14px 28px; background: linear-gradient(135deg, #7B1FA2, #9C27B0); color: #fff; border: none; border-radius: 14px; font-size: 0.95rem; font-weight: 800; cursor: pointer; box-shadow: 0 4px 15px rgba(123,31,162,0.25); }
+        .premium-unlock-price { font-size: 0.7rem; color: #9E9E9E; margin-top: 8px; }
+
+        /* Premium result (unlocked) */
+        .premium-section { background: linear-gradient(135deg, #F3E5F5, #fff); border: 1.5px solid #CE93D8; border-radius: 16px; margin-bottom: 10px; overflow: hidden; }
+        .premium-section .accordion-header { background: transparent; }
+        .premium-badge { font-size: 0.6rem; background: #7B1FA2; color: #fff; padding: 2px 8px; border-radius: 10px; font-weight: 700; }
+
+        /* Referral share section */
+        .referral-section { background: linear-gradient(135deg, #E8F5E9, #F1F8E9); border: 1.5px solid #A5D6A7; border-radius: 16px; padding: 20px; text-align: center; margin: 16px 0; }
+        .referral-title { font-size: 0.95rem; font-weight: 800; color: #2E7D32; margin-bottom: 6px; }
+        .referral-desc { font-size: 0.8rem; color: #558B2F; margin-bottom: 14px; line-height: 1.5; }
+        .referral-btn { padding: 12px 24px; background: linear-gradient(135deg, #43A047, #66BB6A); color: #fff; border: none; border-radius: 12px; font-size: 0.9rem; font-weight: 700; cursor: pointer; }
+        .referral-code { font-family: monospace; background: #fff; padding: 6px 14px; border-radius: 8px; border: 1px solid #A5D6A7; font-size: 0.85rem; color: #2E7D32; font-weight: 700; margin-top: 10px; display: none; }
+
+        /* Life cycle period cards */
+        .lifecycle-periods { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+        .lifecycle-period { display: flex; align-items: flex-start; gap: 10px; background: #FFF8F0; padding: 10px 12px; border-radius: 10px; border: 1px solid #FFE0B2; }
+        .lifecycle-age { font-weight: 800; font-size: 0.8rem; color: #E65100; white-space: nowrap; min-width: 60px; }
+        .lifecycle-theme { font-weight: 700; font-size: 0.78rem; color: #BF360C; }
+        .lifecycle-desc { font-size: 0.76rem; color: #6D4C41; margin-top: 2px; }
+        .lifecycle-keyyear { background: linear-gradient(135deg, #FFF3E0, #FFE0B2); border: 1px solid #FFCC80; border-radius: 10px; padding: 10px 12px; margin-top: 10px; font-size: 0.82rem; color: #BF360C; font-weight: 600; }
+        .lifecycle-premium-hint { background: #F3E5F5; border: 1px solid #CE93D8; border-radius: 10px; padding: 10px 12px; margin-top: 8px; font-size: 0.8rem; color: #7B1FA2; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+
+        /* Animations */
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeInUp 0.5s ease forwards; }
     </style>
 </head>
 <body>
 
+<button class="dev-badge" onclick="devReset()">DEV: 초기화</button>
+
 <div id="app">
     <header>
-        <div class="header-title">✦ DESTINY GUIDE</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+            <span class="header-logo">🔮</span>
+            <span class="header-title">사주 x MBTI</span>
+        </div>
         <div class="lang-switch">
             <button class="lang-btn active" id="btn-ko" onclick="setLanguage('ko')">KO</button>
             <button class="lang-btn" id="btn-en" onclick="setLanguage('en')">EN</button>
         </div>
     </header>
 
-    <!-- ─── INTRO ─── -->
+    <!-- INTRO SCREEN -->
     <div id="intro-screen" class="screen active">
-        <div class="intro-title" id="t-intro-title">당신의 운명을<br>새롭게 읽어드립니다.</div>
-        <p class="intro-sub" id="t-intro-sub">사주와 MBTI의 결합, 무료 분석 리포트</p>
+        <div class="intro-hero">
+            <div class="intro-emoji">🔮</div>
+            <div class="intro-title" id="t-intro-title">사주와 MBTI가 만나면<br>운명이 보입니다</div>
+            <p class="intro-sub" id="t-intro-sub">동양 명리학 + 서양 성격유형의 운명적 조합</p>
+            <span class="free-badge">첫 분석 무료</span>
+        </div>
 
         <div class="form-section">
             <label class="form-label" id="t-label-birth">생년월일 (양력)</label>
@@ -103,212 +232,214 @@
                 </select>
                 <select class="form-select" id="birth_hour" style="flex: 1;">
                     <option value="12">12</option>
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                    <option value="6">6</option>
-                    <option value="7">7</option>
-                    <option value="8">8</option>
-                    <option value="9">9</option>
-                    <option value="10">10</option>
-                    <option value="11">11</option>
+                    <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+                    <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+                    <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+                    <option value="10">10</option><option value="11">11</option>
                 </select>
                 <select class="form-select" id="birth_min" style="flex: 1;">
-                    <option value="00">00</option>
-                    <option value="10">10</option>
-                    <option value="20">20</option>
-                    <option value="30">30</option>
-                    <option value="40">40</option>
-                    <option value="50">50</option>
+                    <option value="00">00</option><option value="10">10</option><option value="20">20</option>
+                    <option value="30">30</option><option value="40">40</option><option value="50">50</option>
                 </select>
             </div>
         </div>
         <div class="form-section">
             <label class="form-label">MBTI</label>
             <select class="form-select" id="mbti">
-                <option value="INTJ">INTJ</option><option value="INTP">INTP</option>
-                <option value="ENTJ">ENTJ</option><option value="ENTP">ENTP</option>
-                <option value="INFJ">INFJ</option><option value="INFP">INFP</option>
-                <option value="ENFJ">ENFJ</option><option value="ENFP" selected>ENFP</option>
-                <option value="ISTJ">ISTJ</option><option value="ISFJ">ISFJ</option>
-                <option value="ESTJ">ESTJ</option><option value="ESFJ">ESFJ</option>
-                <option value="ISTP">ISTP</option><option value="ISFP">ISFP</option>
-                <option value="ESTP">ESTP</option><option value="ESFP">ESFP</option>
+                <option value="INTJ">INTJ - 전략가</option><option value="INTP">INTP - 논리술사</option>
+                <option value="ENTJ">ENTJ - 통솔자</option><option value="ENTP">ENTP - 변론가</option>
+                <option value="INFJ">INFJ - 옹호자</option><option value="INFP">INFP - 중재자</option>
+                <option value="ENFJ">ENFJ - 선도자</option><option value="ENFP" selected>ENFP - 활동가</option>
+                <option value="ISTJ">ISTJ - 현실주의자</option><option value="ISFJ">ISFJ - 수호자</option>
+                <option value="ESTJ">ESTJ - 경영자</option><option value="ESFJ">ESFJ - 집정관</option>
+                <option value="ISTP">ISTP - 장인</option><option value="ISFP">ISFP - 모험가</option>
+                <option value="ESTP">ESTP - 사업가</option><option value="ESFP">ESFP - 연예인</option>
             </select>
         </div>
-        <button class="start-btn" id="t-btn-start" onclick="getReport()">✦ 무제한 무료 분석 시작</button>
+        <button class="start-btn" id="t-btn-start" onclick="getReport()">무료 분석 시작하기</button>
     </div>
 
-    <!-- ─── REPORT ─── -->
+    <!-- REPORT SCREEN -->
     <div id="report-screen" class="screen">
-        <div class="report-section">
-            <div class="report-label" id="t-label-saju">나의 사주 팔자</div>
+        <!-- Header Card -->
+        <div class="report-header-card fade-in" id="report-header">
+            <div class="report-name" id="report-name-display"></div>
+            <div class="report-birth-info" id="report-birth-info"></div>
             <div class="pillar-grid" id="pillar-grid"></div>
         </div>
 
-        <div class="report-section">
-            <div class="report-label" id="t-label-core">핵심 기운 분석</div>
-            <div class="report-title" id="ilgan-title"></div>
-            <div class="report-desc" id="ilgan-desc"></div>
-            <div class="oheng-row" id="oheng-row"></div>
+        <!-- Oheng Chart Section -->
+        <div class="accordion-section open fade-in" style="animation-delay:0.1s">
+            <div class="accordion-header" onclick="toggleAccordion(this)">
+                <div class="accordion-icon" style="background:#E8F5E9;">☯️</div>
+                <div class="accordion-title" id="oheng-chart-title">오행 밸런스 차트</div>
+                <div class="accordion-arrow">▼</div>
+            </div>
+            <div class="accordion-body">
+                <div class="accordion-content">
+                    <div class="oheng-chart" id="oheng-chart"></div>
+                    <div class="accordion-desc" id="oheng-advice"></div>
+                </div>
+            </div>
         </div>
 
-        <div class="report-section">
-            <div class="report-label" id="t-label-synergy">사주 & MBTI 시너지</div>
-            <div class="report-title" id="synergy-title"></div>
-            <div class="report-desc" id="synergy-desc"></div>
+        <!-- Dynamic Accordion Sections - filled by JS -->
+        <div class="section-guide">각 제목을 클릭하면 해설이 펼쳐져요</div>
+        <div id="accordion-container"></div>
+
+        <!-- Lucky Items -->
+        <div class="accordion-section fade-in" style="animation-delay:0.2s">
+            <div class="accordion-header" onclick="toggleAccordion(this)">
+                <div class="accordion-icon" style="background:#E8F5E9;">🍀</div>
+                <div class="accordion-title">행운 부스터</div>
+                <div class="accordion-arrow">▼</div>
+            </div>
+            <div class="accordion-body">
+                <div class="accordion-content">
+                    <div class="lucky-grid" id="lucky-grid"></div>
+                </div>
+            </div>
         </div>
 
-        <div class="report-section">
-            <div class="report-label" id="t-label-compatibility">최고의 궁합 MBTI</div>
-            <div class="report-title" id="compatibility-title"></div>
-            <div class="report-desc" id="compatibility-desc"></div>
+        <!-- Premium Teaser (locked) -->
+        <div id="premium-teaser-area"></div>
+
+        <!-- Premium Unlock Banner -->
+        <div class="premium-unlock-banner" id="premium-unlock-banner">
+            <div class="premium-unlock-title">💎 더 깊은 사주 해석이 준비되어 있습니다</div>
+            <div class="premium-unlock-desc">내 오행에 맞는 풍수인테리어 · 행운 악세사리 · 시그니처 향기<br>+ 사주 원국 심층 분석까지 한 번에 확인하세요</div>
+            <button class="premium-unlock-btn" onclick="requestPremium()">프리미엄 해석 열기</button>
+            <div class="premium-unlock-price">990원 · 결제 시스템 준비 중</div>
         </div>
 
-        <div class="report-section">
-            <div class="report-label" id="t-label-lucky">오늘의 행운 키워드</div>
-            <div class="report-desc" id="lucky-desc"></div>
+        <!-- Premium Result (hidden, shown after unlock) -->
+        <div id="premium-result-area" style="display:none;"></div>
+
+        <!-- Referral Share -->
+        <div class="referral-section">
+            <div class="referral-title">친구에게 공유하면 둘 다 무료 1회!</div>
+            <div class="referral-desc">아래 링크로 친구가 분석하면<br>친구도 무료, 나도 추가 1회 무료</div>
+            <button class="referral-btn" onclick="createReferralLink()">공유 링크 만들기</button>
+            <div class="referral-code" id="referral-code"></div>
         </div>
 
-        <button class="card-preview-btn" id="t-btn-card" onclick="showResultCard()">✨ 분석 결과 카드 저장하기</button>
-        
+        <!-- Card Save -->
+        <div style="margin: 20px 0;">
+            <button class="start-btn" style="background:linear-gradient(135deg,#7B1FA2,#9C27B0);" onclick="showResultCard()">결과 카드 저장하기</button>
+        </div>
+
+        <!-- Share -->
         <div class="share-container">
-            <button class="share-btn kakao" id="t-btn-kakao" onclick="shareKakao()">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.558 1.712 4.8 4.312 6.111l-.817 2.99c-.046.17.144.315.29.227l3.521-2.285c.227.022.458.04.694.04 4.97 0 9-3.186 9-7.116S16.97 3 12 3z"/></svg>
-                카톡
-            </button>
-            <button class="share-btn threads" id="t-btn-threads" onclick="shareThreads()">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"/><path d="M12 6c-3.314 0-6 2.686-6 6s2.686 6 6 6 6-2.686 6-6-2.686-6-6-6zm0 10c-2.206 0-4-1.794-4-4s1.794-4 4-4 4 1.794 4 4-1.794 4-4 4z"/></svg>
-                Threads
-            </button>
-            <button class="share-btn facebook" id="t-btn-facebook" onclick="shareFacebook()">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                페북
-            </button>
-            <button class="share-btn copy" id="t-btn-copy" onclick="copyLink()">
-                🔗 링크
-            </button>
+            <button class="share-btn kakao" onclick="shareKakao()">카카오톡 공유</button>
+            <button class="share-btn copy" onclick="copyLink()">링크 복사</button>
         </div>
 
-        <button class="start-btn" id="t-btn-retry" style="background: rgba(255,255,255,0.05); color: #9a9ab0; margin-bottom: 40px;" onclick="location.reload()">다시 분석하기</button>
+        <!-- Retry -->
+        <button class="retry-btn" onclick="location.reload()">다시 분석하기</button>
     </div>
 </div>
 
-<!-- ─── RESULT MODAL ─── -->
+<!-- Floating CTA -->
+<div class="floating-cta" id="floating-cta">
+    <button class="floating-cta-btn" onclick="showPaymentModal()">
+        <span>🔮</span>
+        <span id="cta-text">친구 사주도 궁금하다면? 990원에 확인하기</span>
+        <span>→</span>
+    </button>
+</div>
+
+<!-- Payment Modal -->
+<div id="payment-modal" onclick="closePaymentModal()">
+    <div class="payment-sheet" onclick="event.stopPropagation()">
+        <div class="payment-handle"></div>
+        <div class="payment-title">더 많은 운명을 탐색해보세요</div>
+        <div class="payment-sub">첫 분석은 무료! 추가 분석은 합리적인 가격에.</div>
+
+        <div class="payment-option" onclick="handlePayment('additional')">
+            <div class="payment-option-row">
+                <span class="payment-option-label">🔮 추가 사주 분석 1회</span>
+                <span class="payment-option-price">990원</span>
+            </div>
+            <div class="payment-option-desc">다른 사람의 사주 x MBTI 분석을 확인해보세요</div>
+        </div>
+
+        <div class="payment-option" onclick="handlePayment('compatibility')">
+            <div class="payment-option-row">
+                <span class="payment-option-label">💕 두 사람 궁합 분석</span>
+                <span class="payment-option-price">1,900원</span>
+            </div>
+            <div class="payment-option-desc">두 사람의 사주 x MBTI 궁합을 심층 분석합니다</div>
+        </div>
+
+        <div class="payment-option" onclick="handlePayment('yearly')">
+            <div class="payment-option-row">
+                <span class="payment-option-label">📅 2026년 상세 운세</span>
+                <span class="payment-option-price">2,900원</span>
+            </div>
+            <div class="payment-option-desc">월별 상세 운세와 맞춤 조언을 받아보세요</div>
+        </div>
+
+        <button class="payment-close" onclick="closePaymentModal()">닫기</button>
+    </div>
+</div>
+
+<!-- Result Card Modal -->
 <div id="result-modal" onclick="closeModal()">
-    <div onclick="event.stopPropagation()" style="width:100%; max-width:360px;">
+    <div onclick="event.stopPropagation()" style="width:100%;max-width:360px;">
         <div id="result-card">
-            <div style="font-size:0.6rem; color:#c9a84c; letter-spacing:3px; margin-bottom:12px;">✦ DESTINY CARD</div>
+            <div style="font-size:0.65rem;color:#E65100;letter-spacing:3px;margin-bottom:12px;">🔮 DESTINY CARD</div>
             <div class="card-name" id="rc-name"></div>
             <div class="card-mbti" id="rc-mbti"></div>
-            
             <div class="pillar-grid" id="rc-pillars" style="margin-bottom:16px;"></div>
-            
-            <div style="background:rgba(201,168,76,0.05); padding:16px; border-radius:16px; font-size:0.85rem; color:#aaa; line-height:1.6; text-align:left;" id="rc-desc"></div>
-            
-            <div style="margin-top:16px; font-size:0.65rem; color:#444460;" id="t-card-footer">운명의 길잡이 — AI 사주 & MBTI</div>
+            <div style="background:rgba(191,54,12,0.05);padding:16px;border-radius:16px;font-size:0.85rem;color:#5D4037;line-height:1.6;text-align:left;" id="rc-desc"></div>
+            <div style="margin-top:16px;font-size:0.65rem;color:#BCAAA4;">사주 x MBTI — 운명의 길잡이</div>
         </div>
-        <button class="btn-save" id="t-btn-save-img" onclick="saveCard()">📸 이미지로 저장하기</button>
-        <button class="btn-save" id="t-btn-close" style="background:none; color:#7a7a9a; font-size:0.8rem;" onclick="closeModal()">닫기</button>
+        <button class="btn-save" onclick="saveCard()">이미지로 저장하기</button>
+        <button class="btn-save" style="background:none;color:#8D6E63;font-size:0.8rem;border:1px solid #ccc;" onclick="closeModal()">닫기</button>
     </div>
+</div>
+
+<!-- Loading -->
+<div class="loading-overlay" id="loading">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">운명을 해석하고 있습니다...</div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.0/kakao.min.js"></script>
 <script>
-    const API_URL = "http://127.0.0.1:8000";
+    const API_URL = window.location.origin;
     let reportData = null;
     let currentLang = 'ko';
+    let freeUsed = localStorage.getItem('freeUsed') === 'true';
 
-    const translations = {
-        ko: {
-            introTitle: "당신의 운명을<br>새롭게 읽어드립니다.",
-            introSub: "사주와 MBTI의 결합, 무료 분석 리포트",
-            labelBirth: "생년월일 (양력)",
-            labelTime: "태어난 시간",
-            btnStart: "✦ 무제한 무료 분석 시작",
-            labelSaju: "나의 사주 팔자",
-            labelCore: "핵심 기운 분석",
-            labelSynergy: "사주 & MBTI 시너지",
-            labelCompatibility: "최고의 궁합 MBTI",
-            labelLucky: "오늘의 행운 키워드",
-            btnCard: "✨ 분석 결과 카드 저장하기",
-            btnKakao: "카톡",
-            btnThreads: "Threads",
-            btnFacebook: "페북",
-            btnCopy: "🔗 링크",
-            btnRetry: "다시 분석하기",
-            cardFooter: "운명의 길잡이 — AI 사주 & MBTI",
-            btnSaveImg: "📸 이미지로 저장하기",
-            btnClose: "닫기",
-            pillars: ["년주", "월주", "일주", "시주"],
-            luckyLabels: ["🎨 행운의 컬러", "🔢 행운의 숫자", "🧭 행운의 방향", "🍽️ 행운의 음식"],
-            alertInput: "정보를 입력해주세요.",
-            alertFail: "서버 연결 실패!",
-            alertNoData: "분석 결과가 없습니다. 먼저 분석을 진행해주세요.",
-            alertCopy: "링크가 복사되었습니다!"
-        },
-        en: {
-            introTitle: "Reading Your Destiny<br>in a New Way.",
-            introSub: "Saju & MBTI Synergy, Free Analysis Report",
-            labelBirth: "Birth Date (Solar)",
-            labelTime: "Birth Time",
-            btnStart: "✦ Start Free Analysis",
-            labelSaju: "My Saju Pillars",
-            labelCore: "Core Energy Analysis",
-            labelSynergy: "Saju & MBTI Synergy",
-            labelCompatibility: "Best MBTI Compatibility",
-            labelLucky: "Today's Lucky Keywords",
-            btnCard: "✨ Save Result Card",
-            btnKakao: "Talk",
-            btnThreads: "Threads",
-            btnFacebook: "FB",
-            btnCopy: "🔗 Link",
-            btnRetry: "Analyze Again",
-            cardFooter: "Destiny Guide — AI Saju & MBTI",
-            btnSaveImg: "📸 Save as Image",
-            btnClose: "Close",
-            pillars: ["Year", "Month", "Day", "Time"],
-            luckyLabels: ["🎨 Lucky Color", "🔢 Lucky Number", "🧭 Lucky Direction", "🍽️ Lucky Food"],
-            alertInput: "Please enter your information.",
-            alertFail: "Server connection failed!",
-            alertNoData: "No analysis result. Please run analysis first.",
-            alertCopy: "Link copied to clipboard!"
-        }
+    const OHENG_MAP = {'木':'목','火':'화','土':'토','金':'금','水':'수'};
+    const OHENG_COLORS = {
+        '木': {bar:'bar-wood', bg:'#E8F5E9', color:'#2E7D32'},
+        '火': {bar:'bar-fire', bg:'#FCE4EC', color:'#C62828'},
+        '土': {bar:'bar-earth', bg:'#FFF8E1', color:'#F57F17'},
+        '金': {bar:'bar-metal', bg:'#F3E5F5', color:'#6A1B9A'},
+        '水': {bar:'bar-water', bg:'#E3F2FD', color:'#1565C0'}
     };
+    const CHEONGAN_OHENG = {'갑':'木','을':'木','병':'火','정':'火','무':'土','기':'土','경':'金','신':'金','임':'水','계':'水'};
+    const JIJI_OHENG = {'자':'水','축':'土','인':'木','묘':'木','진':'土','사':'火','오':'火','미':'土','신':'金','유':'金','술':'土','해':'水'};
+
+    function getPillarColor(char) {
+        const oh = CHEONGAN_OHENG[char] || JIJI_OHENG[char] || '土';
+        return {
+            '木':'p-wood','火':'p-fire','土':'p-earth','金':'p-metal','水':'p-water'
+        }[oh] || 'p-earth';
+    }
 
     function setLanguage(lang) {
         currentLang = lang;
         document.getElementById('btn-ko').classList.toggle('active', lang === 'ko');
         document.getElementById('btn-en').classList.toggle('active', lang === 'en');
-        updateUI();
     }
 
-    function updateUI() {
-        const t = translations[currentLang];
-        document.getElementById('t-intro-title').innerHTML = t.introTitle;
-        document.getElementById('t-intro-sub').innerText = t.introSub;
-        document.getElementById('t-label-birth').innerText = t.labelBirth;
-        document.getElementById('t-label-time').innerText = t.labelTime;
-        document.getElementById('t-btn-start').innerText = t.btnStart;
-        document.getElementById('t-label-saju').innerText = t.labelSaju;
-        document.getElementById('t-label-core').innerText = t.labelCore;
-        document.getElementById('t-label-synergy').innerText = t.labelSynergy;
-        document.getElementById('t-label-compatibility').innerText = t.labelCompatibility;
-        document.getElementById('t-label-lucky').innerText = t.labelLucky;
-        document.getElementById('t-btn-card').innerText = t.btnCard;
-        document.getElementById('t-btn-kakao').innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.558 1.712 4.8 4.312 6.111l-.817 2.99c-.046.17.144.315.29.227l3.521-2.285c.227.022.458.04.694.04 4.97 0 9-3.186 9-7.116S16.97 3 12 3z"/></svg> ${t.btnKakao}`;
-        document.getElementById('t-btn-threads').innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"/><path d="M12 6c-3.314 0-6 2.686-6 6s2.686 6 6 6 6-2.686 6-6-2.686-6-6-6zm0 10c-2.206 0-4-1.794-4-4s1.794-4 4-4 4 1.794 4 4-1.794 4-4 4z"/></svg> ${t.btnThreads}`;
-        document.getElementById('t-btn-facebook').innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg> ${t.btnFacebook}`;
-        document.getElementById('t-btn-copy').innerText = t.btnCopy;
-        document.getElementById('t-btn-retry').innerText = t.btnRetry;
-        document.getElementById('t-card-footer').innerText = t.cardFooter;
-        document.getElementById('t-btn-save-img').innerText = t.btnSaveImg;
-        document.getElementById('t-btn-close').innerText = t.btnClose;
-
-        if (reportData) renderReport();
+    function toggleAccordion(header) {
+        const section = header.parentElement;
+        section.classList.toggle('open');
     }
 
     async function getReport() {
@@ -316,14 +447,19 @@
         const ampm = document.getElementById("birth_ampm").value;
         let hour = parseInt(document.getElementById("birth_hour").value);
         const min = document.getElementById("birth_min").value;
-        
-        // 12-hour to 24-hour conversion
         if (ampm === "PM" && hour !== 12) hour += 12;
         if (ampm === "AM" && hour === 12) hour = 0;
         const bt = `${hour.toString().padStart(2, '0')}:${min}`;
-        
         const mbti = document.getElementById("mbti").value;
-        if(!bd || !bt) return alert(translations[currentLang].alertInput);
+        if (!bd || !bt) return alert("정보를 입력해주세요.");
+
+        // 무료 횟수 체크
+        if (freeUsed) {
+            showPaymentModal();
+            return;
+        }
+
+        document.getElementById("loading").classList.add("active");
 
         try {
             const res = await fetch(`${API_URL}/get-report`, {
@@ -335,127 +471,439 @@
             renderReport();
             document.getElementById("intro-screen").classList.remove("active");
             document.getElementById("report-screen").classList.add("active");
+            document.getElementById("floating-cta").style.display = "block";
             window.scrollTo(0, 0);
-        } catch(e) { alert(translations[currentLang].alertFail); }
+
+            // 무료 사용 기록
+            localStorage.setItem('freeUsed', 'true');
+            freeUsed = true;
+        } catch(e) {
+            alert("서버 연결 실패!");
+        } finally {
+            document.getElementById("loading").classList.remove("active");
+        }
     }
 
     function renderReport() {
         const r = reportData;
-        const t = translations[currentLang];
-        
-        // Pillars
-        const pillarsHTML = ['year','month','day','time'].map((k, i) => `
-            <div class="pillar-item">
-                <div class="p-label">${t.pillars[i]}</div>
-                <div class="p-value">${r.pillars[k].label}</div>
-            </div>
-        `).join('');
+
+        // Header
+        document.getElementById("report-name-display").textContent = `${r.ilgan.name} x ${r.mbti}`;
+        document.getElementById("report-birth-info").innerHTML = `
+            <span class="info-chip">${r.mbti}</span>
+            <span class="info-chip">일간: ${r.ilgan.name}</span>
+        `;
+
+        // Pillars with colors
+        const pillarLabels = ['시주','일주','월주','년주'];
+        const pillarKeys = ['time','day','month','year'];
+        let pillarsHTML = '';
+        pillarKeys.forEach((k, i) => {
+            const p = r.pillars[k];
+            const ganColor = getPillarColor(p.gan);
+            const jiColor = getPillarColor(p.ji);
+            pillarsHTML += `
+                <div class="pillar-item">
+                    <div class="pillar-label">${pillarLabels[i]}</div>
+                    <div class="pillar-gan ${ganColor}">${p.gan}</div>
+                    <div class="pillar-gan-sub ${ganColor}">${OHENG_MAP[CHEONGAN_OHENG[p.gan]] || ''}</div>
+                    <div class="pillar-ji ${jiColor}">${p.ji}</div>
+                    <div class="pillar-ji-sub ${jiColor}">${OHENG_MAP[JIJI_OHENG[p.ji]] || ''}</div>
+                </div>
+            `;
+        });
         document.getElementById("pillar-grid").innerHTML = pillarsHTML;
 
-        // Ilgan
-        document.getElementById("ilgan-title").innerText = r.ilgan.title;
-        document.getElementById("ilgan-desc").innerText = r.ilgan.desc;
+        // Oheng Chart
+        const maxOheng = Math.max(...Object.values(r.oheng), 1);
+        let chartHTML = '';
+        for (const [k, v] of Object.entries(r.oheng)) {
+            const oc = OHENG_COLORS[k];
+            const height = Math.max((v / maxOheng) * 70, 8);
+            chartHTML += `
+                <div class="oheng-bar-wrap">
+                    <div class="oheng-bar ${oc.bar}" style="height:${height}px;"></div>
+                    <div class="oheng-bar-label" style="color:${oc.color}">${OHENG_MAP[k]}(${k})</div>
+                    <div class="oheng-bar-count">${v}개</div>
+                </div>
+            `;
+        }
+        document.getElementById("oheng-chart").innerHTML = chartHTML;
 
-        // Oheng
-        document.getElementById("oheng-row").innerHTML = Object.entries(r.oheng).map(([k, v]) => 
-            `<span class="oheng-badge ${k}">${k} ${v}</span>`
-        ).join('');
+        // Oheng advice
+        const weakest = Object.entries(r.oheng).sort((a,b) => a[1]-b[1])[0][0];
+        const strongest = Object.entries(r.oheng).sort((a,b) => b[1]-a[1])[0][0];
+        document.getElementById("oheng-advice").textContent =
+            `${OHENG_MAP[strongest]}(${strongest})의 기운이 가장 강하고, ${OHENG_MAP[weakest]}(${weakest})의 기운이 부족합니다. 부족한 ${OHENG_MAP[weakest]}의 기운을 보충해주는 것이 운의 균형을 맞추는 핵심입니다.`;
 
-        // Synergy
-        document.getElementById("synergy-title").innerText = r.synergy.title;
-        document.getElementById("synergy-desc").innerText = r.synergy.desc;
+        // Build Accordion Sections
+        const container = document.getElementById("accordion-container");
+        container.innerHTML = '';
+
+        const sections = [
+            { icon: '🌟', bg: '#FFF3E0', title: r.ilgan.title, desc: r.ilgan.desc },
+            { icon: '🔮', bg: '#F3E5F5', title: r.synergy.title, desc: r.synergy.desc,
+              extra: r.combo_detail && r.combo_detail.strength ? `
+                <div class="accordion-sub">
+                    <div class="accordion-sub-item"><span class="accordion-sub-label">강점</span><span>${r.combo_detail.strength}</span></div>
+                    <div class="accordion-sub-item"><span class="accordion-sub-label">약점</span><span>${r.combo_detail.weakness}</span></div>
+                    <div class="accordion-sub-item"><span class="accordion-sub-label">성장팁</span><span>${r.combo_detail.growth_tip}</span></div>
+                </div>` : '' },
+        ];
+
+        // Detailed sections from ilgan_detailed
+        const d = r.detailed || {};
+
+        if (d.tough_love) {
+            sections.push({ icon: '💣', bg: '#FCE4EC', title: d.tough_love.title, desc: d.tough_love.desc });
+        }
+        if (d.encouragement) {
+            sections.push({ icon: '💝', bg: '#FCE4EC', title: d.encouragement.title, desc: d.encouragement.desc });
+        }
+        if (d.love) {
+            const loveExtra = `
+                <div class="accordion-sub">
+                    <div class="accordion-sub-item"><span class="accordion-sub-label">이상형</span><span>${d.love.ideal_partner}</span></div>
+                    <div class="accordion-sub-item"><span class="accordion-sub-label">연애주의</span><span>${d.love.love_warning}</span></div>
+                    ${r.mbti_love ? `<div class="accordion-sub-item"><span class="accordion-sub-label">${r.mbti} 연애</span><span>${r.mbti_love.style}</span></div>` : ''}
+                </div>`;
+            sections.push({ icon: '💕', bg: '#FCE4EC', title: d.love.title, desc: d.love.desc, extra: loveExtra });
+        }
+        if (d.career) {
+            const careerExtra = `
+                <div class="accordion-sub">
+                    <div class="accordion-sub-item"><span class="accordion-sub-label">업무스타일</span><span>${d.career.work_style}</span></div>
+                </div>
+                <div class="tag-row">${(d.career.best_fields||[]).map(f => `<span class="tag" style="background:#E3F2FD;color:#1565C0;">${f}</span>`).join('')}</div>`;
+            sections.push({ icon: '💼', bg: '#E3F2FD', title: d.career.title, desc: d.career.desc, extra: careerExtra });
+        }
+        if (d.wealth) {
+            const wealthExtra = `
+                <div class="accordion-sub">
+                    <div class="accordion-sub-item"><span class="accordion-sub-label">금전스타일</span><span>${d.wealth.money_style}</span></div>
+                    <div class="accordion-sub-item"><span class="accordion-sub-label">재물팁</span><span>${d.wealth.wealth_tip}</span></div>
+                </div>`;
+            sections.push({ icon: '💰', bg: '#FFF8E1', title: d.wealth.title, desc: d.wealth.desc, extra: wealthExtra });
+        }
+        if (d.relationships) {
+            sections.push({ icon: '👥', bg: '#E0F7FA', title: d.relationships.title, desc: d.relationships.desc });
+        }
+        if (d.health) {
+            const healthExtra = `
+                <div class="accordion-sub">
+                    <div class="accordion-sub-item"><span class="accordion-sub-label">건강팁</span><span>${d.health.health_tip}</span></div>
+                </div>
+                <div class="tag-row">${(d.health.weak_points||[]).map(p => `<span class="tag" style="background:#FFEBEE;color:#C62828;">주의: ${p}</span>`).join('')}</div>`;
+            sections.push({ icon: '🏥', bg: '#E8F5E9', title: d.health.title, desc: d.health.desc, extra: healthExtra });
+        }
+
+        // Life Turning Point (인생 전환점 & 대운 흐름)
+        if (d.life_turning_point) {
+            const lc = d.life_turning_point;
+            const periodsHTML = (lc.periods || []).map(p => `
+                <div class="lifecycle-period">
+                    <div class="lifecycle-age">${p.age}</div>
+                    <div>
+                        <div class="lifecycle-theme">⚡ ${p.theme}</div>
+                        <div class="lifecycle-desc">${p.desc}</div>
+                    </div>
+                </div>
+            `).join('');
+            const lcExtra = `
+                <div class="lifecycle-periods">${periodsHTML}</div>
+                <div class="lifecycle-keyyear">🔑 ${lc.key_year}</div>
+                <div class="lifecycle-premium-hint" onclick="requestPremium()">
+                    🔮 <span>이 시기의 <strong>숨겨진 대운 흐름과 전환점</strong>을 더 자세히 보려면 →</span>
+                </div>
+            `;
+            sections.push({ icon: '🔄', bg: '#EDE7F6', title: lc.title, desc: lc.desc, extra: lcExtra });
+        }
+
+        // Travel
+        if (d.travel) {
+            const domesticHTML = (d.travel.domestic || []).map(p =>
+                `<div class="travel-place"><div class="travel-place-flag">🇰🇷</div><div><div class="travel-place-name">${p.place}</div><div class="travel-place-reason">${p.reason}</div></div></div>`
+            ).join('');
+            const intlHTML = (d.travel.international || []).map(p =>
+                `<div class="travel-place"><div class="travel-place-flag">✈️</div><div><div class="travel-place-name">${p.place}</div><div class="travel-place-reason">${p.reason}</div></div></div>`
+            ).join('');
+            const travelExtra = `
+                <div style="font-weight:700;font-size:0.82rem;color:#E65100;margin-top:14px;">국내 추천</div>
+                <div class="travel-places">${domesticHTML}</div>
+                <div style="font-weight:700;font-size:0.82rem;color:#E65100;margin-top:14px;">해외 추천</div>
+                <div class="travel-places">${intlHTML}</div>
+                <div class="travel-avoid">⚠️ ${d.travel.avoid}</div>
+                <div class="travel-tip">💡 ${d.travel.travel_tip}</div>
+            `;
+            sections.push({ icon: '🌏', bg: '#E3F2FD', title: d.travel.title, desc: d.travel.desc, extra: travelExtra });
+        }
 
         // Compatibility
-        document.getElementById("compatibility-title").innerText = r.compatibility.title;
-        document.getElementById("compatibility-desc").innerText = r.compatibility.desc;
+        sections.push({ icon: '🤝', bg: '#E8F5E9', title: r.compatibility.title, desc: r.compatibility.desc });
 
-        // Lucky
+        // Fortune
+        if (r.fortune && Object.keys(r.fortune).length > 0) {
+            const fortuneDesc = Object.values(r.fortune).join('\n\n');
+            sections.push({ icon: '📅', bg: '#EDE7F6', title: '2026년 계절별 운세 키워드', desc: fortuneDesc });
+        }
+
+        // Final message
+        if (d.final_message) {
+            sections.push({ icon: '✨', bg: '#FFF3E0', title: '당신에게 전하는 마지막 한마디', desc: d.final_message });
+        }
+
+        // Render all sections
+        sections.forEach((s, i) => {
+            const div = document.createElement('div');
+            div.className = 'accordion-section fade-in';
+            div.style.animationDelay = `${0.05 * i}s`;
+            div.innerHTML = `
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <div class="accordion-icon" style="background:${s.bg};">${s.icon}</div>
+                    <div class="accordion-title">${s.title}</div>
+                    <div class="accordion-arrow">▼</div>
+                </div>
+                <div class="accordion-body">
+                    <div class="accordion-content">
+                        <div class="accordion-desc">${s.desc}</div>
+                        ${s.extra || ''}
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+
+        // Lucky Grid
         const l = r.lucky;
-        document.getElementById("lucky-desc").innerHTML = `
-            ${t.luckyLabels[0]}: ${l.color}<br>
-            ${t.luckyLabels[1]}: ${l.num}<br>
-            ${t.luckyLabels[2]}: ${l.dir}<br>
-            ${t.luckyLabels[3]}: ${l.food}
+        document.getElementById("lucky-grid").innerHTML = `
+            <div class="lucky-card"><div class="lucky-card-icon">🎨</div><div class="lucky-card-label">행운의 컬러</div><div class="lucky-card-value">${l.color}</div></div>
+            <div class="lucky-card"><div class="lucky-card-icon">🔢</div><div class="lucky-card-label">행운의 숫자</div><div class="lucky-card-value">${l.num}</div></div>
+            <div class="lucky-card"><div class="lucky-card-icon">🧭</div><div class="lucky-card-label">행운의 방향</div><div class="lucky-card-value">${l.dir}</div></div>
+            <div class="lucky-card"><div class="lucky-card-icon">🍽️</div><div class="lucky-card-label">행운의 음식</div><div class="lucky-card-value">${l.food}</div></div>
         `;
+
+        // CTA text
+        if (r.payment_config && r.payment_config.cta_messages) {
+            document.getElementById("cta-text").textContent = r.payment_config.cta_messages.after_free;
+        }
+
+        // Premium teaser
+        renderPremiumTeaser();
     }
 
+    // Payment
+    function showPaymentModal() {
+        document.getElementById("payment-modal").style.display = "flex";
+    }
+    function closePaymentModal() {
+        document.getElementById("payment-modal").style.display = "none";
+    }
+    function handlePayment(type) {
+        // 결제 시스템 연동 전 임시 처리
+        alert('결제 시스템 준비 중입니다. 곧 오픈 예정!');
+        closePaymentModal();
+    }
+
+    // Result Card
     function showResultCard() {
+        if (!reportData) return;
         const r = reportData;
-        document.getElementById("rc-name").innerText = r.ilgan.title;
-        document.getElementById("rc-mbti").innerText = `MBTI: ${r.mbti}`;
+        document.getElementById("rc-name").textContent = r.ilgan.title;
+        document.getElementById("rc-mbti").textContent = `MBTI: ${r.mbti}`;
         document.getElementById("rc-pillars").innerHTML = document.getElementById("pillar-grid").innerHTML;
-        document.getElementById("rc-desc").innerText = r.ilgan.desc;
+        document.getElementById("rc-desc").textContent = r.ilgan.desc;
         document.getElementById("result-modal").style.display = "flex";
     }
-
     function closeModal() { document.getElementById("result-modal").style.display = "none"; }
 
     async function saveCard() {
         const card = document.getElementById("result-card");
-        const canvas = await html2canvas(card, { backgroundColor: "#151528", scale: 2 });
+        const canvas = await html2canvas(card, { backgroundColor: "#FFF8F0", scale: 2 });
         const link = document.createElement("a");
-        link.download = `destiny-card.png`;
+        link.download = "saju-mbti-card.png";
         link.href = canvas.toDataURL();
         link.click();
     }
 
-    // --- SHARE FUNCTIONS ---
+    // Share
     function shareKakao() {
         if (!window.Kakao) return alert("카카오 SDK 로딩 중...");
         if (!Kakao.isInitialized()) {
-            try {
-                Kakao.init('9b06dc85b339014203d8ddc90db3b4cf'); 
-            } catch (e) {
-                console.error("Kakao Init Error:", e);
-                return alert("카카오 초기화에 실패했습니다.");
-            }
+            try { Kakao.init('9b06dc85b339014203d8ddc90db3b4cf'); } catch(e) { return; }
         }
-
-        if (!reportData) return alert(translations[currentLang].alertNoData);
-
+        if (!reportData) return;
         Kakao.Share.sendDefault({
             objectType: 'feed',
             content: {
-                title: '운명의 길잡이 — 사주 & MBTI AI 분석',
-                description: currentLang === 'ko' 
-                    ? `나의 일간: ${reportData.ilgan.title}\n나의 MBTI: ${reportData.mbti}\n당신의 운명도 확인해보세요!`
-                    : `My Pillar: ${reportData.ilgan.title}\nMy MBTI: ${reportData.mbti}\nCheck your destiny too!`,
+                title: '사주 x MBTI 운명 분석',
+                description: `${reportData.ilgan.title} | ${reportData.mbti}\n당신의 운명도 확인해보세요!`,
                 imageUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=1000',
-                link: {
-                    mobileWebUrl: window.location.href,
-                    webUrl: window.location.href,
-                },
+                link: { mobileWebUrl: window.location.href, webUrl: window.location.href },
             },
-            buttons: [
-                {
-                    title: currentLang === 'ko' ? '지금 분석하기' : 'Analyze Now',
-                    link: {
-                        mobileWebUrl: window.location.href,
-                        webUrl: window.location.href,
-                    },
-                },
-            ],
+            buttons: [{ title: '나도 분석하기', link: { mobileWebUrl: window.location.href, webUrl: window.location.href } }],
         });
-    }
-
-    function shareThreads() {
-        const t = translations[currentLang];
-        const text = currentLang === 'ko'
-            ? `✨ 운명의 길잡이 ✨\n\n나의 일간: ${reportData.ilgan.title}\n나의 MBTI: ${reportData.mbti}\n\n당신의 사주와 MBTI 시너지는 어떤가요? 지금 확인해보세요!\n\n${window.location.href}`
-            : `✨ Destiny Guide ✨\n\nMy Pillar: ${reportData.ilgan.title}\nMy MBTI: ${reportData.mbti}\n\nWhat's your Saju & MBTI synergy? Check it out now!\n\n${window.location.href}`;
-        window.open(`https://www.threads.net/intent/post?text=${encodeURIComponent(text)}`);
-    }
-
-    function shareFacebook() {
-        const url = window.location.href;
-        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`);
     }
 
     function copyLink() {
-        const url = window.location.href;
-        navigator.clipboard.writeText(url).then(() => {
-            alert(translations[currentLang].alertCopy);
-        });
+        navigator.clipboard.writeText(window.location.href).then(() => alert("링크가 복사되었습니다!"));
+    }
+
+    // DEV: 무료 사용 초기화 (개발 중에만 사용)
+    function devReset() {
+        localStorage.removeItem('freeUsed');
+        localStorage.removeItem('referralBonus');
+        freeUsed = false;
+        alert('DEV: 초기화 완료!');
+        location.reload();
+    }
+
+    // ═══════════════════════════════════════════════
+    // 💎 프리미엄 티저 (절제된 잠금 콘텐츠)
+    // ═══════════════════════════════════════════════
+
+    function renderPremiumTeaser() {
+        const area = document.getElementById('premium-teaser-area');
+        const teasers = [
+            { icon: '🏠', title: '돈이 새지 않는 우리집 풍수인테리어', blur: '당신의 오행 에너지를 살리는 컬러, 배치, 소품이 따로 있습니다. 지금 집이 돈을 새게 하고 있을 수도...' },
+            { icon: '💎', title: '부족한 기운을 채워주는 악세사리', blur: '내 사주에 부족한 오행을 보충해주는 소재와 보석이 있습니다. 매일 차는 것만으로...' },
+            { icon: '🌸', title: '나의 기질에 딱 맞는 시그니처 향기', blur: '일간 에너지와 공명하는 향이 자신감과 매력을 끌어올립니다. 당신의 향기는...' },
+        ];
+
+        area.innerHTML = teasers.map(t => `
+            <div class="premium-teaser">
+                <div class="premium-teaser-header">
+                    <div class="premium-teaser-icon">${t.icon}</div>
+                    <div class="premium-teaser-title">${t.title}</div>
+                    <div class="premium-teaser-lock">🔒</div>
+                </div>
+                <div class="premium-teaser-blur">${t.blur}</div>
+            </div>
+        `).join('');
+    }
+
+    // 프리미엄 분석 요청
+    async function requestPremium() {
+        if (!reportData) return;
+
+        // TODO: 실제 결제 연동 시 여기에 결제 확인 로직 추가
+        // 지금은 바로 API 호출 (개발 모드)
+
+        document.getElementById("loading").classList.add("active");
+        document.querySelector(".loading-text").textContent = "AI 명리학자가 사주를 풀어보고 있습니다...";
+
+        try {
+            const bd = document.getElementById("birth_date").value;
+            const ampm = document.getElementById("birth_ampm").value;
+            let hour = parseInt(document.getElementById("birth_hour").value);
+            const min = document.getElementById("birth_min").value;
+            if (ampm === "PM" && hour !== 12) hour += 12;
+            if (ampm === "AM" && hour === 12) hour = 0;
+            const bt = `${hour.toString().padStart(2, '0')}:${min}`;
+            const mbti = document.getElementById("mbti").value;
+
+            const res = await fetch(`${API_URL}/get-premium-report`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({ birth_date: bd, birth_time: bt, mbti, lang: currentLang })
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                alert(err.detail || "프리미엄 분석에 실패했습니다.");
+                return;
+            }
+
+            const data = await res.json();
+            renderPremiumResult(data.premium);
+
+        } catch(e) {
+            alert("서버 연결에 실패했습니다. 다시 시도해주세요.");
+        } finally {
+            document.getElementById("loading").classList.remove("active");
+            document.querySelector(".loading-text").textContent = "운명을 해석하고 있습니다...";
+        }
+    }
+
+    function renderPremiumResult(premium) {
+        // 티저와 배너 숨기기
+        document.getElementById('premium-teaser-area').style.display = 'none';
+        document.getElementById('premium-unlock-banner').style.display = 'none';
+
+        const area = document.getElementById('premium-result-area');
+        area.style.display = 'block';
+
+        const sections = Object.values(premium);
+        area.innerHTML = sections.map(s => `
+            <div class="premium-section fade-in">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <div class="accordion-icon" style="background:#F3E5F5;">💎</div>
+                    <div class="accordion-title">${s.title} <span class="premium-badge">PREMIUM</span></div>
+                    <div class="accordion-arrow">▼</div>
+                </div>
+                <div class="accordion-body">
+                    <div class="accordion-content">
+                        <div class="accordion-desc">${s.desc}</div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        // 첫 번째 섹션 자동 열기
+        const first = area.querySelector('.premium-section');
+        if (first) {
+            first.classList.add('open');
+            first.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+
+    // ═══════════════════════════════════════════════
+    // 🔗 리퍼럴 (공유 보상)
+    // ═══════════════════════════════════════════════
+
+    // 페이지 로드 시 리퍼럴 코드 체크
+    (function checkReferral() {
+        const params = new URLSearchParams(window.location.search);
+        const refCode = params.get('ref');
+        if (refCode) {
+            fetch(`${API_URL}/use-referral`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({ code: refCode })
+            }).then(r => r.json()).then(data => {
+                if (data.valid) {
+                    localStorage.removeItem('freeUsed');
+                    freeUsed = false;
+                }
+            }).catch(() => {});
+        }
+
+        // 리퍼럴 보너스 체크
+        if (localStorage.getItem('referralBonus') === 'true') {
+            localStorage.removeItem('freeUsed');
+            localStorage.removeItem('referralBonus');
+            freeUsed = false;
+        }
+    })();
+
+    async function createReferralLink() {
+        try {
+            const res = await fetch(`${API_URL}/create-referral`, { method: "POST" });
+            const data = await res.json();
+            const link = `${window.location.origin}?ref=${data.code}`;
+
+            const codeEl = document.getElementById('referral-code');
+            codeEl.style.display = 'block';
+            codeEl.textContent = link;
+
+            // 클립보드 복사
+            await navigator.clipboard.writeText(link);
+            alert('공유 링크가 복사되었습니다!\n친구에게 보내주세요.');
+
+            // 공유자 보너스 기록
+            localStorage.setItem('myReferralCode', data.code);
+        } catch(e) {
+            alert('링크 생성에 실패했습니다.');
+        }
     }
 </script>
 
