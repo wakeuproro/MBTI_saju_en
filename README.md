@@ -1,8 +1,8 @@
 ---
 title: 사주 x MBTI 운명 분석
 emoji: 🔮
-colorFrom: orange
-colorTo: yellow
+colorFrom: yellow
+colorTo: red
 sdk: docker
 app_port: 7860
 pinned: false
