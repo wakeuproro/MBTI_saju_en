@@ -1,3 +1,15 @@
+---
+title: 사주 x MBTI 운명 분석
+emoji: 🔮
+colorFrom: orange
+colorTo: yellow
+sdk: docker
+app_port: 7860
+pinned: false
+license: mit
+short_description: 동양 명리학(사주) + 서양 성격유형(MBTI) AI 분석
+---
+
 # 사주 × MBTI 운명 분석
 
 동양 명리학(사주)과 서양 성격유형(MBTI)을 결합한 AI 분석 서비스
@@ -22,14 +34,9 @@ uvicorn main:app --host 0.0.0.0 --port 8000
 
 ## 환경 변수
 
-`.env` 파일 생성:
-
-```
-GOOGLE_API_KEY=your_gemini_api_key_here
-```
+- `GOOGLE_API_KEY`: Gemini API 키 (선택, AI 심층 분석용)
 
 ## 배포
 
-Railway / Render 등 PaaS에 GitHub 연동하여 자동 배포.
-
-`PORT` 환경변수는 플랫폼에서 자동 제공.
+- **Hugging Face Spaces**: Docker SDK, README 프론트매터 자동 인식
+- **Railway / Render**: `Procfile` + `requirements.txt` 사용
