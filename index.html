@@ -770,10 +770,50 @@
     function closePaymentModal() {
         document.getElementById("payment-modal").style.display = "none";
     }
-    function handlePayment(type) {
-        // 결제 시스템 연동 전 임시 처리
-        alert('결제 시스템 준비 중입니다. 곧 오픈 예정!');
-        closePaymentModal();
+    async function handlePayment(type) {
+        if (type === 'additional') {
+            closePaymentModal();
+            await purchaseAdditionalAnalysisCredit();
+        } else if (type === 'compatibility') {
+            alert('💕 두 사람 궁합 분석은 곧 오픈 예정입니다!\n지금은 먼저 \'프리미엄 해석 열기\'를 이용해보세요.');
+            closePaymentModal();
+        } else if (type === 'yearly') {
+            alert('📅 2026년 상세 운세는 곧 오픈 예정입니다!\n지금은 먼저 \'프리미엄 해석 열기\'를 이용해보세요.');
+            closePaymentModal();
+        }
+    }
+
+    // 추가 사주 분석 1회 권한 구매 (990원)
+    async function purchaseAdditionalAnalysisCredit() {
+        if (typeof TossPayments === 'undefined') {
+            alert('결제 모듈 로드 중입니다. 잠시 후 다시 시도해주세요.');
+            return;
+        }
+        try {
+            const cfg = await ensureTossConfig();
+            const orderId = `credit_additional_${Date.now()}_${Math.random().toString(36).slice(2,10)}`;
+            localStorage.setItem(`pending_${orderId}`, JSON.stringify({ kind: 'additional_credit' }));
+
+            const tossPayments = TossPayments(cfg.client_key);
+            const payment = tossPayments.payment({ customerKey: TossPayments.ANONYMOUS });
+
+            const successUrl = `${window.location.origin}${window.location.pathname}?payment=success&kind=credit&product=additional`;
+            const failUrl = `${window.location.origin}${window.location.pathname}?payment=fail`;
+
+            await payment.requestPayment({
+                method: "CARD",
+                amount: { currency: "KRW", value: 990 },
+                orderId,
+                orderName: "추가 사주 분석 1회",
+                customerName: document.getElementById("user_name").value.trim() || '게스트',
+                successUrl,
+                failUrl,
+            });
+        } catch (e) {
+            if (e && e.code === 'USER_CANCEL') return;
+            console.error(e);
+            alert(`결제창 열기 실패: ${e.message || e}`);
+        }
     }
 
     // Result Card
@@ -947,6 +987,7 @@
         const orderId = params.get('orderId');
         const paymentKey = params.get('paymentKey');
         const amount = parseInt(params.get('amount') || '0', 10);
+        const kind = params.get('kind') || 'premium';
 
         const stored = localStorage.getItem(`pending_${orderId}`);
         if (!stored) {
@@ -954,6 +995,37 @@
             return;
         }
         const input = JSON.parse(stored);
+
+        // ✦ 추가 분석 권한 구매 처리
+        if (kind === 'credit') {
+            const product = params.get('product') || 'additional';
+            document.getElementById("loading").classList.add("active");
+            document.querySelector(".loading-text").textContent = "결제 확인 중...";
+            try {
+                const res = await fetch(`${API_URL}/confirm-payment-credit`, {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({ paymentKey, orderId, amount, product })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    alert(`결제 검증 실패: ${data.detail || ''}`);
+                    return;
+                }
+                // 결제 통과 → 무료 사용 권한 다시 부여
+                localStorage.removeItem('freeUsed');
+                freeUsed = false;
+                localStorage.removeItem(`pending_${orderId}`);
+                alert('✅ 결제 완료! 추가 분석 1회 권한이 부여됐어요.\n새 정보 입력 후 분석을 시작해주세요.');
+            } catch(e) {
+                console.error(e);
+                alert('결제는 완료됐지만 권한 부여에 실패했어요. 새로고침 후 다시 시도해주세요.');
+            } finally {
+                document.getElementById("loading").classList.remove("active");
+                document.querySelector(".loading-text").textContent = "운명을 해석하고 있습니다...";
+            }
+            return;
+        }
 
         // 분석 결과부터 다시 받아 화면 복원
         document.getElementById("loading").classList.add("active");

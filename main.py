@@ -288,6 +288,12 @@ class PaidPremiumInput(BaseModel):
     orderId: str
     amount: int
 
+class PaymentCreditInput(BaseModel):
+    paymentKey: str
+    orderId: str
+    amount: int
+    product: str  # 'additional' | 'compatibility' | 'yearly'
+
 @app.post("/get-report")
 async def get_report(input_data: ReportInput):
     try:
@@ -416,14 +422,8 @@ async def get_premium_report(input_data: PremiumReportInput):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/confirm-and-get-premium")
-async def confirm_and_get_premium(data: PaidPremiumInput):
-    """토스 결제 검증 → 통과 시 프리미엄 콘텐츠 반환"""
-    # 1) 금액 사전 검증 (위/변조 방어)
-    if data.amount != TOSS_PREMIUM_AMOUNT:
-        raise HTTPException(status_code=400, detail=f"잘못된 결제 금액입니다. (요청: {data.amount}원, 정가: {TOSS_PREMIUM_AMOUNT}원)")
-
-    # 2) 토스페이먼츠 결제 승인 호출
+async def _verify_toss_payment(payment_key: str, order_id: str, amount: int) -> dict:
+    """토스페이먼츠 결제 승인 호출 후 검증된 결제 정보 반환"""
     auth = base64.b64encode(f"{TOSS_SECRET_KEY}:".encode()).decode()
     try:
         async with httpx.AsyncClient(timeout=20.0) as client:
@@ -434,9 +434,9 @@ async def confirm_and_get_premium(data: PaidPremiumInput):
                     "Content-Type": "application/json",
                 },
                 json={
-                    "paymentKey": data.paymentKey,
-                    "orderId": data.orderId,
-                    "amount": data.amount,
+                    "paymentKey": payment_key,
+                    "orderId": order_id,
+                    "amount": amount,
                 },
             )
         if resp.status_code != 200:
@@ -451,13 +451,31 @@ async def confirm_and_get_premium(data: PaidPremiumInput):
         toss_result = resp.json()
         if toss_result.get("status") not in ("DONE", "WAITING_FOR_DEPOSIT"):
             raise HTTPException(status_code=400, detail=f"결제 상태 비정상: {toss_result.get('status')}")
+        return toss_result
 
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"결제 검증 중 오류: {str(e)[:200]}")
 
-    # 3) 검증 통과 → 프리미엄 콘텐츠 생성
+
+# 상품별 정가 (위/변조 방어용)
+PRODUCT_PRICES = {
+    "premium": TOSS_PREMIUM_AMOUNT,  # 990
+    "additional": 990,
+    "compatibility": 1900,
+    "yearly": 2900,
+}
+
+
+@app.post("/confirm-and-get-premium")
+async def confirm_and_get_premium(data: PaidPremiumInput):
+    """토스 결제 검증 → 통과 시 프리미엄 콘텐츠 반환"""
+    if data.amount != TOSS_PREMIUM_AMOUNT:
+        raise HTTPException(status_code=400, detail=f"잘못된 결제 금액입니다. (요청: {data.amount}원, 정가: {TOSS_PREMIUM_AMOUNT}원)")
+
+    toss_result = await _verify_toss_payment(data.paymentKey, data.orderId, data.amount)
+
     try:
         payload = _build_premium_payload(data.birth_date, data.birth_time, data.mbti)
         payload["payment"] = {
@@ -470,6 +488,30 @@ async def confirm_and_get_premium(data: PaidPremiumInput):
         return payload
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"분석 생성 실패: {str(e)[:200]}")
+
+
+@app.post("/confirm-payment-credit")
+async def confirm_payment_credit(data: PaymentCreditInput):
+    """추가 분석/궁합/운세 등의 권한 구매 결제 검증"""
+    expected = PRODUCT_PRICES.get(data.product)
+    if not expected:
+        raise HTTPException(status_code=400, detail=f"알 수 없는 상품: {data.product}")
+    if data.amount != expected:
+        raise HTTPException(status_code=400, detail=f"잘못된 결제 금액입니다. (요청: {data.amount}원, 정가: {expected}원)")
+
+    toss_result = await _verify_toss_payment(data.paymentKey, data.orderId, data.amount)
+
+    return {
+        "status": "ok",
+        "product": data.product,
+        "payment": {
+            "approved_at": toss_result.get("approvedAt"),
+            "order_id": data.orderId,
+            "amount": data.amount,
+            "method": toss_result.get("method"),
+            "is_test": TOSS_IS_TEST,
+        },
+    }
 
 # ═══════════════════════════════════════════════
 # 🔗 리퍼럴 시스템 (공유 보상)
