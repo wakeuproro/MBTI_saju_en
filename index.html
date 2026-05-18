@@ -347,8 +347,8 @@
         <div class="premium-unlock-banner" id="premium-unlock-banner">
             <div class="premium-unlock-title">💎 더 깊은 사주 해석이 준비되어 있습니다</div>
             <div class="premium-unlock-desc">내 오행에 맞는 풍수인테리어 · 행운 악세사리 · 시그니처 향기<br>+ 사주 원국 심층 분석까지 한 번에 확인하세요</div>
-            <button class="premium-unlock-btn" onclick="requestPremium()">프리미엄 해석 열기</button>
-            <div class="premium-unlock-price">990원 · 결제 시스템 준비 중</div>
+            <button class="premium-unlock-btn" onclick="requestPremium()">💳 990원 결제하고 열기</button>
+            <div class="premium-unlock-price">토스 결제 · 카드/카카오페이 등</div>
         </div>
 
         <!-- Premium Result (hidden, shown after unlock) -->
@@ -446,10 +446,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.0/kakao.min.js"></script>
+<script src="https://js.tosspayments.com/v2/standard"></script>
 <script>
     const API_URL = window.location.origin;
     let reportData = null;
     let currentLang = 'ko';
+    let tossPaymentConfig = null;
     let freeUsed = localStorage.getItem('freeUsed') === 'true';
 
     const OHENG_MAP = {'木':'목','火':'화','土':'토','金':'금','水':'수'};
@@ -851,48 +853,151 @@
         `).join('');
     }
 
-    // 프리미엄 분석 요청
-    async function requestPremium() {
-        if (!reportData) return;
-
-        // TODO: 실제 결제 연동 시 여기에 결제 확인 로직 추가
-        // 지금은 바로 API 호출 (개발 모드)
-
-        document.getElementById("loading").classList.add("active");
-        document.querySelector(".loading-text").textContent = "AI 명리학자가 사주를 풀어보고 있습니다...";
-
-        try {
-            const bd = document.getElementById("birth_date").value;
+    // 현재 입력값을 결제 정보로 패키징
+    function collectAnalysisInput() {
+        const bd = document.getElementById("birth_date").value;
+        const timeUnknown = document.getElementById("time_unknown").checked;
+        let bt;
+        if (timeUnknown) {
+            bt = "12:00";
+        } else {
             const ampm = document.getElementById("birth_ampm").value;
             let hour = parseInt(document.getElementById("birth_hour").value);
             const min = document.getElementById("birth_min").value;
             if (ampm === "PM" && hour !== 12) hour += 12;
             if (ampm === "AM" && hour === 12) hour = 0;
-            const bt = `${hour.toString().padStart(2, '0')}:${min}`;
-            const mbti = document.getElementById("mbti").value;
+            bt = `${hour.toString().padStart(2, '0')}:${min}`;
+        }
+        return {
+            birth_date: bd,
+            birth_time: bt,
+            mbti: document.getElementById("mbti").value,
+            lang: currentLang,
+            name: document.getElementById("user_name").value.trim() || '당신',
+            gender: document.getElementById("user_gender").value,
+            time_unknown: timeUnknown,
+        };
+    }
 
-            const res = await fetch(`${API_URL}/get-premium-report`, {
+    // 토스 결제 설정 로드 (최초 1회)
+    async function ensureTossConfig() {
+        if (tossPaymentConfig) return tossPaymentConfig;
+        const res = await fetch(`${API_URL}/payment-config`);
+        tossPaymentConfig = await res.json();
+        return tossPaymentConfig;
+    }
+
+    // 프리미엄 분석 요청 — 토스 결제 → 검증 → 콘텐츠 응답
+    async function requestPremium() {
+        if (!reportData) return;
+        if (typeof TossPayments === 'undefined') {
+            alert('결제 모듈 로드 중입니다. 잠시 후 다시 시도해주세요.');
+            return;
+        }
+
+        try {
+            const cfg = await ensureTossConfig();
+            const input = collectAnalysisInput();
+            const orderId = `mbti_saju_${Date.now()}_${Math.random().toString(36).slice(2,10)}`;
+
+            // 결제 후 복귀 시 사용할 입력 데이터를 localStorage에 임시 저장
+            localStorage.setItem(`pending_${orderId}`, JSON.stringify(input));
+
+            const tossPayments = TossPayments(cfg.client_key);
+            const payment = tossPayments.payment({ customerKey: TossPayments.ANONYMOUS });
+
+            const successUrl = `${window.location.origin}${window.location.pathname}?payment=success`;
+            const failUrl = `${window.location.origin}${window.location.pathname}?payment=fail`;
+
+            await payment.requestPayment({
+                method: "CARD",
+                amount: { currency: "KRW", value: cfg.amount },
+                orderId,
+                orderName: cfg.order_name,
+                customerName: input.name,
+                successUrl,
+                failUrl,
+                card: { useEscrow: false, flowMode: "DEFAULT", useCardPoint: false, useAppCardOnly: false },
+            });
+        } catch (e) {
+            if (e && e.code === 'USER_CANCEL') return; // 사용자 취소는 무시
+            console.error(e);
+            alert(`결제창 열기 실패: ${e.message || e}`);
+        }
+    }
+
+    // 결제 완료 후 자동 호출 (페이지 로드 시 URL 파라미터 체크)
+    async function handlePaymentReturn() {
+        const params = new URLSearchParams(window.location.search);
+        const status = params.get('payment');
+        if (!status) return;
+
+        // URL 정리 (뒤로가기/새로고침으로 중복 호출 방지)
+        const cleanUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, '', cleanUrl);
+
+        if (status === 'fail') {
+            const msg = params.get('message') || '결제에 실패했어요.';
+            alert(`❌ ${msg}`);
+            return;
+        }
+
+        if (status !== 'success') return;
+
+        const orderId = params.get('orderId');
+        const paymentKey = params.get('paymentKey');
+        const amount = parseInt(params.get('amount') || '0', 10);
+
+        const stored = localStorage.getItem(`pending_${orderId}`);
+        if (!stored) {
+            alert('결제 정보를 찾을 수 없어요. 새로 입력 후 다시 시도해주세요.');
+            return;
+        }
+        const input = JSON.parse(stored);
+
+        // 분석 결과부터 다시 받아 화면 복원
+        document.getElementById("loading").classList.add("active");
+        document.querySelector(".loading-text").textContent = "결제 확인 및 AI 분석 중...";
+
+        try {
+            // 1) 기본 분석 다시 받아서 화면 그리기
+            const baseRes = await fetch(`${API_URL}/get-report`, {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({ birth_date: bd, birth_time: bt, mbti, lang: currentLang })
+                body: JSON.stringify(input)
             });
+            if (!baseRes.ok) throw new Error('기본 분석 실패');
+            reportData = await baseRes.json();
+            userInfo = { name: input.name, gender: input.gender, timeUnknown: input.time_unknown };
+            renderReport();
+            document.getElementById("intro-screen").classList.remove("active");
+            document.getElementById("report-screen").classList.add("active");
+            document.getElementById("floating-cta").style.display = "block";
 
+            // 2) 결제 검증 + 프리미엄 콘텐츠 받기
+            const res = await fetch(`${API_URL}/confirm-and-get-premium`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({ ...input, paymentKey, orderId, amount })
+            });
+            const data = await res.json();
             if (!res.ok) {
-                const err = await res.json();
-                alert(err.detail || "프리미엄 분석에 실패했습니다.");
+                alert(`결제 검증 실패: ${data.detail || ''}`);
                 return;
             }
-
-            const data = await res.json();
             renderPremiumResult(data.premium, data.lifestyle, data.ai_error);
-
-        } catch(e) {
-            alert("서버 연결에 실패했습니다. 다시 시도해주세요.");
+            localStorage.removeItem(`pending_${orderId}`);
+        } catch (e) {
+            console.error(e);
+            alert('결제는 완료됐지만 분석 응답에 실패했어요. 새로고침해서 다시 시도해주세요.');
         } finally {
             document.getElementById("loading").classList.remove("active");
             document.querySelector(".loading-text").textContent = "운명을 해석하고 있습니다...";
         }
     }
+
+    // 페이지 로드 시 결제 결과 자동 처리
+    document.addEventListener('DOMContentLoaded', handlePaymentReturn);
 
     function renderPremiumResult(premium, lifestyle, aiError) {
         // 티저와 배너 숨기기

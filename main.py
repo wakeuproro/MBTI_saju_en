@@ -1,6 +1,8 @@
 import os
 import json
 import uuid
+import base64
+import httpx
 from datetime import date
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
@@ -18,6 +20,16 @@ if GOOGLE_API_KEY:
     genai.configure(api_key=GOOGLE_API_KEY)
     gemini_model = genai.GenerativeModel('gemini-2.5-flash')
 
+# ─────────────────────────────────────────────
+# 💳 토스페이먼츠 결제 설정
+# 테스트 키 (Toss Payments 공식 문서 공개): 990원 결제 가능, 실제 청구 X
+# 실서비스 전환 시 환경변수로 실제 키 주입
+# ─────────────────────────────────────────────
+TOSS_CLIENT_KEY = os.getenv("TOSS_CLIENT_KEY", "test_ck_D5GePWvyJnrK0W0k6q8gLzN97Eoq")
+TOSS_SECRET_KEY = os.getenv("TOSS_SECRET_KEY", "test_sk_zXLkKEypNArWmo50nX3lmeaxYG5R")
+TOSS_PREMIUM_AMOUNT = int(os.getenv("TOSS_PREMIUM_AMOUNT", "990"))
+TOSS_IS_TEST = TOSS_SECRET_KEY.startswith("test_")
+
 app = FastAPI()
 
 app.add_middleware(
@@ -31,6 +43,16 @@ app.add_middleware(
 @app.get("/")
 async def read_index():
     return FileResponse("index.html")
+
+@app.get("/payment-config")
+async def payment_config():
+    """프론트에서 토스 결제창 띄울 때 필요한 공개 정보"""
+    return {
+        "client_key": TOSS_CLIENT_KEY,
+        "amount": TOSS_PREMIUM_AMOUNT,
+        "is_test": TOSS_IS_TEST,
+        "order_name": "사주 × MBTI 프리미엄 분석",
+    }
 
 # ═══════════════════════════════════════════════
 # 🔮 고퀄리티 정적 기초 데이터 (LLM 프롬프트 보조용)
@@ -252,6 +274,20 @@ class PremiumReportInput(BaseModel):
     gender: str = 'F'
     time_unknown: bool = False
 
+class PaidPremiumInput(BaseModel):
+    # 분석에 필요한 입력
+    birth_date: str
+    birth_time: str
+    mbti: str
+    lang: str = 'ko'
+    name: str = ''
+    gender: str = 'F'
+    time_unknown: bool = False
+    # 토스 결제 정보
+    paymentKey: str
+    orderId: str
+    amount: int
+
 @app.post("/get-report")
 async def get_report(input_data: ReportInput):
     try:
@@ -310,69 +346,130 @@ PREMIUM_PROMPT_TEMPLATE = """당신은 30년 경력의 명리학 전문가이자
   }}
 }}"""
 
+def _build_premium_payload(birth_date: str, birth_time: str, mbti: str):
+    """프리미엄 분석 콘텐츠 생성 (라이프스타일 + Gemini 심층)"""
+    year, month, day = map(int, birth_date.split('-'))
+    hour = int(birth_time.split(':')[0])
+
+    year_p = calc_year_pillar(year)
+    month_p = calc_month_pillar(year, month)
+    day_p = calc_day_pillar(year, month, day)
+    time_p = calc_time_pillar(day_p[0], hour)
+
+    pillars = [year_p, month_p, day_p, time_p]
+    oheng = analyze_oheng(pillars)
+    ilgan = day_p[0]
+    ilgan_name = ILGAN_NAMES['ko'][ilgan]
+
+    # 1) JSON 기반 라이프스타일
+    ilgan_detailed = ANALYSIS_DATA.get("ilgan_detailed", {}).get(ilgan, {}) if ANALYSIS_DATA else {}
+    lifestyle = {
+        "fengshui": ilgan_detailed.get("fengshui"),
+        "accessory": ilgan_detailed.get("accessory"),
+        "scent": ilgan_detailed.get("scent"),
+    }
+
+    # 2) Gemini 심층 분석 (옵셔널)
+    premium_data = None
+    ai_error = None
+    if gemini_model:
+        try:
+            prompt = PREMIUM_PROMPT_TEMPLATE.format(
+                birth_date=birth_date,
+                birth_time=birth_time,
+                year_p=f"{year_p[0]}{year_p[1]}",
+                month_p=f"{month_p[0]}{month_p[1]}",
+                day_p=f"{day_p[0]}{day_p[1]}",
+                time_p=f"{time_p[0]}{time_p[1]}",
+                ilgan_name=ilgan_name,
+                oh_wood=oheng['木'], oh_fire=oheng['火'], oh_earth=oheng['土'],
+                oh_metal=oheng['金'], oh_water=oheng['水'],
+                mbti=mbti
+            )
+            response = gemini_model.generate_content(prompt)
+            text = response.text.strip()
+            if text.startswith("```"):
+                text = text.split("```")[1]
+                if text.startswith("json"):
+                    text = text[4:]
+            text = text.strip()
+            premium_data = json.loads(text)
+        except Exception as e:
+            ai_error = f"AI 심층 분석은 일시적으로 사용할 수 없어요. (사유: {str(e)[:80]}…)"
+    else:
+        ai_error = "AI 심층 분석 키가 아직 연결되지 않았어요. 라이프스타일 추천은 정상 제공됩니다."
+
+    return {
+        "status": "ok",
+        "premium": premium_data,
+        "lifestyle": lifestyle,
+        "ai_error": ai_error,
+    }
+
+
 @app.post("/get-premium-report")
 async def get_premium_report(input_data: PremiumReportInput):
+    """결제 검증 없이 프리미엄 콘텐츠 반환 (개발/내부용)"""
     try:
-        year, month, day = map(int, input_data.birth_date.split('-'))
-        hour = int(input_data.birth_time.split(':')[0])
-
-        year_p = calc_year_pillar(year)
-        month_p = calc_month_pillar(year, month)
-        day_p = calc_day_pillar(year, month, day)
-        time_p = calc_time_pillar(day_p[0], hour)
-
-        pillars = [year_p, month_p, day_p, time_p]
-        oheng = analyze_oheng(pillars)
-        ilgan = day_p[0]
-        ilgan_name = ILGAN_NAMES['ko'][ilgan]
-
-        # 1) JSON 기반 라이프스타일 (항상 응답) — 풍수/악세사리/향기
-        ilgan_detailed = ANALYSIS_DATA.get("ilgan_detailed", {}).get(ilgan, {}) if ANALYSIS_DATA else {}
-        lifestyle = {
-            "fengshui": ilgan_detailed.get("fengshui"),
-            "accessory": ilgan_detailed.get("accessory"),
-            "scent": ilgan_detailed.get("scent"),
-        }
-
-        # 2) Gemini 심층 분석 (옵셔널 — 실패해도 라이프스타일은 응답)
-        premium_data = None
-        ai_error = None
-        if gemini_model:
-            try:
-                prompt = PREMIUM_PROMPT_TEMPLATE.format(
-                    birth_date=input_data.birth_date,
-                    birth_time=input_data.birth_time,
-                    year_p=f"{year_p[0]}{year_p[1]}",
-                    month_p=f"{month_p[0]}{month_p[1]}",
-                    day_p=f"{day_p[0]}{day_p[1]}",
-                    time_p=f"{time_p[0]}{time_p[1]}",
-                    ilgan_name=ilgan_name,
-                    oh_wood=oheng['木'], oh_fire=oheng['火'], oh_earth=oheng['土'],
-                    oh_metal=oheng['金'], oh_water=oheng['水'],
-                    mbti=input_data.mbti
-                )
-                response = gemini_model.generate_content(prompt)
-                text = response.text.strip()
-                if text.startswith("```"):
-                    text = text.split("```")[1]
-                    if text.startswith("json"):
-                        text = text[4:]
-                text = text.strip()
-                premium_data = json.loads(text)
-            except Exception as e:
-                ai_error = f"AI 심층 분석은 일시적으로 사용할 수 없어요. (사유: {str(e)[:80]}…)"
-        else:
-            ai_error = "AI 심층 분석 키가 아직 연결되지 않았어요. 라이프스타일 추천은 정상 제공됩니다."
-
-        return {
-            "status": "ok",
-            "premium": premium_data,
-            "lifestyle": lifestyle,
-            "ai_error": ai_error,
-        }
-
+        return _build_premium_payload(input_data.birth_date, input_data.birth_time, input_data.mbti)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/confirm-and-get-premium")
+async def confirm_and_get_premium(data: PaidPremiumInput):
+    """토스 결제 검증 → 통과 시 프리미엄 콘텐츠 반환"""
+    # 1) 금액 사전 검증 (위/변조 방어)
+    if data.amount != TOSS_PREMIUM_AMOUNT:
+        raise HTTPException(status_code=400, detail=f"잘못된 결제 금액입니다. (요청: {data.amount}원, 정가: {TOSS_PREMIUM_AMOUNT}원)")
+
+    # 2) 토스페이먼츠 결제 승인 호출
+    auth = base64.b64encode(f"{TOSS_SECRET_KEY}:".encode()).decode()
+    try:
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            resp = await client.post(
+                "https://api.tosspayments.com/v1/payments/confirm",
+                headers={
+                    "Authorization": f"Basic {auth}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "paymentKey": data.paymentKey,
+                    "orderId": data.orderId,
+                    "amount": data.amount,
+                },
+            )
+        if resp.status_code != 200:
+            err = {}
+            try:
+                err = resp.json()
+            except Exception:
+                pass
+            msg = err.get("message", resp.text[:200])
+            raise HTTPException(status_code=400, detail=f"결제 검증 실패: {msg}")
+
+        toss_result = resp.json()
+        if toss_result.get("status") not in ("DONE", "WAITING_FOR_DEPOSIT"):
+            raise HTTPException(status_code=400, detail=f"결제 상태 비정상: {toss_result.get('status')}")
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"결제 검증 중 오류: {str(e)[:200]}")
+
+    # 3) 검증 통과 → 프리미엄 콘텐츠 생성
+    try:
+        payload = _build_premium_payload(data.birth_date, data.birth_time, data.mbti)
+        payload["payment"] = {
+            "approved_at": toss_result.get("approvedAt"),
+            "order_id": data.orderId,
+            "amount": data.amount,
+            "method": toss_result.get("method"),
+            "is_test": TOSS_IS_TEST,
+        }
+        return payload
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"분석 생성 실패: {str(e)[:200]}")
 
 # ═══════════════════════════════════════════════
 # 🔗 리퍼럴 시스템 (공유 보상)
