@@ -11,8 +11,13 @@ from fastapi.middleware.cors import CORSMiddleware
 import google.generativeai as genai
 from dotenv import load_dotenv
 from korean_lunar_calendar import KoreanLunarCalendar
+import sxtwl
 
 load_dotenv()
+
+# 천간/지지 한글 인덱스 (sxtwl 정수 → 한자)
+_GAN_KR = ['갑','을','병','정','무','기','경','신','임','계']
+_JI_KR  = ['자','축','인','묘','진','사','오','미','신','유','술','해']
 
 
 def convert_lunar_to_solar(lunar_date: str, is_leap_month: bool = False) -> str:
@@ -40,39 +45,40 @@ def resolve_birth_date(birth_date: str, calendar_type: str = 'solar', is_leap_mo
 def calc_pillars_accurate(year: int, month: int, day: int, hour: int,
                           calendar_type: str = 'solar', is_leap_month: bool = False):
     """
-    📿 한국천문연구원 데이터 기반 정확한 사주 4기둥 계산
-    - 24절기 기반 월주 (입춘, 경칩, 청명...)
+    📿 sxtwl(수신통일력) 기반 정확한 사주 4기둥
+    - 24절기 기반 월주 (입춘, 경칩, 청명, 입하 등 정확)
     - 입춘 기준 연주
     - 자시(23:00+) → 다음 날 일주
-    - 음력→양력 변환 자동
+    - 음력→양력 변환 자동 (korean-lunar-calendar 활용)
     """
     from datetime import date as _date, timedelta as _td
 
-    # 1) 자시 처리: 23시면 다음 날의 일주 기준으로
-    base_year, base_month, base_day = year, month, day
-    if hour == 23:
-        if calendar_type == 'solar':
-            d = _date(year, month, day) + _td(days=1)
-            base_year, base_month, base_day = d.year, d.month, d.day
-
-    # 2) 라이브러리로 사주 갑자 계산
-    cal = KoreanLunarCalendar()
+    # 1) 입력을 양력으로 정규화
     if calendar_type == 'lunar':
-        cal.setLunarDate(base_year, base_month, base_day, bool(is_leap_month))
+        cal_conv = KoreanLunarCalendar()
+        cal_conv.setLunarDate(year, month, day, bool(is_leap_month))
+        solar_str = cal_conv.SolarIsoFormat()
+        if not solar_str or solar_str == '0000-00-00':
+            raise ValueError(f"음력 변환 실패: {year}-{month}-{day} (윤달={is_leap_month})")
+        sy, sm, sd = map(int, solar_str.split('-'))
     else:
-        cal.setSolarDate(base_year, base_month, base_day)
+        sy, sm, sd = year, month, day
 
-    gapja = cal.getGapJaString()
-    # "경오년 신사월 경진일" 식으로 옴
-    parts = gapja.replace('년', ' ').replace('월', ' ').replace('일', ' ').split()
-    if len(parts) < 3:
-        raise ValueError(f"갑자 파싱 실패: {gapja}")
-    year_gz, month_gz, day_gz = parts[0], parts[1], parts[2]
-    year_p  = (year_gz[0], year_gz[1])
-    month_p = (month_gz[0], month_gz[1])
-    day_p   = (day_gz[0], day_gz[1])
+    # 2) 자시 처리: 23시 출생은 양력 +1일
+    if hour == 23:
+        d = _date(sy, sm, sd) + _td(days=1)
+        sy, sm, sd = d.year, d.month, d.day
 
-    # 3) 시주: 우리 함수 (일간 + 시간 기반, 정확함)
+    # 3) sxtwl로 사주 갑자 계산 (절기 기반 정확)
+    day_obj = sxtwl.fromSolar(sy, sm, sd)
+    year_gz  = day_obj.getYearGZ()
+    month_gz = day_obj.getMonthGZ()
+    day_gz   = day_obj.getDayGZ()
+    year_p  = (_GAN_KR[year_gz.tg],  _JI_KR[year_gz.dz])
+    month_p = (_GAN_KR[month_gz.tg], _JI_KR[month_gz.dz])
+    day_p   = (_GAN_KR[day_gz.tg],   _JI_KR[day_gz.dz])
+
+    # 4) 시주: 일간 + 시간 기반 (5호둔)
     time_p = calc_time_pillar(day_p[0], hour)
 
     return year_p, month_p, day_p, time_p
