@@ -10,8 +10,31 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 import google.generativeai as genai
 from dotenv import load_dotenv
+from korean_lunar_calendar import KoreanLunarCalendar
 
 load_dotenv()
+
+
+def convert_lunar_to_solar(lunar_date: str, is_leap_month: bool = False) -> str:
+    """음력 YYYY-MM-DD → 양력 YYYY-MM-DD 변환"""
+    try:
+        y, m, d = map(int, lunar_date.split('-'))
+        cal = KoreanLunarCalendar()
+        cal.setLunarDate(y, m, d, bool(is_leap_month))
+        solar = cal.SolarIsoFormat()  # "YYYY-MM-DD"
+        if not solar or solar == "0000-00-00":
+            raise ValueError("변환 실패")
+        return solar
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"음력→양력 변환 실패: {str(e)[:120]}")
+
+
+def resolve_birth_date(birth_date: str, calendar_type: str = 'solar', is_leap_month: bool = False) -> tuple:
+    """입력된 날짜를 항상 양력 기준으로 보정. (solar_date, original_lunar_or_none)"""
+    if calendar_type == 'lunar':
+        solar = convert_lunar_to_solar(birth_date, is_leap_month)
+        return solar, birth_date
+    return birth_date, None
 
 # Gemini API 설정
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
@@ -485,8 +508,11 @@ def load_analysis_data():
 
 ANALYSIS_DATA = load_analysis_data()
 
-async def get_report_analysis(birth_date: str, birth_time: str, mbti: str, lang: str = 'ko'):
-    year, month, day = map(int, birth_date.split('-'))
+async def get_report_analysis(birth_date: str, birth_time: str, mbti: str, lang: str = 'ko',
+                              calendar_type: str = 'solar', is_leap_month: bool = False):
+    # 음력 입력이면 양력으로 변환
+    solar_date, lunar_original = resolve_birth_date(birth_date, calendar_type, is_leap_month)
+    year, month, day = map(int, solar_date.split('-'))
     hour = int(birth_time.split(':')[0])
 
     year_p = calc_year_pillar(year)
@@ -592,6 +618,12 @@ async def get_report_analysis(birth_date: str, birth_time: str, mbti: str, lang:
         'lucky': lucky,
         'sinsal': sinsal,
         'zodiac': zodiac,
+        'calendar_info': {
+            'type': calendar_type,
+            'solar_date': solar_date,
+            'lunar_date': lunar_original,
+            'is_leap_month': is_leap_month if calendar_type == 'lunar' else False,
+        },
         'detailed': detailed,
         'mbti_love': mbti_love,
         'combo_detail': combo_detail,
@@ -608,6 +640,8 @@ class ReportInput(BaseModel):
     name: str = ''
     gender: str = 'F'  # 'F' or 'M'
     time_unknown: bool = False
+    calendar_type: str = 'solar'   # 'solar' | 'lunar'
+    is_leap_month: bool = False    # 음력 윤달 여부
 
 class PremiumReportInput(BaseModel):
     birth_date: str
@@ -617,6 +651,8 @@ class PremiumReportInput(BaseModel):
     name: str = ''
     gender: str = 'F'
     time_unknown: bool = False
+    calendar_type: str = 'solar'
+    is_leap_month: bool = False
 
 class PaidPremiumInput(BaseModel):
     # 분석에 필요한 입력
@@ -627,6 +663,8 @@ class PaidPremiumInput(BaseModel):
     name: str = ''
     gender: str = 'F'
     time_unknown: bool = False
+    calendar_type: str = 'solar'
+    is_leap_month: bool = False
     # 토스 결제 정보
     paymentKey: str
     orderId: str
@@ -645,6 +683,8 @@ class PersonInput(BaseModel):
     birth_time: str = '12:00'
     mbti: str
     time_unknown: bool = False
+    calendar_type: str = 'solar'
+    is_leap_month: bool = False
 
 class CompatibilityInput(BaseModel):
     person_a: PersonInput
@@ -661,6 +701,8 @@ class YearlyFortuneInput(BaseModel):
     name: str = ''
     gender: str = 'F'
     target_year: int = 2026
+    calendar_type: str = 'solar'
+    is_leap_month: bool = False
     # 결제 정보
     paymentKey: str = ''
     orderId: str = ''
@@ -669,8 +711,13 @@ class YearlyFortuneInput(BaseModel):
 @app.post("/get-report")
 async def get_report(input_data: ReportInput):
     try:
-        report = await get_report_analysis(input_data.birth_date, input_data.birth_time, input_data.mbti, input_data.lang)
+        report = await get_report_analysis(
+            input_data.birth_date, input_data.birth_time, input_data.mbti, input_data.lang,
+            calendar_type=input_data.calendar_type, is_leap_month=input_data.is_leap_month
+        )
         return report
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -724,9 +771,11 @@ PREMIUM_PROMPT_TEMPLATE = """당신은 30년 경력의 명리학 전문가이자
   }}
 }}"""
 
-def _build_premium_payload(birth_date: str, birth_time: str, mbti: str):
+def _build_premium_payload(birth_date: str, birth_time: str, mbti: str,
+                           calendar_type: str = 'solar', is_leap_month: bool = False):
     """프리미엄 분석 콘텐츠 생성 (라이프스타일 + Gemini 심층)"""
-    year, month, day = map(int, birth_date.split('-'))
+    solar_date, _ = resolve_birth_date(birth_date, calendar_type, is_leap_month)
+    year, month, day = map(int, solar_date.split('-'))
     hour = int(birth_time.split(':')[0])
 
     year_p = calc_year_pillar(year)
@@ -789,7 +838,10 @@ def _build_premium_payload(birth_date: str, birth_time: str, mbti: str):
 async def get_premium_report(input_data: PremiumReportInput):
     """결제 검증 없이 프리미엄 콘텐츠 반환 (개발/내부용)"""
     try:
-        return _build_premium_payload(input_data.birth_date, input_data.birth_time, input_data.mbti)
+        return _build_premium_payload(input_data.birth_date, input_data.birth_time, input_data.mbti,
+                                       calendar_type=input_data.calendar_type, is_leap_month=input_data.is_leap_month)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -849,7 +901,8 @@ async def confirm_and_get_premium(data: PaidPremiumInput):
     toss_result = await _verify_toss_payment(data.paymentKey, data.orderId, data.amount)
 
     try:
-        payload = _build_premium_payload(data.birth_date, data.birth_time, data.mbti)
+        payload = _build_premium_payload(data.birth_date, data.birth_time, data.mbti,
+                                          calendar_type=data.calendar_type, is_leap_month=data.is_leap_month)
         payload["payment"] = {
             "approved_at": toss_result.get("approvedAt"),
             "order_id": data.orderId,
@@ -931,7 +984,13 @@ def mbti_relation(a_mbti, b_mbti):
 def calc_compatibility(person_a: dict, person_b: dict) -> dict:
     """두 사람 사주 + MBTI 궁합 분석"""
     def make_profile(p):
-        y, m, dd = map(int, p['birth_date'].split('-'))
+        # 음력 → 양력 변환
+        solar_date, _ = resolve_birth_date(
+            p['birth_date'],
+            p.get('calendar_type', 'solar'),
+            p.get('is_leap_month', False)
+        )
+        y, m, dd = map(int, solar_date.split('-'))
         h = int(p['birth_time'].split(':')[0])
         yp = calc_year_pillar(y)
         mp = calc_month_pillar(y, m)
@@ -1108,9 +1167,11 @@ MONTH_THEMES_BY_OHENG = {
     },
 }
 
-def build_yearly_fortune(birth_date: str, birth_time: str, mbti: str, year: int):
+def build_yearly_fortune(birth_date: str, birth_time: str, mbti: str, year: int,
+                          calendar_type: str = 'solar', is_leap_month: bool = False):
     """년주의 오행 흐름과 사용자 일간을 비교한 월별 운세"""
-    y, m, dd = map(int, birth_date.split('-'))
+    solar_date, _ = resolve_birth_date(birth_date, calendar_type, is_leap_month)
+    y, m, dd = map(int, solar_date.split('-'))
     h = int(birth_time.split(':')[0])
     dp = calc_day_pillar(y, m, dd)
     ilgan = dp[0]
@@ -1173,7 +1234,8 @@ def build_yearly_fortune(birth_date: str, birth_time: str, mbti: str, year: int)
 @app.post("/get-yearly-fortune-preview")
 async def yearly_preview(data: YearlyFortuneInput):
     """미리보기 — 결제 유도용 (요약만)"""
-    result = build_yearly_fortune(data.birth_date, data.birth_time, data.mbti, data.target_year)
+    result = build_yearly_fortune(data.birth_date, data.birth_time, data.mbti, data.target_year,
+                                   calendar_type=data.calendar_type, is_leap_month=data.is_leap_month)
     return {
         'year': result['year'],
         'ilgan': result['ilgan'],
@@ -1193,7 +1255,8 @@ async def confirm_and_get_yearly(data: YearlyFortuneInput):
         raise HTTPException(status_code=400, detail=f"잘못된 결제 금액 (요청: {data.amount}원, 정가: {expected}원)")
     await _verify_toss_payment(data.paymentKey, data.orderId, data.amount)
 
-    result = build_yearly_fortune(data.birth_date, data.birth_time, data.mbti, data.target_year)
+    result = build_yearly_fortune(data.birth_date, data.birth_time, data.mbti, data.target_year,
+                                   calendar_type=data.calendar_type, is_leap_month=data.is_leap_month)
     result['unlocked'] = True
     return result
 

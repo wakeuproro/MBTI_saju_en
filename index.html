@@ -412,6 +412,10 @@
         .lifestyle-avoid { background: #FBE9E7; border: 1px solid #FFCCBC; border-radius: 10px; padding: 10px 12px; margin-top: 8px; font-size: 0.8rem; color: #4A148C; }
         .lifestyle-tip { background: #E8F5E9; border: 1px solid #C8E6C9; border-radius: 10px; padding: 10px 12px; margin-top: 8px; font-size: 0.8rem; color: #2E7D32; }
 
+        /* 양/음력 토글 */
+        .cal-btn { padding: 5px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; border: none; background: transparent; color: var(--primary); transition: all 0.2s; font-family: inherit; }
+        .cal-btn.active { background: var(--primary); color: #fff; }
+
         /* Gender select buttons */
         .gender-btn { flex: 1; padding: 14px; background: var(--bg-card); border: 2px solid #E1BEE7; border-radius: 14px; color: #8D6E63; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit; }
         .gender-btn.active { background: linear-gradient(135deg, #7B1FA2, #9C27B0); color: #fff; border-color: #7B1FA2; box-shadow: 0 4px 12px rgba(123,31,162,0.2); }
@@ -527,10 +531,21 @@
             <input type="hidden" id="user_gender" value="F">
         </div>
         <div class="form-section">
-            <label class="form-label" id="t-label-birth">생년월일 (양력)</label>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <label class="form-label" id="t-label-birth" style="margin-bottom:0;">생년월일</label>
+                <div style="display:flex; gap:4px; background:var(--bg-soft); padding:3px; border-radius:8px; border:1px solid var(--border-soft);">
+                    <button type="button" class="cal-btn active" data-cal="solar" onclick="selectCalendar('solar')">양력</button>
+                    <button type="button" class="cal-btn" data-cal="lunar" onclick="selectCalendar('lunar')">음력</button>
+                </div>
+                <input type="hidden" id="calendar_type" value="solar">
+            </div>
             <input type="date" class="form-input" id="birth_date" value="1995-05-15"
                    min="1900-01-01" max="2099-12-31"
                    oninput="enforceBirthDate(this)">
+            <label id="leap_month_wrap" style="display:none; align-items:center; gap:6px; margin-top:8px; font-size:0.78rem; color:var(--text-light); cursor:pointer;">
+                <input type="checkbox" id="is_leap_month" style="width:14px; height:14px; accent-color:var(--primary);">
+                <span>윤달 입니다 (음력 윤달일 때만 체크)</span>
+            </label>
         </div>
         <div class="form-section">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -1038,6 +1053,16 @@
         });
     }
 
+    function selectCalendar(type) {
+        document.getElementById('calendar_type').value = type;
+        document.querySelectorAll('.cal-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.cal === type);
+        });
+        // 윤달 옵션은 음력일 때만
+        document.getElementById('leap_month_wrap').style.display = (type === 'lunar') ? 'flex' : 'none';
+        if (type === 'solar') document.getElementById('is_leap_month').checked = false;
+    }
+
     function toggleTimeUnknown() {
         const unknown = document.getElementById('time_unknown').checked;
         document.getElementById('time_inputs').style.display = unknown ? 'none' : 'flex';
@@ -1100,6 +1125,8 @@
         const mbti = document.getElementById("mbti").value;
         const name = document.getElementById("user_name").value.trim() || '당신';
         const gender = document.getElementById("user_gender").value;
+        const calendarType = document.getElementById("calendar_type").value;
+        const isLeapMonth = document.getElementById("is_leap_month").checked;
         if (!bd) { showCatError("생년월일을 입력해주세요."); return; }
         // 연도 4자리 검증
         const yearMatch = bd.match(/^(\d+)-/);
@@ -1114,7 +1141,7 @@
         }
 
         // 사용자 정보 보관 (렌더링용)
-        userInfo = { name, gender, timeUnknown };
+        userInfo = { name, gender, timeUnknown, calendarType, isLeapMonth };
 
         // 무료 횟수 체크
         if (freeUsed) {
@@ -1128,7 +1155,7 @@
             const res = await fetch(`${API_URL}/get-report`, {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({ birth_date: bd, birth_time: bt, mbti, lang: currentLang, name, gender, time_unknown: timeUnknown })
+                body: JSON.stringify({ birth_date: bd, birth_time: bt, mbti, lang: currentLang, name, gender, time_unknown: timeUnknown, calendar_type: calendarType, is_leap_month: isLeapMonth })
             });
             reportData = await res.json();
             renderReport();
@@ -1155,10 +1182,17 @@
         document.getElementById("report-name-display").textContent = `${greetName} 사주 — ${r.ilgan.name} × ${r.mbti}`;
         const genderChip = userInfo.gender === 'M' ? '♂ 남자' : '♀ 여자';
         const timeChip = userInfo.timeUnknown ? '⏰ 시간 모름' : '';
+        // 음력 정보 표시
+        let calChip = '';
+        if (r.calendar_info && r.calendar_info.type === 'lunar') {
+            const leap = r.calendar_info.is_leap_month ? '(윤달)' : '';
+            calChip = `<span class="info-chip" style="background:#F3E5F5;color:#4A148C;">🌙 음력 ${r.calendar_info.lunar_date} ${leap}</span>`;
+        }
         document.getElementById("report-birth-info").innerHTML = `
             <span class="info-chip">${genderChip}</span>
             <span class="info-chip">${r.mbti}</span>
             <span class="info-chip">일간: ${r.ilgan.name}</span>
+            ${calChip}
             ${timeChip ? `<span class="info-chip" style="background:#F3E5F5;color:#4A148C;">${timeChip}</span>` : ''}
         `;
 
@@ -1711,6 +1745,8 @@
             name: document.getElementById("user_name").value.trim() || '당신',
             gender: document.getElementById("user_gender").value,
             time_unknown: timeUnknown,
+            calendar_type: document.getElementById("calendar_type").value,
+            is_leap_month: document.getElementById("is_leap_month").checked,
         };
     }
 
