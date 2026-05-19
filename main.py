@@ -36,6 +36,47 @@ def resolve_birth_date(birth_date: str, calendar_type: str = 'solar', is_leap_mo
         return solar, birth_date
     return birth_date, None
 
+
+def calc_pillars_accurate(year: int, month: int, day: int, hour: int,
+                          calendar_type: str = 'solar', is_leap_month: bool = False):
+    """
+    📿 한국천문연구원 데이터 기반 정확한 사주 4기둥 계산
+    - 24절기 기반 월주 (입춘, 경칩, 청명...)
+    - 입춘 기준 연주
+    - 자시(23:00+) → 다음 날 일주
+    - 음력→양력 변환 자동
+    """
+    from datetime import date as _date, timedelta as _td
+
+    # 1) 자시 처리: 23시면 다음 날의 일주 기준으로
+    base_year, base_month, base_day = year, month, day
+    if hour == 23:
+        if calendar_type == 'solar':
+            d = _date(year, month, day) + _td(days=1)
+            base_year, base_month, base_day = d.year, d.month, d.day
+
+    # 2) 라이브러리로 사주 갑자 계산
+    cal = KoreanLunarCalendar()
+    if calendar_type == 'lunar':
+        cal.setLunarDate(base_year, base_month, base_day, bool(is_leap_month))
+    else:
+        cal.setSolarDate(base_year, base_month, base_day)
+
+    gapja = cal.getGapJaString()
+    # "경오년 신사월 경진일" 식으로 옴
+    parts = gapja.replace('년', ' ').replace('월', ' ').replace('일', ' ').split()
+    if len(parts) < 3:
+        raise ValueError(f"갑자 파싱 실패: {gapja}")
+    year_gz, month_gz, day_gz = parts[0], parts[1], parts[2]
+    year_p  = (year_gz[0], year_gz[1])
+    month_p = (month_gz[0], month_gz[1])
+    day_p   = (day_gz[0], day_gz[1])
+
+    # 3) 시주: 우리 함수 (일간 + 시간 기반, 정확함)
+    time_p = calc_time_pillar(day_p[0], hour)
+
+    return year_p, month_p, day_p, time_p
+
 # Gemini API 설정
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 gemini_model = None
@@ -510,15 +551,17 @@ ANALYSIS_DATA = load_analysis_data()
 
 async def get_report_analysis(birth_date: str, birth_time: str, mbti: str, lang: str = 'ko',
                               calendar_type: str = 'solar', is_leap_month: bool = False):
-    # 음력 입력이면 양력으로 변환
+    # 음력 입력 시 양력 변환 (응답 메타용)
     solar_date, lunar_original = resolve_birth_date(birth_date, calendar_type, is_leap_month)
+    # 원본 입력 그대로 라이브러리에 넣어 계산 (음력은 음력대로)
+    raw_y, raw_m, raw_d = map(int, birth_date.split('-'))
     year, month, day = map(int, solar_date.split('-'))
     hour = int(birth_time.split(':')[0])
 
-    year_p = calc_year_pillar(year)
-    month_p = calc_month_pillar(year, month)
-    day_p = calc_day_pillar(year, month, day)
-    time_p = calc_time_pillar(day_p[0], hour)
+    # 📿 정확한 사주 (24절기 + 자시 + 라이브러리 기반)
+    year_p, month_p, day_p, time_p = calc_pillars_accurate(
+        raw_y, raw_m, raw_d, hour, calendar_type, is_leap_month
+    )
 
     pillars = [year_p, month_p, day_p, time_p]
     oheng = analyze_oheng(pillars)
@@ -774,14 +817,13 @@ PREMIUM_PROMPT_TEMPLATE = """당신은 30년 경력의 명리학 전문가이자
 def _build_premium_payload(birth_date: str, birth_time: str, mbti: str,
                            calendar_type: str = 'solar', is_leap_month: bool = False):
     """프리미엄 분석 콘텐츠 생성 (라이프스타일 + Gemini 심층)"""
-    solar_date, _ = resolve_birth_date(birth_date, calendar_type, is_leap_month)
-    year, month, day = map(int, solar_date.split('-'))
+    raw_y, raw_m, raw_d = map(int, birth_date.split('-'))
     hour = int(birth_time.split(':')[0])
 
-    year_p = calc_year_pillar(year)
-    month_p = calc_month_pillar(year, month)
-    day_p = calc_day_pillar(year, month, day)
-    time_p = calc_time_pillar(day_p[0], hour)
+    # 📿 정확한 사주
+    year_p, month_p, day_p, time_p = calc_pillars_accurate(
+        raw_y, raw_m, raw_d, hour, calendar_type, is_leap_month
+    )
 
     pillars = [year_p, month_p, day_p, time_p]
     oheng = analyze_oheng(pillars)
@@ -984,18 +1026,14 @@ def mbti_relation(a_mbti, b_mbti):
 def calc_compatibility(person_a: dict, person_b: dict) -> dict:
     """두 사람 사주 + MBTI 궁합 분석"""
     def make_profile(p):
-        # 음력 → 양력 변환
-        solar_date, _ = resolve_birth_date(
-            p['birth_date'],
-            p.get('calendar_type', 'solar'),
-            p.get('is_leap_month', False)
-        )
-        y, m, dd = map(int, solar_date.split('-'))
+        raw_y, raw_m, raw_d = map(int, p['birth_date'].split('-'))
         h = int(p['birth_time'].split(':')[0])
-        yp = calc_year_pillar(y)
-        mp = calc_month_pillar(y, m)
-        dp = calc_day_pillar(y, m, dd)
-        tp = calc_time_pillar(dp[0], h)
+        cal_type = p.get('calendar_type', 'solar')
+        leap = p.get('is_leap_month', False)
+        # 📿 정확한 사주
+        yp, mp, dp, tp = calc_pillars_accurate(raw_y, raw_m, raw_d, h, cal_type, leap)
+        # 양력 변환 (메타용)
+        y, m, dd = map(int, resolve_birth_date(p['birth_date'], cal_type, leap)[0].split('-'))
         ilgan = dp[0]
         return {
             'name': p.get('name') or '익명',
@@ -1170,10 +1208,10 @@ MONTH_THEMES_BY_OHENG = {
 def build_yearly_fortune(birth_date: str, birth_time: str, mbti: str, year: int,
                           calendar_type: str = 'solar', is_leap_month: bool = False):
     """년주의 오행 흐름과 사용자 일간을 비교한 월별 운세"""
-    solar_date, _ = resolve_birth_date(birth_date, calendar_type, is_leap_month)
-    y, m, dd = map(int, solar_date.split('-'))
+    raw_y, raw_m, raw_d = map(int, birth_date.split('-'))
     h = int(birth_time.split(':')[0])
-    dp = calc_day_pillar(y, m, dd)
+    # 📿 정확한 사주
+    _yp, _mp, dp, _tp = calc_pillars_accurate(raw_y, raw_m, raw_d, h, calendar_type, is_leap_month)
     ilgan = dp[0]
     ilgan_oheng = CHEONGAN_OHENG[ilgan]
     ilgan_name = ILGAN_NAMES['ko'][ilgan]
