@@ -183,6 +183,18 @@
         .referral-btn { padding: 12px 24px; background: linear-gradient(135deg, #43A047, #66BB6A); color: #fff; border: none; border-radius: 12px; font-size: 0.9rem; font-weight: 700; cursor: pointer; }
         .referral-code { font-family: monospace; background: #fff; padding: 6px 14px; border-radius: 8px; border: 1px solid #A5D6A7; font-size: 0.85rem; color: #2E7D32; font-weight: 700; margin-top: 10px; display: none; }
 
+        /* Sinsal cards */
+        .sinsal-list { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+        .sinsal-card { background: linear-gradient(135deg, #FFF8F0, #FFF3E0); border: 1.5px solid #FFCC80; border-radius: 14px; padding: 14px 16px; }
+        .sinsal-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+        .sinsal-icon { font-size: 1.5rem; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 10px; border: 1px solid #FFE0B2; }
+        .sinsal-meta { flex: 1; }
+        .sinsal-name { font-size: 0.95rem; font-weight: 800; color: #BF360C; line-height: 1.2; }
+        .sinsal-type { font-size: 0.72rem; color: #8D6E63; font-weight: 600; margin-top: 2px; }
+        .sinsal-desc { font-size: 0.83rem; color: #5D4037; line-height: 1.6; margin-top: 4px; }
+        .sinsal-tip { background: #fff; border: 1px solid #FFE0B2; border-radius: 8px; padding: 8px 10px; margin-top: 8px; font-size: 0.78rem; color: #6D4C41; }
+        .sinsal-empty { text-align: center; padding: 20px; font-size: 0.85rem; color: #8D6E63; background: #FFF8F0; border-radius: 10px; line-height: 1.6; }
+
         /* Lifestyle cards (fengshui/accessory/scent unlocked) */
         .lifestyle-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
         .lifestyle-item { background: #FFF8F0; border: 1px solid #FFE0B2; border-radius: 10px; padding: 10px 12px; }
@@ -683,6 +695,33 @@
                 </div>
                 <div class="tag-row">${(d.health.weak_points||[]).map(p => `<span class="tag" style="background:#FFEBEE;color:#C62828;">주의: ${p}</span>`).join('')}</div>`;
             sections.push({ icon: '🏥', bg: '#E8F5E9', title: d.health.title, desc: d.health.desc, extra: healthExtra });
+        }
+
+        // ✨ 신살 (특수 별자리)
+        if (r.sinsal !== undefined) {
+            let sinsalHTML;
+            if (r.sinsal.length > 0) {
+                sinsalHTML = `<div class="sinsal-list">` +
+                    r.sinsal.map(s => `
+                        <div class="sinsal-card">
+                            <div class="sinsal-head">
+                                <div class="sinsal-icon">${s.icon}</div>
+                                <div class="sinsal-meta">
+                                    <div class="sinsal-name">${s.name}</div>
+                                    <div class="sinsal-type">${s.type}</div>
+                                </div>
+                            </div>
+                            <div class="sinsal-desc">${s.desc}</div>
+                            <div class="sinsal-tip">💡 ${s.tip}</div>
+                        </div>
+                    `).join('') + `</div>`;
+            } else {
+                sinsalHTML = `<div class="sinsal-empty">이번 사주에서는 대표 신살이 발견되지 않았어요.<br>대신 오행 균형과 일간 분석에 더 집중해보세요!</div>`;
+            }
+            const sinsalTitle = r.sinsal.length > 0
+                ? `내 사주에 깃든 ${r.sinsal.length}가지 특수 신살`
+                : '특수 신살 분석';
+            sections.push({ icon: '✨', bg: '#FFF8E1', title: sinsalTitle, desc: '신살(神煞)은 사주 원국의 특별한 별자리예요. 가진 신살은 인생 흐름에 큰 영향을 줍니다.', extra: sinsalHTML });
         }
 
         // Life Turning Point (인생 전환점 & 대운 흐름)

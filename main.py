@@ -139,6 +139,102 @@ def analyze_oheng(pillars):
         count[JIJI_OHENG[ji]] += 1
     return count
 
+# ─────────────────────────────────────────────
+# ✨ 신살(神煞) 분석
+# 도화살/역마살/화개살/장성살 — 일지(또는 년지) 삼합 기준
+# 천을귀인 — 일간 기준
+# ─────────────────────────────────────────────
+SAMHAP_OF = {
+    '신': '신자진', '자': '신자진', '진': '신자진',
+    '인': '인오술', '오': '인오술', '술': '인오술',
+    '사': '사유축', '유': '사유축', '축': '사유축',
+    '해': '해묘미', '묘': '해묘미', '미': '해묘미',
+}
+
+# 각 삼합 그룹별 신살이 자리하는 지지
+DOHWA_MAP    = {'신자진': '유', '인오술': '묘', '사유축': '오', '해묘미': '자'}
+YEOKMA_MAP   = {'신자진': '인', '인오술': '신', '사유축': '해', '해묘미': '사'}
+HWAGAE_MAP   = {'신자진': '진', '인오술': '술', '사유축': '축', '해묘미': '미'}
+JANGSEONG_MAP= {'신자진': '자', '인오술': '오', '사유축': '유', '해묘미': '묘'}
+
+# 천을귀인 (일간 → 해당 지지가 있으면 작동)
+CHEONULGWIIN_MAP = {
+    '갑': ['축', '미'], '무': ['축', '미'], '경': ['축', '미'],
+    '을': ['자', '신'], '기': ['자', '신'],
+    '병': ['해', '유'], '정': ['해', '유'],
+    '신': ['인', '오'],
+    '임': ['묘', '사'], '계': ['묘', '사'],
+}
+
+SINSAL_DATA = {
+    '도화살': {
+        'icon': '🌸',
+        'name': '도화살 (桃花殺)',
+        'type': '매력 · 인기',
+        'desc': '복숭아꽃처럼 빛나는 매력의 별. 이성에게 인기가 많고 사람을 끄는 분위기가 있어요. 예술적 감각과 패션 센스도 뛰어나 어디서든 눈에 띕니다.',
+        'tip': '매력이 무기지만 한편으론 구설수의 원인이 될 수 있어요. 진짜 인연을 알아보는 안목을 키우세요.'
+    },
+    '역마살': {
+        'icon': '🐎',
+        'name': '역마살 (驛馬殺)',
+        'type': '이동 · 변화',
+        'desc': '한 자리에 머물지 못하는 자유로운 별. 여행·이직·이사가 잦고 새로운 환경에서 더 빛납니다. 글로벌 무대나 출장 잦은 일과 잘 맞아요.',
+        'tip': '안정보다 변화에서 기회를 잡는 타입. 한 곳에 갇히기보다 흐름을 따라가세요.'
+    },
+    '천을귀인': {
+        'icon': '⭐',
+        'name': '천을귀인 (天乙貴人)',
+        'type': '귀인 · 보호',
+        'desc': '하늘이 내린 최고의 길성. 위기 때마다 도와주는 귀인을 만나고, 어려운 순간에도 좋은 결과로 이어집니다. 인복을 타고난 사주예요.',
+        'tip': '주변 사람을 소중히 하세요. 가장 큰 자산은 사람입니다.'
+    },
+    '화개살': {
+        'icon': '🪷',
+        'name': '화개살 (華蓋殺)',
+        'type': '예술 · 영성',
+        'desc': '연꽃처럼 고고한 정신의 별. 예술·종교·학문·영성에 끌립니다. 깊이 있는 사색과 창작에 능하며 평범함을 거부하는 독특한 매력이 있어요.',
+        'tip': '내면이 풍부한 만큼 외로움도 깊을 수 있어요. 자기만의 세계를 가꾸되 고립되지 마세요.'
+    },
+    '장성살': {
+        'icon': '⚔️',
+        'name': '장성살 (將星殺)',
+        'type': '리더십 · 권위',
+        'desc': '장군별. 타고난 리더십과 카리스마의 별입니다. 조직을 이끄는 능력이 뛰어나고 권위 있는 자리에서 빛을 발합니다.',
+        'tip': '책임감이 강한 만큼 부담도 클 수 있어요. 가끔은 어깨의 짐을 내려놓고 쉬어가세요.'
+    },
+}
+
+
+def analyze_sinsal(pillars, ilgan):
+    """가진 신살만 추출해서 상세 데이터로 반환"""
+    year_p, month_p, day_p, time_p = pillars
+    all_jiji = [p[1] for p in pillars]
+
+    found = []
+
+    # 일지·년지 양쪽에서 모두 검사 (둘 중 하나라도 작동하면 인정)
+    for base_ji in [day_p[1], year_p[1]]:
+        group = SAMHAP_OF.get(base_ji)
+        if not group:
+            continue
+        for name, mp in [
+            ('도화살', DOHWA_MAP),
+            ('역마살', YEOKMA_MAP),
+            ('화개살', HWAGAE_MAP),
+            ('장성살', JANGSEONG_MAP),
+        ]:
+            target = mp[group]
+            if target in all_jiji and name not in found:
+                found.append(name)
+
+    # 천을귀인 (일간 기준)
+    for t in CHEONULGWIIN_MAP.get(ilgan, []):
+        if t in all_jiji and '천을귀인' not in found:
+            found.append('천을귀인')
+            break
+
+    return [{'key': k, **SINSAL_DATA[k]} for k in found]
+
 # ═══════════════════════════════════════════════
 # 🔮 정적 분석 데이터 로드 (LLM 대체용)
 # ═══════════════════════════════════════════════
@@ -166,7 +262,10 @@ async def get_report_analysis(birth_date: str, birth_time: str, mbti: str, lang:
     oheng = analyze_oheng(pillars)
     ilgan = day_p[0]
     ilgan_name_lang = ILGAN_NAMES.get(lang, ILGAN_NAMES['ko'])[ilgan]
-    
+
+    # ✨ 신살 분석
+    sinsal = analyze_sinsal(pillars, ilgan)
+
     weakest_oheng = min(oheng, key=oheng.get)
     current_lucky_map = LUCKY_MAP.get(lang, LUCKY_MAP['ko'])
     lucky = current_lucky_map[weakest_oheng]
@@ -252,6 +351,7 @@ async def get_report_analysis(birth_date: str, birth_time: str, mbti: str, lang:
         'synergy': {'title': analysis['synergy_title'], 'desc': analysis['synergy_desc']},
         'compatibility': {'title': analysis['compatibility_title'], 'desc': analysis['compatibility_desc']},
         'lucky': lucky,
+        'sinsal': sinsal,
         'detailed': detailed,
         'mbti_love': mbti_love,
         'combo_detail': combo_detail,
