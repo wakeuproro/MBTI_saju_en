@@ -494,49 +494,74 @@ SINSAL_DATA = {
 
 
 def analyze_sinsal(pillars, ilgan):
-    """가진 신살만 추출해서 상세 데이터로 반환"""
+    """가진 신살만 추출해서 상세 데이터로 반환 (한국 명리 표준)"""
     year_p, month_p, day_p, time_p = pillars
     all_jiji = [p[1] for p in pillars]
+    day_jiji = day_p[1]
+    other_jiji_no_day = [year_p[1], month_p[1], time_p[1]]
 
     found = []
 
-    # 1) 삼합 기준 — 도화/역마/화개/장성
-    for base_ji in [day_p[1], year_p[1]]:
-        group = SAMHAP_OF.get(base_ji)
-        if not group:
-            continue
+    # ────────────────────────────────────────
+    # 1) 삼합 기준 — 일지 우선 (도화/역마/화개/장성)
+    #    본인 일지가 신살 자리거나, 사주에 그 글자가 있으면 작동
+    # ────────────────────────────────────────
+    base_group = SAMHAP_OF.get(day_jiji)
+    if base_group:
         for name, mp in [
-            ('도화살', DOHWA_MAP),
-            ('역마살', YEOKMA_MAP),
-            ('화개살', HWAGAE_MAP),
-            ('장성살', JANGSEONG_MAP),
+            ('도화살',   DOHWA_MAP),
+            ('역마살',   YEOKMA_MAP),
+            ('화개살',   HWAGAE_MAP),
+            ('장성살',   JANGSEONG_MAP),
         ]:
-            target = mp[group]
-            if target in all_jiji and name not in found:
+            target = mp[base_group]
+            # 사주 어느 자리든 해당 지지가 있으면 작동 (일지 포함)
+            if target in all_jiji:
                 found.append(name)
 
-    # 2) 일간 기준 — 천을귀인 / 문창귀인 / 양인 / 재고
-    for name, mp in [
-        ('천을귀인', CHEONULGWIIN_MAP),
-        ('문창귀인', {k: [v] for k, v in MUNCHANG_MAP.items()}),
-        ('양인살', {k: [v] for k, v in YANGIN_MAP.items()}),
-        ('재고', {k: [v] for k, v in JAEGO_MAP.items()}),
-    ]:
-        for t in mp.get(ilgan, []):
-            if t in all_jiji and name not in found:
-                found.append(name)
-                break
-
-    # 3) 백호살 — 4기둥 중 하나라도 (간,지) 조합이 일치하면 인정
-    for gan, ji in pillars:
-        if (gan, ji) in BAEKHO_PAIRS and '백호살' not in found:
-            found.append('백호살')
+    # ────────────────────────────────────────
+    # 2) 천을귀인 — 일간 기준
+    # ────────────────────────────────────────
+    for t in CHEONULGWIIN_MAP.get(ilgan, []):
+        if t in all_jiji:
+            found.append('천을귀인')
             break
 
-    # 4) 공망 — 일주 기준 공망 지지가 다른 기둥(년/월/시)에 있으면 인정
+    # ────────────────────────────────────────
+    # 3) 문창귀인 — 일간 기준
+    # ────────────────────────────────────────
+    munchang_target = MUNCHANG_MAP.get(ilgan)
+    if munchang_target and munchang_target in all_jiji:
+        found.append('문창귀인')
+
+    # ────────────────────────────────────────
+    # 4) 양인살 — 양일간(갑·병·무·경·임)만 적용
+    #    음일간은 양인 적용 X (전통 명리 표준)
+    # ────────────────────────────────────────
+    YANG_GAN = {'갑', '병', '무', '경', '임'}
+    if ilgan in YANG_GAN:
+        yangin_target = YANGIN_MAP.get(ilgan)
+        if yangin_target and yangin_target in all_jiji:
+            found.append('양인살')
+
+    # ────────────────────────────────────────
+    # 5) 재고(財庫) — 일간 기준
+    # ────────────────────────────────────────
+    jaego_target = JAEGO_MAP.get(ilgan)
+    if jaego_target and jaego_target in all_jiji:
+        found.append('재고')
+
+    # ────────────────────────────────────────
+    # 6) 백호살 — 일주 한정 (전통 명리는 일주만, 시주는 약하게)
+    # ────────────────────────────────────────
+    if (day_p[0], day_p[1]) in BAEKHO_PAIRS:
+        found.append('백호살')
+
+    # ────────────────────────────────────────
+    # 7) 공망 — 일주 旬(순) 기준 지지가 다른 기둥에 있으면 작동
+    # ────────────────────────────────────────
     gongmang_jiji = calc_gongmang(day_p[0], day_p[1])
-    other_jiji = [year_p[1], month_p[1], time_p[1]]
-    if any(j in gongmang_jiji for j in other_jiji) and '공망' not in found:
+    if any(j in gongmang_jiji for j in other_jiji_no_day):
         found.append('공망')
 
     return [{'key': k, **SINSAL_DATA[k]} for k in found]
