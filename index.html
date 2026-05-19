@@ -8,33 +8,83 @@
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800;900&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        /* 🎨 보라 마법 테마 컬러 시스템 */
-        :root {
+        /* 🎨 보라 마법 테마 — 라이트 모드 */
+        :root, [data-theme="light"] {
             --primary: #7B1FA2;
             --primary-dark: #4A148C;
             --primary-light: #BA68C8;
-            --accent: #FFC107;          /* 골든 별 */
-            --accent-pink: #F8BBD0;     /* 핑크 볼터치 */
-            --bg-main: #FAF7FF;         /* 배경 (보라 빛 화이트) */
-            --bg-soft: #F3E5F5;         /* 라이트 라벤더 */
+            --accent: #FFC107;
+            --accent-pink: #F8BBD0;
+            --bg-main: #FAF7FF;
+            --bg-soft: #F3E5F5;
             --bg-card: #FFFFFF;
-            --border: #E1BEE7;          /* 보라 보더 */
+            --bg-card-soft: #FAFAFA;
+            --header-bg: rgba(250,247,255,0.95);
+            --border: #E1BEE7;
             --border-soft: #EDE7F6;
             --text-dark: #2D2D2D;
             --text-mid: #5D4037;
             --text-light: #8E7E94;
+            --shadow: 0 4px 15px rgba(123,31,162,0.1);
+            --shadow-strong: 0 10px 40px rgba(123,31,162,0.15);
         }
 
-        body { background-color: var(--bg-main); font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; justify-content: center; color: var(--text-dark); }
+        /* 🌙 보라 마법 테마 — 다크 모드 */
+        [data-theme="dark"] {
+            --primary: #CE93D8;
+            --primary-dark: #BA68C8;
+            --primary-light: #E1BEE7;
+            --accent: #FFD54F;
+            --accent-pink: #F8BBD0;
+            --bg-main: #16151F;
+            --bg-soft: #221F2E;
+            --bg-card: #1E1B2C;
+            --bg-card-soft: #252238;
+            --header-bg: rgba(22,21,31,0.95);
+            --border: #3A2E4D;
+            --border-soft: #2A2438;
+            --text-dark: #F3E5F5;
+            --text-mid: #CE93D8;
+            --text-light: #9E8AAE;
+            --shadow: 0 4px 15px rgba(0,0,0,0.4);
+            --shadow-strong: 0 10px 40px rgba(0,0,0,0.6);
+        }
+
+        body { background-color: var(--bg-main); font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; justify-content: center; color: var(--text-dark); transition: background-color 0.3s, color 0.3s; }
         #app { width: 100%; max-width: 480px; min-height: 100dvh; background: var(--bg-main); display: flex; flex-direction: column; position: relative; padding-bottom: 80px; }
 
         /* Header */
-        header { padding: 14px 20px; background: rgba(250,247,255,0.95); border-bottom: 2px solid var(--border-soft); display: flex; justify-content: space-between; align-items: center; backdrop-filter: blur(10px); z-index: 10; position: sticky; top: 0; }
+        header { padding: 14px 20px; background: var(--header-bg); border-bottom: 2px solid var(--border-soft); display: flex; justify-content: space-between; align-items: center; backdrop-filter: blur(10px); z-index: 10; position: sticky; top: 0; }
         .header-title { font-weight: 900; font-size: 1rem; color: var(--primary); letter-spacing: 1px; }
         .header-logo { font-size: 1.2rem; display: flex; align-items: center; }
-        .lang-switch { display: flex; gap: 4px; background: var(--bg-soft); padding: 4px; border-radius: 8px; border: 1px solid var(--border-soft); }
-        .lang-btn { padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; cursor: pointer; border: none; background: transparent; color: var(--primary); transition: all 0.2s; }
-        .lang-btn.active { background: var(--primary); color: #fff; }
+
+        /* 🌗 라이트/다크 모드 토글 */
+        .theme-toggle { width: 38px; height: 38px; border-radius: 50%; border: 1.5px solid var(--border); background: var(--bg-soft); color: var(--primary); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; transition: all 0.3s; padding: 0; }
+        .theme-toggle:hover { transform: scale(1.1); background: var(--primary); color: #fff; }
+        .theme-toggle:active { transform: scale(0.95); }
+        .theme-toggle .icon-light { display: inline; }
+        .theme-toggle .icon-dark { display: none; }
+        [data-theme="dark"] .theme-toggle .icon-light { display: none; }
+        [data-theme="dark"] .theme-toggle .icon-dark { display: inline; }
+
+        /* 🌙 다크 모드 카드/입력창 미세 조정 */
+        [data-theme="dark"] .accordion-section,
+        [data-theme="dark"] .lifestyle-item,
+        [data-theme="dark"] .sinsal-card,
+        [data-theme="dark"] .premium-section,
+        [data-theme="dark"] .form-input,
+        [data-theme="dark"] .form-select,
+        [data-theme="dark"] .gender-btn,
+        [data-theme="dark"] .retry-btn { background: var(--bg-card) !important; color: var(--text-dark); }
+        [data-theme="dark"] .info-chip,
+        [data-theme="dark"] .lucky-card,
+        [data-theme="dark"] .pillar-item,
+        [data-theme="dark"] .report-header-card { background: var(--bg-card-soft) !important; }
+        [data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); }
+        [data-theme="dark"] .form-select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23CE93D8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); }
+        [data-theme="dark"] .premium-teaser-blur { color: var(--text-light); }
+        [data-theme="dark"] body { color-scheme: dark; }
+        [data-theme="light"] body { color-scheme: light; }
 
         /* 🐱 고양이 마스코트 SVG 컴포넌트 */
         .cat-mascot { display: inline-block; line-height: 0; }
@@ -54,7 +104,7 @@
         .intro-sub { color: #8D6E63; font-size: 0.9rem; margin-bottom: 32px; }
         .form-section { margin-bottom: 16px; }
         .form-label { display: block; margin-bottom: 8px; font-size: 0.85rem; color: #6D4C41; font-weight: 700; }
-        .form-input, .form-select { width: 100%; padding: 14px; background: #fff; border: 2px solid #E1BEE7; border-radius: 14px; color: #2D2D2D; font-size: 1rem; outline: none; transition: all 0.2s; font-family: inherit; }
+        .form-input, .form-select { width: 100%; padding: 14px; background: var(--bg-card); border: 2px solid #E1BEE7; border-radius: 14px; color: #2D2D2D; font-size: 1rem; outline: none; transition: all 0.2s; font-family: inherit; }
         .form-input:focus, .form-select:focus { border-color: #7B1FA2; box-shadow: 0 0 0 3px rgba(123,31,162,0.1); }
         .form-select {
             appearance: none;
@@ -69,7 +119,7 @@
         .report-header-card { background: linear-gradient(135deg, #F3E5F5, #E1BEE7); border-radius: 20px; padding: 24px; margin-bottom: 20px; text-align: center; border: 2px solid #CE93D8; }
         .report-name { font-size: 1.1rem; font-weight: 700; color: #7B1FA2; margin-bottom: 8px; }
         .report-birth-info { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 12px; }
-        .info-chip { background: #fff; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; color: #6D4C41; font-weight: 600; border: 1px solid #CE93D8; }
+        .info-chip { background: var(--bg-card); padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; color: #6D4C41; font-weight: 600; border: 1px solid #CE93D8; }
 
         /* Pillar Grid */
         .pillar-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 16px 0; }
@@ -94,7 +144,7 @@
 
         /* Accordion Sections */
         .section-guide { text-align: center; color: #8D6E63; font-size: 0.8rem; margin: 16px 0 12px; }
-        .accordion-section { background: #fff; border: 1.5px solid #E1BEE7; border-radius: 16px; margin-bottom: 10px; overflow: hidden; transition: all 0.3s; }
+        .accordion-section { background: var(--bg-card); border: 1.5px solid #E1BEE7; border-radius: 16px; margin-bottom: 10px; overflow: hidden; transition: all 0.3s; }
         .accordion-section:hover { border-color: #BA68C8; }
         .accordion-header { display: flex; align-items: center; gap: 12px; padding: 16px 18px; cursor: pointer; user-select: none; }
         .accordion-icon { font-size: 1.3rem; flex-shrink: 0; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 10px; }
@@ -124,7 +174,7 @@
         .share-btn:active { transform: scale(0.96); }
         .share-btn.kakao { background: #FEE500; color: #3c1e1e; }
         .share-btn.copy { background: #E8EAF6; color: #283593; }
-        .retry-btn { width: 100%; padding: 14px; background: #fff; border: 2px solid #E1BEE7; color: #8D6E63; border-radius: 14px; font-size: 0.9rem; font-weight: 700; cursor: pointer; margin-bottom: 20px; }
+        .retry-btn { width: 100%; padding: 14px; background: var(--bg-card); border: 2px solid #E1BEE7; color: #8D6E63; border-radius: 14px; font-size: 0.9rem; font-weight: 700; cursor: pointer; margin-bottom: 20px; }
 
         /* Floating CTA */
         .floating-cta { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; z-index: 50; padding: 0; display: none; }
@@ -133,7 +183,7 @@
 
         /* Payment Modal */
         #payment-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: flex-end; }
-        .payment-sheet { width: 100%; max-width: 480px; background: #fff; border-radius: 24px 24px 0 0; padding: 28px 24px 40px; animation: slideUp 0.3s ease; }
+        .payment-sheet { width: 100%; max-width: 480px; background: var(--bg-card); border-radius: 24px 24px 0 0; padding: 28px 24px 40px; animation: slideUp 0.3s ease; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .payment-handle { width: 40px; height: 4px; background: #E0E0E0; border-radius: 2px; margin: 0 auto 20px; }
         .payment-title { font-size: 1.2rem; font-weight: 900; margin-bottom: 6px; color: #2D2D2D; }
@@ -181,7 +231,7 @@
         .dev-badge:hover { opacity: 1; }
 
         /* Premium locked teaser */
-        .premium-teaser { background: #fff; border: 1.5px solid #E0E0E0; border-radius: 16px; margin-bottom: 10px; overflow: hidden; position: relative; }
+        .premium-teaser { background: var(--bg-card); border: 1.5px solid #E0E0E0; border-radius: 16px; margin-bottom: 10px; overflow: hidden; position: relative; }
         .premium-teaser-header { display: flex; align-items: center; gap: 12px; padding: 16px 18px; }
         .premium-teaser-icon { font-size: 1.3rem; flex-shrink: 0; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: #F5F5F5; }
         .premium-teaser-title { flex: 1; font-size: 0.9rem; font-weight: 700; color: #9E9E9E; line-height: 1.4; }
@@ -206,7 +256,7 @@
         .referral-title { font-size: 0.95rem; font-weight: 800; color: #2E7D32; margin-bottom: 6px; }
         .referral-desc { font-size: 0.8rem; color: #558B2F; margin-bottom: 14px; line-height: 1.5; }
         .referral-btn { padding: 12px 24px; background: linear-gradient(135deg, #43A047, #66BB6A); color: #fff; border: none; border-radius: 12px; font-size: 0.9rem; font-weight: 700; cursor: pointer; }
-        .referral-code { font-family: monospace; background: #fff; padding: 6px 14px; border-radius: 8px; border: 1px solid #A5D6A7; font-size: 0.85rem; color: #2E7D32; font-weight: 700; margin-top: 10px; display: none; }
+        .referral-code { font-family: monospace; background: var(--bg-card); padding: 6px 14px; border-radius: 8px; border: 1px solid #A5D6A7; font-size: 0.85rem; color: #2E7D32; font-weight: 700; margin-top: 10px; display: none; }
 
         /* Zodiac (12지신) card */
         .zodiac-hero { background: linear-gradient(135deg, #FFF8E1, #E1BEE7); border: 1.5px solid #CE93D8; border-radius: 16px; padding: 20px 16px; text-align: center; margin-top: 10px; }
@@ -215,9 +265,9 @@
         .zodiac-tagline { font-size: 0.85rem; color: #6D4C41; font-weight: 600; margin-bottom: 12px; }
         .zodiac-desc { font-size: 0.85rem; color: #5D4037; line-height: 1.7; background: rgba(255,255,255,0.6); padding: 12px; border-radius: 10px; text-align: left; }
         .zodiac-traits { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-top: 12px; }
-        .zodiac-chip { padding: 4px 12px; background: #fff; border: 1px solid #CE93D8; border-radius: 16px; font-size: 0.75rem; font-weight: 700; color: #4A148C; }
+        .zodiac-chip { padding: 4px 12px; background: var(--bg-card); border: 1px solid #CE93D8; border-radius: 16px; font-size: 0.75rem; font-weight: 700; color: #4A148C; }
         .zodiac-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
-        .zodiac-mini { background: #fff; border: 1px solid #E1BEE7; border-radius: 10px; padding: 10px; text-align: left; }
+        .zodiac-mini { background: var(--bg-card); border: 1px solid #E1BEE7; border-radius: 10px; padding: 10px; text-align: left; }
         .zodiac-mini-label { font-size: 0.72rem; color: #8D6E63; font-weight: 700; margin-bottom: 4px; }
         .zodiac-mini-value { font-size: 0.8rem; color: #5D4037; line-height: 1.5; }
         .zodiac-match { display: flex; gap: 8px; margin-top: 10px; }
@@ -229,12 +279,12 @@
         .sinsal-list { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
         .sinsal-card { background: linear-gradient(135deg, #FAF7FF, #F3E5F5); border: 1.5px solid #CE93D8; border-radius: 14px; padding: 14px 16px; }
         .sinsal-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
-        .sinsal-icon { font-size: 1.5rem; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 10px; border: 1px solid #E1BEE7; }
+        .sinsal-icon { font-size: 1.5rem; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: var(--bg-card); border-radius: 10px; border: 1px solid #E1BEE7; }
         .sinsal-meta { flex: 1; }
         .sinsal-name { font-size: 0.95rem; font-weight: 800; color: #4A148C; line-height: 1.2; }
         .sinsal-type { font-size: 0.72rem; color: #8D6E63; font-weight: 600; margin-top: 2px; }
         .sinsal-desc { font-size: 0.83rem; color: #5D4037; line-height: 1.6; margin-top: 4px; }
-        .sinsal-tip { background: #fff; border: 1px solid #E1BEE7; border-radius: 8px; padding: 8px 10px; margin-top: 8px; font-size: 0.78rem; color: #6D4C41; }
+        .sinsal-tip { background: var(--bg-card); border: 1px solid #E1BEE7; border-radius: 8px; padding: 8px 10px; margin-top: 8px; font-size: 0.78rem; color: #6D4C41; }
         .sinsal-empty { text-align: center; padding: 20px; font-size: 0.85rem; color: #8D6E63; background: #FAF7FF; border-radius: 10px; line-height: 1.6; }
 
         /* Lifestyle cards (fengshui/accessory/scent unlocked) */
@@ -248,7 +298,7 @@
         .lifestyle-tip { background: #E8F5E9; border: 1px solid #C8E6C9; border-radius: 10px; padding: 10px 12px; margin-top: 8px; font-size: 0.8rem; color: #2E7D32; }
 
         /* Gender select buttons */
-        .gender-btn { flex: 1; padding: 14px; background: #fff; border: 2px solid #E1BEE7; border-radius: 14px; color: #8D6E63; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+        .gender-btn { flex: 1; padding: 14px; background: var(--bg-card); border: 2px solid #E1BEE7; border-radius: 14px; color: #8D6E63; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit; }
         .gender-btn.active { background: linear-gradient(135deg, #7B1FA2, #9C27B0); color: #fff; border-color: #7B1FA2; box-shadow: 0 4px 12px rgba(123,31,162,0.2); }
         .gender-btn:active { transform: scale(0.97); }
 
@@ -289,10 +339,10 @@
             </span>
             <span class="header-title">사주 x MBTI</span>
         </div>
-        <div class="lang-switch">
-            <button class="lang-btn active" id="btn-ko" onclick="setLanguage('ko')">KO</button>
-            <button class="lang-btn" id="btn-en" onclick="setLanguage('en')">EN</button>
-        </div>
+        <button class="theme-toggle" onclick="toggleTheme()" aria-label="라이트/다크 모드 전환" title="라이트/다크 모드 전환">
+            <span class="icon-light">🌙</span>
+            <span class="icon-dark">☀️</span>
+        </button>
     </header>
 
     <!-- INTRO SCREEN -->
@@ -565,7 +615,7 @@
             <div id="compat-self-info" style="font-size:0.9rem; color:#C2185B; font-weight:700;">분석 정보 로딩...</div>
         </div>
 
-        <div style="background:#fff; border:1.5px solid #E1BEE7; border-radius:14px; padding:14px;">
+        <div style="background:var(--bg-card); border:1.5px solid #E1BEE7; border-radius:14px; padding:14px;">
             <div style="font-size:0.85rem; color:#4A148C; font-weight:800; margin-bottom:12px;">상대방 정보 입력</div>
             <div class="form-section">
                 <label class="form-label">이름 또는 닉네임</label>
@@ -701,7 +751,7 @@
 
 <!-- 😿 Error Modal (운명의 실이 꼬였어요) -->
 <div id="cat-error-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(74,20,140,0.55); z-index:200; justify-content:center; align-items:center; padding:20px; backdrop-filter:blur(4px);" onclick="closeCatError()">
-    <div onclick="event.stopPropagation()" style="background:#fff; border-radius:24px; padding:32px 24px; max-width:340px; width:100%; text-align:center; box-shadow:0 10px 40px rgba(74,20,140,0.3);">
+    <div onclick="event.stopPropagation()" style="background:var(--bg-card); border-radius:24px; padding:32px 24px; max-width:340px; width:100%; text-align:center; box-shadow:0 10px 40px rgba(74,20,140,0.3);">
         <div class="cat-mascot" style="margin-bottom:8px;">
             <!-- 😿 당황한 고양이 -->
             <svg width="120" height="140" viewBox="0 0 200 220">
@@ -812,11 +862,24 @@
         }[oh] || 'p-earth';
     }
 
-    function setLanguage(lang) {
-        currentLang = lang;
-        document.getElementById('btn-ko').classList.toggle('active', lang === 'ko');
-        document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+    // 🌗 라이트/다크 모드 토글
+    function toggleTheme() {
+        const current = document.documentElement.getAttribute('data-theme') || 'light';
+        const next = current === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
     }
+    // 초기 테마 적용 (저장값 → 시스템 환경 순)
+    (function initTheme() {
+        const saved = localStorage.getItem('theme');
+        if (saved === 'dark' || saved === 'light') {
+            document.documentElement.setAttribute('data-theme', saved);
+        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+            document.documentElement.setAttribute('data-theme', 'light');
+        }
+    })();
 
     function toggleAccordion(header) {
         const section = header.parentElement;
@@ -1722,7 +1785,7 @@
     function renderCompatibilityFull(data) {
         const area = document.getElementById('compat-result-area');
         const detailsHTML = data.details.map(d => `
-            <div style="background:#fff; border:1px solid #F8BBD0; border-radius:12px; padding:14px; margin-bottom:10px;">
+            <div style="background:var(--bg-card); border:1px solid #F8BBD0; border-radius:12px; padding:14px; margin-bottom:10px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                     <strong style="color:#C2185B; font-size:0.9rem;">${d.label}</strong>
                     <span style="font-size:0.7rem; color:#8D6E63;">가중치 ${d.weight}</span>
@@ -1746,7 +1809,7 @@
                 <div style="font-size:0.85rem; font-weight:800; color:#2E7D32; margin-bottom:6px;">💡 관계 조언</div>
                 <div style="font-size:0.85rem; color:#1B5E20; line-height:1.7;">${data.advice}</div>
             </div>
-            <button onclick="backToReport()" style="width:100%; margin-top:14px; padding:14px; background:#fff; border:2px solid #E1BEE7; color:#8D6E63; border-radius:14px; font-weight:700; cursor:pointer;">← 분석 결과로 돌아가기</button>`;
+            <button onclick="backToReport()" style="width:100%; margin-top:14px; padding:14px; background:var(--bg-card); border:2px solid #E1BEE7; color:#8D6E63; border-radius:14px; font-weight:700; cursor:pointer;">← 분석 결과로 돌아가기</button>`;
         area.scrollIntoView({behavior:'smooth', block:'start'});
     }
 
@@ -1805,7 +1868,7 @@
                     💎 2,900원 결제하고 12개월 다 보기
                 </button>
             </div>
-            <button onclick="backToReport()" style="width:100%; margin-top:14px; padding:14px; background:#fff; border:2px solid #E1BEE7; color:#8D6E63; border-radius:14px; font-weight:700; cursor:pointer;">← 분석 결과로 돌아가기</button>`;
+            <button onclick="backToReport()" style="width:100%; margin-top:14px; padding:14px; background:var(--bg-card); border:2px solid #E1BEE7; color:#8D6E63; border-radius:14px; font-weight:700; cursor:pointer;">← 분석 결과로 돌아가기</button>`;
     }
 
     async function purchaseYearly(meInput) {
@@ -1857,7 +1920,7 @@
                 <div style="font-size:0.85rem; color:#5E35B1; margin-top:8px;">${data.summary}</div>
             </div>
             ${monthCards}
-            <button onclick="backToReport()" style="width:100%; margin-top:14px; padding:14px; background:#fff; border:2px solid #E1BEE7; color:#8D6E63; border-radius:14px; font-weight:700; cursor:pointer;">← 분석 결과로 돌아가기</button>`;
+            <button onclick="backToReport()" style="width:100%; margin-top:14px; padding:14px; background:var(--bg-card); border:2px solid #E1BEE7; color:#8D6E63; border-radius:14px; font-weight:700; cursor:pointer;">← 분석 결과로 돌아가기</button>`;
         area.scrollIntoView({behavior:'smooth', block:'start'});
     }
 
