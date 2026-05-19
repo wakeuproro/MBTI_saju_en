@@ -44,6 +44,10 @@ app.add_middleware(
 async def read_index():
     return FileResponse("index.html")
 
+@app.get("/privacy")
+async def read_privacy():
+    return FileResponse("privacy.html")
+
 @app.get("/payment-config")
 async def payment_config():
     """프론트에서 토스 결제창 띄울 때 필요한 공개 정보"""
