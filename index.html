@@ -526,21 +526,38 @@
         document.getElementById('time_unknown_notice').style.display = unknown ? 'block' : 'none';
     }
 
-    // 생년월일 입력 검증 — 연도 4자리 강제 (1900~2099)
+    // 생년월일 입력 검증 — 연도 4자리 / 월·일 2자리 강제
     function enforceBirthDate(input) {
-        const v = input.value; // "YYYY-MM-DD" 또는 "YYYYY-MM-DD" 등
+        const v = input.value;
         if (!v) return;
-        const match = v.match(/^(\d+)-(\d{2})-(\d{2})$/);
-        if (!match) return;
-        let [_, year, mm, dd] = match;
-        // 5자리 이상이면 첫 4자리만 사용
-        if (year.length > 4) {
-            year = year.slice(0, 4);
-            input.value = `${year}-${mm}-${dd}`;
+        const parts = v.split('-');
+        if (parts.length !== 3) return;
+        let [year, mm, dd] = parts;
+
+        // 자릿수 제한
+        if (year.length > 4) year = year.slice(0, 4);
+        if (mm.length > 2)   mm   = mm.slice(0, 2);
+        if (dd.length > 2)   dd   = dd.slice(0, 2);
+
+        // 월 범위 보정 (01~12)
+        if (mm.length === 2) {
+            const m = parseInt(mm, 10);
+            if (m < 1)  mm = '01';
+            if (m > 12) mm = '12';
         }
-        // 4자리 미만은 입력 중일 수 있으니 그대로 두되, blur 시점에 보정
-        const y = parseInt(year, 10);
+        // 일 범위 보정 (01~31)
+        if (dd.length === 2) {
+            const d = parseInt(dd, 10);
+            if (d < 1)  dd = '01';
+            if (d > 31) dd = '31';
+        }
+
+        const fixed = `${year}-${mm}-${dd}`;
+        if (fixed !== v) input.value = fixed;
+
+        // 연도 범위 보정 (1900~2099)
         if (year.length === 4) {
+            const y = parseInt(year, 10);
             if (y < 1900) {
                 input.value = `1900-${mm}-${dd}`;
                 alert('생년월일은 1900년 이후만 입력 가능해요.');
