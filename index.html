@@ -96,6 +96,7 @@
         .cat-mascot.wiggle { animation: catWiggle 1.5s ease-in-out infinite; }
         @keyframes catBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
         @keyframes catWiggle { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+        @keyframes toastSlideUp { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
 
         /* Screens */
         .screen { display: none; padding: 24px 20px; }
@@ -899,6 +900,26 @@
         document.getElementById('cat-error-modal').style.display = 'none';
     }
 
+    // ✨ 가벼운 토스트 (성공 알림용)
+    function showToast(msg, kind = 'info') {
+        const existing = document.getElementById('cat-toast');
+        if (existing) existing.remove();
+        const t = document.createElement('div');
+        t.id = 'cat-toast';
+        const bgColor = kind === 'success' ? '#2E7D32' : (kind === 'warn' ? '#9C27B0' : '#4A148C');
+        t.style.cssText = `
+            position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+            background: ${bgColor}; color: white; padding: 14px 22px; border-radius: 24px;
+            font-size: 0.9rem; font-weight: 700; z-index: 300; box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+            max-width: 90%; text-align: center; line-height: 1.5;
+            animation: toastSlideUp 0.3s ease;
+        `;
+        t.innerHTML = msg;
+        document.body.appendChild(t);
+        setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; }, 2400);
+        setTimeout(() => t.remove(), 2800);
+    }
+
     function selectGender(g) {
         document.getElementById('user_gender').value = g;
         document.querySelectorAll('.gender-btn').forEach(b => {
@@ -1380,8 +1401,26 @@
         });
     }
 
-    function copyLink() {
-        navigator.clipboard.writeText(window.location.href).then(() => alert("링크가 복사되었습니다!"));
+    async function copyLink() {
+        const url = window.location.href;
+        let copied = false;
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(url);
+                copied = true;
+            }
+        } catch(_) {}
+        if (!copied) {
+            try {
+                const ta = document.createElement('textarea');
+                ta.value = url; ta.style.position='fixed'; ta.style.opacity='0';
+                document.body.appendChild(ta); ta.focus(); ta.select();
+                copied = document.execCommand('copy');
+                document.body.removeChild(ta);
+            } catch(_) {}
+        }
+        if (copied) showToast('✨ 링크가 복사됐어요!', 'success');
+        else showToast('복사에 실패했어요. 주소창에서 직접 복사해주세요.', 'warn');
     }
 
     // DEV: 무료 사용 초기화 (개발 중에만 사용)
@@ -2042,23 +2081,77 @@
     })();
 
     async function createReferralLink() {
+        // 1) 서버에서 리퍼럴 코드 받기
+        let link;
         try {
             const res = await fetch(`${API_URL}/create-referral`, { method: "POST" });
+            if (!res.ok) throw new Error(`서버 응답 ${res.status}`);
             const data = await res.json();
-            const link = `${window.location.origin}?ref=${data.code}`;
-
-            const codeEl = document.getElementById('referral-code');
-            codeEl.style.display = 'block';
-            codeEl.textContent = link;
-
-            // 클립보드 복사
-            await navigator.clipboard.writeText(link);
-            alert('공유 링크가 복사되었습니다!\n친구에게 보내주세요.');
-
-            // 공유자 보너스 기록
+            if (!data.code) throw new Error('코드 응답 없음');
+            link = `${window.location.origin}?ref=${data.code}`;
             localStorage.setItem('myReferralCode', data.code);
         } catch(e) {
-            alert('링크 생성에 실패했습니다.');
+            console.error('Referral create failed:', e);
+            showCatError('링크 생성에 실패했어요. 잠시 후 다시 시도해주세요.');
+            return;
+        }
+
+        // 2) 링크 화면에 노출 (클립보드 실패해도 사용자가 직접 복사 가능)
+        const codeEl = document.getElementById('referral-code');
+        codeEl.style.display = 'block';
+        codeEl.textContent = link;
+        codeEl.style.cursor = 'pointer';
+        codeEl.onclick = () => {
+            try { window.getSelection().selectAllChildren(codeEl); } catch(_) {}
+        };
+
+        // 3) Web Share API 우선 시도 (모바일 친화)
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: '사주 × MBTI 운명 분석',
+                    text: '나도 사주 받았어! 너도 무료로 받아봐 🐱✨',
+                    url: link
+                });
+                return;
+            } catch(shareErr) {
+                // 사용자가 공유 취소한 경우는 무시
+                if (shareErr && shareErr.name === 'AbortError') return;
+                console.warn('Share API failed:', shareErr);
+                // → 클립보드로 fallback
+            }
+        }
+
+        // 4) Clipboard API fallback
+        let copied = false;
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(link);
+                copied = true;
+            }
+        } catch(clipErr) {
+            console.warn('Clipboard API failed:', clipErr);
+        }
+
+        // 5) 최종 fallback: execCommand
+        if (!copied) {
+            try {
+                const ta = document.createElement('textarea');
+                ta.value = link;
+                ta.style.position = 'fixed';
+                ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.focus(); ta.select();
+                copied = document.execCommand('copy');
+                document.body.removeChild(ta);
+            } catch(_) {}
+        }
+
+        // 6) 결과 안내 (토스트 — 부드럽게)
+        if (copied) {
+            showToast('✨ 공유 링크가 복사됐어요!<br>친구에게 보내주세요 🐾', 'success');
+        } else {
+            showToast('아래 링크를 길게 눌러 복사해주세요 🐾', 'warn');
         }
     }
 </script>
