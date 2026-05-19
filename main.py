@@ -166,6 +166,53 @@ CHEONULGWIIN_MAP = {
     '임': ['묘', '사'], '계': ['묘', '사'],
 }
 
+# 백호대살 — 특정 (일간, 일지) 조합. 다른 기둥에 와도 인정
+BAEKHO_PAIRS = {('갑','진'), ('을','미'), ('병','술'), ('정','축'),
+                ('무','진'), ('임','술'), ('계','축')}
+
+# 양인살 — 일간 → 해당 지지가 사주에 있으면 작동
+YANGIN_MAP = {
+    '갑': '묘', '을': '진', '병': '오', '정': '미', '무': '오',
+    '기': '미', '경': '유', '신': '술', '임': '자', '계': '축'
+}
+
+# 재고(財庫) — 일간 → 재성이 들어가는 묘(墓)고 지지
+JAEGO_MAP = {
+    '갑': '축', '을': '술', '병': '축', '정': '축',
+    '무': '진', '기': '진', '경': '미', '신': '미',
+    '임': '술', '계': '술',
+}
+
+# 문창귀인 — 일간 → 지지
+MUNCHANG_MAP = {
+    '갑': '사', '을': '오', '병': '신', '정': '유', '무': '신',
+    '기': '유', '경': '해', '신': '자', '임': '인', '계': '묘'
+}
+
+# 공망 — 일주가 속한 旬(순) 기준 비어있는 2개 지지
+GONGMANG_BY_SUN = {
+    0: ['술', '해'], 1: ['신', '유'], 2: ['오', '미'],
+    3: ['진', '사'], 4: ['인', '묘'], 5: ['자', '축'],
+}
+
+def _calc_day_idx_in_60(day_gan, day_ji):
+    """일주의 60갑자 인덱스 (0=갑자, 59=계해)"""
+    CHEONGAN = ['갑','을','병','정','무','기','경','신','임','계']
+    JIJI = ['자','축','인','묘','진','사','오','미','신','유','술','해']
+    g_idx = CHEONGAN.index(day_gan)
+    j_idx = JIJI.index(day_ji)
+    for idx in range(60):
+        if idx % 10 == g_idx and idx % 12 == j_idx:
+            return idx
+    return 0
+
+
+def calc_gongmang(day_gan, day_ji):
+    """일주 기준 공망 지지 2개 반환"""
+    day_idx = _calc_day_idx_in_60(day_gan, day_ji)
+    sun = day_idx // 10
+    return GONGMANG_BY_SUN.get(sun, [])
+
 SINSAL_DATA = {
     '도화살': {
         'icon': '🌸',
@@ -202,6 +249,41 @@ SINSAL_DATA = {
         'desc': '장군별. 타고난 리더십과 카리스마의 별입니다. 조직을 이끄는 능력이 뛰어나고 권위 있는 자리에서 빛을 발합니다.',
         'tip': '책임감이 강한 만큼 부담도 클 수 있어요. 가끔은 어깨의 짐을 내려놓고 쉬어가세요.'
     },
+    '백호살': {
+        'icon': '🐅',
+        'name': '백호살 (白虎殺)',
+        'type': '추진력 · 카리스마',
+        'desc': '백호의 별. 강력한 추진력과 결단력을 타고난 신살입니다. 한번 결심하면 끝까지 밀고 나가는 폭발적 에너지가 있어요. 다만 갑작스러운 변화나 사건사고와도 인연이 있을 수 있어요.',
+        'tip': '강한 에너지를 좋은 방향으로 쓰세요. 운전·운동 시 안전 주의, 무리한 추진은 잠시 멈춰가며.'
+    },
+    '양인살': {
+        'icon': '🗡️',
+        'name': '양인살 (羊刃殺)',
+        'type': '결단력 · 강한 의지',
+        'desc': '날카로운 칼날의 별. 의지가 강하고 한번 결정하면 흔들리지 않는 단호함이 있어요. 전문직·기술직·운동선수에게서 자주 발견되며, 경쟁에서 강한 모습을 보입니다.',
+        'tip': '칼은 잘 쓰면 명검, 못 쓰면 흉기예요. 강한 자기주장 뒤에는 부드러운 마무리를 잊지 마세요.'
+    },
+    '공망': {
+        'icon': '🕳️',
+        'name': '공망 (空亡)',
+        'type': '비움 · 정신적 자유',
+        'desc': '비어있는 자리의 별. 해당 영역에서 집착을 내려놓아야 오히려 잘 풀려요. 물질보다 정신, 소유보다 경험에 끌리는 자유로운 영혼입니다. 종교·예술·연구 분야와 인연이 깊어요.',
+        'tip': '집착하면 더 멀어지고, 놓으면 다가옵니다. 비움의 미학을 즐기세요.'
+    },
+    '재고': {
+        'icon': '💰',
+        'name': '재고 (財庫)',
+        'type': '재물 창고 · 축적',
+        'desc': '재물을 모으는 창고의 별. 큰 돈을 한번에 벌기보다 꾸준히 모아 부를 쌓는 타입이에요. 부동산·저축·자산 관리에 재능이 있고, 노후에 더 풍요로워지는 사주입니다.',
+        'tip': '한 방을 노리지 마세요. 작은 돈도 잘 굴리면 큰 자산이 됩니다. 적금·연금이 당신의 친구.'
+    },
+    '문창귀인': {
+        'icon': '📚',
+        'name': '문창귀인 (文昌貴人)',
+        'type': '학문 · 시험 · 창작',
+        'desc': '학문과 글쓰기의 별. 머리가 명석하고 공부·시험에 강한 운을 타고났어요. 작가·교수·연구원·강사에게서 자주 발견되며, 자격증 취득과 시험 합격 운이 좋습니다.',
+        'tip': '시험·자격증·자기개발에 적극 도전하세요. 글쓰기·강의·콘텐츠 제작도 잘 어울려요.'
+    },
 }
 
 
@@ -212,7 +294,7 @@ def analyze_sinsal(pillars, ilgan):
 
     found = []
 
-    # 일지·년지 양쪽에서 모두 검사 (둘 중 하나라도 작동하면 인정)
+    # 1) 삼합 기준 — 도화/역마/화개/장성
     for base_ji in [day_p[1], year_p[1]]:
         group = SAMHAP_OF.get(base_ji)
         if not group:
@@ -227,11 +309,29 @@ def analyze_sinsal(pillars, ilgan):
             if target in all_jiji and name not in found:
                 found.append(name)
 
-    # 천을귀인 (일간 기준)
-    for t in CHEONULGWIIN_MAP.get(ilgan, []):
-        if t in all_jiji and '천을귀인' not in found:
-            found.append('천을귀인')
+    # 2) 일간 기준 — 천을귀인 / 문창귀인 / 양인 / 재고
+    for name, mp in [
+        ('천을귀인', CHEONULGWIIN_MAP),
+        ('문창귀인', {k: [v] for k, v in MUNCHANG_MAP.items()}),
+        ('양인살', {k: [v] for k, v in YANGIN_MAP.items()}),
+        ('재고', {k: [v] for k, v in JAEGO_MAP.items()}),
+    ]:
+        for t in mp.get(ilgan, []):
+            if t in all_jiji and name not in found:
+                found.append(name)
+                break
+
+    # 3) 백호살 — 4기둥 중 하나라도 (간,지) 조합이 일치하면 인정
+    for gan, ji in pillars:
+        if (gan, ji) in BAEKHO_PAIRS and '백호살' not in found:
+            found.append('백호살')
             break
+
+    # 4) 공망 — 일주 기준 공망 지지가 다른 기둥(년/월/시)에 있으면 인정
+    gongmang_jiji = calc_gongmang(day_p[0], day_p[1])
+    other_jiji = [year_p[1], month_p[1], time_p[1]]
+    if any(j in gongmang_jiji for j in other_jiji) and '공망' not in found:
+        found.append('공망')
 
     return [{'key': k, **SINSAL_DATA[k]} for k in found]
 
