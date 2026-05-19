@@ -1217,27 +1217,33 @@
         });
         document.getElementById("pillar-grid").innerHTML = pillarsHTML;
 
-        // Oheng Chart
-        const maxOheng = Math.max(...Object.values(r.oheng), 1);
+        // 📊 Oheng Chart (정밀 점수 + 지장간 반영)
+        const useAdvanced = r.oheng_advanced && r.oheng_advanced.pct;
+        const chartData = useAdvanced ? r.oheng_advanced.pct : r.oheng;
+        const maxVal = Math.max(...Object.values(chartData), 1);
         let chartHTML = '';
-        for (const [k, v] of Object.entries(r.oheng)) {
+        for (const [k, v] of Object.entries(chartData)) {
             const oc = OHENG_COLORS[k];
-            const height = Math.max((v / maxOheng) * 70, 8);
+            const height = Math.max((v / maxVal) * 70, 8);
+            const displayValue = useAdvanced ? `${v.toFixed(1)}%` : `${v}개`;
             chartHTML += `
                 <div class="oheng-bar-wrap">
                     <div class="oheng-bar ${oc.bar}" style="height:${height}px;"></div>
                     <div class="oheng-bar-label" style="color:${oc.color}">${OHENG_MAP[k]}(${k})</div>
-                    <div class="oheng-bar-count">${v}개</div>
+                    <div class="oheng-bar-count">${displayValue}</div>
                 </div>
             `;
         }
         document.getElementById("oheng-chart").innerHTML = chartHTML;
 
-        // Oheng advice
-        const weakest = Object.entries(r.oheng).sort((a,b) => a[1]-b[1])[0][0];
-        const strongest = Object.entries(r.oheng).sort((a,b) => b[1]-a[1])[0][0];
-        document.getElementById("oheng-advice").textContent =
-            `${OHENG_MAP[strongest]}(${strongest})의 기운이 가장 강하고, ${OHENG_MAP[weakest]}(${weakest})의 기운이 부족합니다. 부족한 ${OHENG_MAP[weakest]}의 기운을 보충해주는 것이 운의 균형을 맞추는 핵심입니다.`;
+        // Oheng advice (정밀 분석 기반)
+        const strongest = useAdvanced ? r.oheng_advanced.strongest
+            : Object.entries(r.oheng).sort((a,b) => b[1]-a[1])[0][0];
+        const weakest = useAdvanced ? r.oheng_advanced.weakest
+            : Object.entries(r.oheng).sort((a,b) => a[1]-b[1])[0][0];
+        const calcMethod = useAdvanced ? '<small style="color:var(--text-light);font-size:0.7rem;">※ 지장간·월령 가중치 반영 정밀 분석</small><br>' : '';
+        document.getElementById("oheng-advice").innerHTML =
+            `${calcMethod}<b>${OHENG_MAP[strongest]}(${strongest})</b>의 기운이 가장 강하고, <b>${OHENG_MAP[weakest]}(${weakest})</b>의 기운이 부족해요. 부족한 ${OHENG_MAP[weakest]}의 기운을 보충해주는 것이 운의 균형을 맞추는 핵심입니다.`;
 
         // Build Accordion Sections
         const container = document.getElementById("accordion-container");
@@ -1569,13 +1575,15 @@
             summaryParts.push(`✨ 핵심 신살: ${top}`);
         }
 
-        // 6줄: 오행 강약
-        if (r.oheng) {
-            const entries = Object.entries(r.oheng).sort((a,b) => b[1]-a[1]);
+        // 6줄: 오행 강약 (정밀 점수 우선)
+        const ohSource = (r.oheng_advanced && r.oheng_advanced.pct) ? r.oheng_advanced.pct : r.oheng;
+        if (ohSource) {
+            const entries = Object.entries(ohSource).sort((a,b) => b[1]-a[1]);
             const ohNames = {'木':'목(나무)','火':'화(불)','土':'토(흙)','金':'금(쇠)','水':'수(물)'};
             const strongest = entries[0];
             const weakest = entries[entries.length - 1];
-            summaryParts.push(`⚖️ 강한 기운: ${ohNames[strongest[0]]} ${strongest[1]} / 부족: ${ohNames[weakest[0]]} ${weakest[1]}`);
+            const unit = (r.oheng_advanced && r.oheng_advanced.pct) ? '%' : '';
+            summaryParts.push(`⚖️ 강한 기운: ${ohNames[strongest[0]]} ${strongest[1]}${unit} / 부족: ${ohNames[weakest[0]]} ${weakest[1]}${unit}`);
         }
 
         document.getElementById('rc-summary').innerHTML = summaryParts.join('<br>');

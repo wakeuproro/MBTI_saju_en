@@ -203,11 +203,85 @@ def calc_time_pillar(day_gan: str, hour: int):
     return CHEONGAN[time_gan_idx], JIJI[jiji_idx]
 
 def analyze_oheng(pillars):
+    """단순 카운트 (지장간 미반영, 호환용)"""
     count = {'木': 0, '火': 0, '土': 0, '金': 0, '水': 0}
     for gan, ji in pillars:
         count[CHEONGAN_OHENG[gan]] += 1
         count[JIJI_OHENG[ji]] += 1
     return count
+
+
+# ─────────────────────────────────────────────
+# 📿 지장간(支藏干) — 지지 안에 숨은 천간들
+# 본기/중기/여기 + 비율 (전통 명리 표준)
+# ─────────────────────────────────────────────
+JIJI_JANGGAN = {
+    '자': [('계', 1.0)],
+    '축': [('기', 0.6), ('계', 0.3), ('신', 0.1)],
+    '인': [('갑', 0.6), ('병', 0.3), ('무', 0.1)],
+    '묘': [('을', 1.0)],
+    '진': [('무', 0.6), ('을', 0.3), ('계', 0.1)],
+    '사': [('병', 0.6), ('경', 0.3), ('무', 0.1)],
+    '오': [('정', 0.7), ('기', 0.3)],
+    '미': [('기', 0.6), ('정', 0.3), ('을', 0.1)],
+    '신': [('경', 0.6), ('임', 0.3), ('무', 0.1)],
+    '유': [('신', 1.0)],
+    '술': [('무', 0.6), ('신', 0.3), ('정', 0.1)],
+    '해': [('임', 0.7), ('갑', 0.3)],
+}
+
+# 자리별 가중치 (월지가 가장 영향력 큼)
+PILLAR_WEIGHTS = {'year': 1.0, 'month': 2.5, 'day': 1.8, 'time': 1.0}
+JIJI_WEIGHT = 1.2   # 지지가 천간보다 약간 무겁게
+
+
+def analyze_oheng_advanced(pillars):
+    """
+    📿 정밀 오행 분석 (지장간 + 자리별 가중치)
+    pillars: [(year_gan, year_ji), (month_gan, month_ji), (day_gan, day_ji), (time_gan, time_ji)]
+
+    Returns:
+        {
+            'score': {오행→실수 점수},
+            'pct':   {오행→백분율},
+            'count': {오행→정수 막대 (시각화용)},
+            'strongest': 가장 강한 오행,
+            'weakest':   가장 약한 오행,
+        }
+    """
+    score = {'木': 0.0, '火': 0.0, '土': 0.0, '金': 0.0, '水': 0.0}
+    pillar_names = ['year', 'month', 'day', 'time']
+
+    for i, (gan, ji) in enumerate(pillars):
+        pn = pillar_names[i]
+        w = PILLAR_WEIGHTS[pn]
+
+        # 1) 천간 (드러난 오행)
+        score[CHEONGAN_OHENG[gan]] += w * 1.0
+
+        # 2) 지장간 (지지 안 숨은 오행, 본기·중기·여기)
+        for hidden_gan, ratio in JIJI_JANGGAN[ji]:
+            score[CHEONGAN_OHENG[hidden_gan]] += w * ratio * JIJI_WEIGHT
+
+    # 백분율 계산
+    total = sum(score.values()) or 1.0
+    pct = {k: round(v * 100 / total, 1) for k, v in score.items()}
+
+    # 시각화용 정수 막대 (0~10 정규화)
+    max_score = max(score.values()) or 1.0
+    count_viz = {k: max(1, round(v * 10 / max_score)) if v > 0.05 else 0 for k, v in score.items()}
+
+    sorted_items = sorted(score.items(), key=lambda x: x[1], reverse=True)
+    strongest = sorted_items[0][0]
+    weakest = sorted_items[-1][0]
+
+    return {
+        'score': {k: round(v, 2) for k, v in score.items()},
+        'pct': pct,
+        'count': count_viz,
+        'strongest': strongest,
+        'weakest': weakest,
+    }
 
 # ─────────────────────────────────────────────
 # ✨ 신살(神煞) 분석
@@ -595,7 +669,10 @@ async def get_report_analysis(birth_date: str, birth_time: str, mbti: str, lang:
     )
 
     pillars = [year_p, month_p, day_p, time_p]
-    oheng = analyze_oheng(pillars)
+    oheng_simple = analyze_oheng(pillars)              # 기본 카운트 (호환)
+    oheng_adv = analyze_oheng_advanced(pillars)        # 정밀 점수 (지장간+가중치)
+    # 시각화용 — 정밀 점수 기반 정수 막대를 oheng으로 사용
+    oheng = oheng_adv['count']
     ilgan = day_p[0]
     ilgan_name_lang = ILGAN_NAMES.get(lang, ILGAN_NAMES['ko'])[ilgan]
 
@@ -686,6 +763,7 @@ async def get_report_analysis(birth_date: str, birth_time: str, mbti: str, lang:
         },
         'ilgan': {'name': ilgan_name_lang, 'title': analysis['ilgan_title'], 'desc': analysis['ilgan_desc']},
         'oheng': oheng,
+        'oheng_advanced': oheng_adv,    # 정밀 점수 (지장간+가중치)
         'mbti': mbti,
         'synergy': {'title': analysis['synergy_title'], 'desc': analysis['synergy_desc']},
         'compatibility': {'title': analysis['compatibility_title'], 'desc': analysis['compatibility_desc']},
