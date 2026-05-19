@@ -421,7 +421,7 @@
             <label class="form-label" id="t-label-birth">생년월일 (양력)</label>
             <input type="date" class="form-input" id="birth_date" value="1995-05-15"
                    min="1900-01-01" max="2099-12-31"
-                   oninput="enforceBirthDate(this)" onblur="enforceBirthDate(this)">
+                   oninput="enforceBirthDate(this)" onchange="validateBirthDateRange(this)">
         </div>
         <div class="form-section">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -631,7 +631,7 @@
             </div>
             <div class="form-section">
                 <label class="form-label">생년월일 (양력)</label>
-                <input type="date" class="form-input" id="partner_birth_date" value="1995-01-15" min="1900-01-01" max="2099-12-31" oninput="enforceBirthDate(this)" onblur="enforceBirthDate(this)">
+                <input type="date" class="form-input" id="partner_birth_date" value="1995-01-15" min="1900-01-01" max="2099-12-31" oninput="enforceBirthDate(this)" onchange="validateBirthDateRange(this)">
             </div>
             <div class="form-section">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -908,7 +908,8 @@
         document.getElementById('time_unknown_notice').style.display = unknown ? 'block' : 'none';
     }
 
-    // 생년월일 입력 검증 — 연도 4자리 / 월·일 2자리 강제
+    // 생년월일 입력 검증 — 자릿수 초과만 silent 보정 (알림 없음)
+    // 연도 범위(1900~2099)는 onchange/제출 시점에서만 체크
     function enforceBirthDate(input) {
         const v = input.value;
         if (!v) return;
@@ -916,38 +917,32 @@
         if (parts.length !== 3) return;
         let [year, mm, dd] = parts;
 
-        // 자릿수 제한
-        if (year.length > 4) year = year.slice(0, 4);
-        if (mm.length > 2)   mm   = mm.slice(0, 2);
-        if (dd.length > 2)   dd   = dd.slice(0, 2);
+        // 자릿수 초과분만 잘라냄 (입력 중에는 알림 X)
+        let changed = false;
+        if (year.length > 4) { year = year.slice(0, 4); changed = true; }
+        if (mm.length > 2)   { mm   = mm.slice(0, 2);   changed = true; }
+        if (dd.length > 2)   { dd   = dd.slice(0, 2);   changed = true; }
+        if (changed) input.value = `${year}-${mm}-${dd}`;
+    }
 
-        // 월 범위 보정 (01~12)
-        if (mm.length === 2) {
-            const m = parseInt(mm, 10);
-            if (m < 1)  mm = '01';
-            if (m > 12) mm = '12';
+    // 연도 범위 검증 (선택을 마쳤을 때만)
+    function validateBirthDateRange(input) {
+        const v = input.value;
+        if (!v) return true;
+        const m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (!m) return true; // 형식이 미완성이면 검증 건너뜀
+        const y = parseInt(m[1], 10);
+        if (y < 1900) {
+            showCatError('생년월일은 1900년 이후로 입력해주세요.');
+            input.value = `1900-${m[2]}-${m[3]}`;
+            return false;
         }
-        // 일 범위 보정 (01~31)
-        if (dd.length === 2) {
-            const d = parseInt(dd, 10);
-            if (d < 1)  dd = '01';
-            if (d > 31) dd = '31';
+        if (y > 2099) {
+            showCatError('생년월일은 2099년 이전으로 입력해주세요.');
+            input.value = `2099-${m[2]}-${m[3]}`;
+            return false;
         }
-
-        const fixed = `${year}-${mm}-${dd}`;
-        if (fixed !== v) input.value = fixed;
-
-        // 연도 범위 보정 (1900~2099)
-        if (year.length === 4) {
-            const y = parseInt(year, 10);
-            if (y < 1900) {
-                input.value = `1900-${mm}-${dd}`;
-                alert('생년월일은 1900년 이후만 입력 가능해요.');
-            } else if (y > 2099) {
-                input.value = `2099-${mm}-${dd}`;
-                alert('생년월일은 2099년 이전까지만 입력 가능해요.');
-            }
-        }
+        return true;
     }
 
     let userInfo = { name: '', gender: 'F', timeUnknown: false };
@@ -969,15 +964,17 @@
         const mbti = document.getElementById("mbti").value;
         const name = document.getElementById("user_name").value.trim() || '당신';
         const gender = document.getElementById("user_gender").value;
-        if (!bd) return alert("생년월일을 입력해주세요.");
+        if (!bd) { showCatError("생년월일을 입력해주세요."); return; }
         // 연도 4자리 검증
         const yearMatch = bd.match(/^(\d+)-/);
         if (!yearMatch || yearMatch[1].length !== 4) {
-            return alert("생년월일의 연도는 4자리(예: 1995)로 입력해주세요.");
+            showCatError("연도는 4자리(예: 1995)로 입력해주세요.");
+            return;
         }
         const yearNum = parseInt(yearMatch[1], 10);
         if (yearNum < 1900 || yearNum > 2099) {
-            return alert("생년월일은 1900~2099년 사이로 입력해주세요.");
+            showCatError("생년월일은 1900~2099년 사이로 입력해주세요.");
+            return;
         }
 
         // 사용자 정보 보관 (렌더링용)
