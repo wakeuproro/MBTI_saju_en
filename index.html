@@ -1478,9 +1478,9 @@
         const me = userInfo || { name: '당신' };
         const myName = (me.name && me.name !== '당신') ? `${me.name}님의` : '당신의';
 
-        // 이름 타이틀
+        // 이름 타이틀 (한 줄)
         document.getElementById('rc-name').innerHTML =
-            `${myName}<br>운명 카드 <span class="rc-name-highlight">✨</span>`;
+            `${myName} 운명 카드 <span class="rc-name-highlight">✨</span>`;
 
         // 4개 정보 카드: 일간, MBTI, 띠, 신살
         const ilganShort = r.ilgan.name; // 예: "병화(丙火)"
