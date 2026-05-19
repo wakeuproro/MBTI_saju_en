@@ -638,6 +638,34 @@ class PaymentCreditInput(BaseModel):
     amount: int
     product: str  # 'additional' | 'compatibility' | 'yearly'
 
+class PersonInput(BaseModel):
+    name: str = ''
+    gender: str = 'F'
+    birth_date: str
+    birth_time: str = '12:00'
+    mbti: str
+    time_unknown: bool = False
+
+class CompatibilityInput(BaseModel):
+    person_a: PersonInput
+    person_b: PersonInput
+    # 결제 정보 (옵셔널 — 결제 검증 후 호출 시)
+    paymentKey: str = ''
+    orderId: str = ''
+    amount: int = 0
+
+class YearlyFortuneInput(BaseModel):
+    birth_date: str
+    birth_time: str = '12:00'
+    mbti: str
+    name: str = ''
+    gender: str = 'F'
+    target_year: int = 2026
+    # 결제 정보
+    paymentKey: str = ''
+    orderId: str = ''
+    amount: int = 0
+
 @app.post("/get-report")
 async def get_report(input_data: ReportInput):
     try:
@@ -832,6 +860,342 @@ async def confirm_and_get_premium(data: PaidPremiumInput):
         return payload
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"분석 생성 실패: {str(e)[:200]}")
+
+
+# ─────────────────────────────────────────────
+# 💑 두 사람 궁합 분석 (1,900원)
+# ─────────────────────────────────────────────
+
+# 오행 상생/상극 관계 (생: +2, 극: -1, 같음: +1)
+OHENG_SAENG = {'木':'火', '火':'土', '土':'金', '金':'水', '水':'木'}  # 생
+OHENG_GEUK  = {'木':'土', '土':'水', '水':'火', '火':'金', '金':'木'}  # 극
+
+def oheng_relation_score(a_oheng, b_oheng):
+    """일간 오행 기준 관계 점수"""
+    if a_oheng == b_oheng:
+        return 70, "비슷한 결, 편안한 사이"
+    if OHENG_SAENG.get(a_oheng) == b_oheng:
+        return 90, f"{a_oheng}이(가) {b_oheng}을(를) 키워주는 사이"
+    if OHENG_SAENG.get(b_oheng) == a_oheng:
+        return 90, f"{b_oheng}이(가) {a_oheng}을(를) 키워주는 사이"
+    if OHENG_GEUK.get(a_oheng) == b_oheng:
+        return 50, f"{a_oheng}이(가) {b_oheng}을(를) 제어하는 긴장 관계"
+    if OHENG_GEUK.get(b_oheng) == a_oheng:
+        return 50, f"{b_oheng}이(가) {a_oheng}을(를) 제어하는 긴장 관계"
+    return 75, "조화롭게 어우러지는 관계"
+
+
+# 띠 궁합 (간단 매핑 — 삼합/육합/육충 기반)
+SAMHAP_GROUPS_LIST = [
+    ['신','자','진'], ['인','오','술'], ['사','유','축'], ['해','묘','미']
+]
+YUKCHUNG = {'자':'오','오':'자', '축':'미','미':'축', '인':'신','신':'인',
+            '묘':'유','유':'묘', '진':'술','술':'진', '사':'해','해':'사'}
+
+def zodiac_relation(a_jiji, b_jiji):
+    if a_jiji == b_jiji:
+        return 75, "같은 띠 — 닮은 점이 많아 공감대 형성에 좋음"
+    if YUKCHUNG.get(a_jiji) == b_jiji:
+        return 45, "육충(六冲) — 정반대 성향이 부딪힐 수 있지만 자극이 큼"
+    for group in SAMHAP_GROUPS_LIST:
+        if a_jiji in group and b_jiji in group:
+            return 95, "삼합(三合) — 천생연분급 환상의 조합"
+    return 70, "무난한 띠 조합"
+
+
+# MBTI 궁합 매핑 (간단)
+MBTI_BEST = {
+    'INTJ':['ENFP','ENTP'], 'INTP':['ENTJ','ENFJ'],
+    'ENTJ':['INTP','INFP'], 'ENTP':['INTJ','INFJ'],
+    'INFJ':['ENTP','ENFP'], 'INFP':['ENTJ','ENFJ'],
+    'ENFJ':['INTP','INFP'], 'ENFP':['INTJ','INFJ'],
+    'ISTJ':['ESFP','ESTP'], 'ISFJ':['ESFP','ESTP'],
+    'ESTJ':['ISFP','ISTP'], 'ESFJ':['ISFP','ISTP'],
+    'ISTP':['ESFJ','ESTJ'], 'ISFP':['ESFJ','ENFJ'],
+    'ESTP':['ISFJ','ISTJ'], 'ESFP':['ISFJ','ISTJ'],
+}
+
+def mbti_relation(a_mbti, b_mbti):
+    if a_mbti == b_mbti:
+        return 70, "같은 MBTI — 서로의 패턴을 본능적으로 이해"
+    if b_mbti in MBTI_BEST.get(a_mbti, []):
+        return 95, "MBTI 황금 궁합 — 서로를 보완하는 환상 짝"
+    # 같은 NF/NT/SF/ST 가족
+    if a_mbti[1:3] == b_mbti[1:3]:
+        return 80, "비슷한 사고·가치관 — 대화가 잘 통하는 사이"
+    if a_mbti[2:] == b_mbti[2:]:
+        return 75, "공감 코드 일치 — 감정선이 비슷한 편"
+    return 65, "다른 색깔이 만나 서로를 배우는 관계"
+
+
+def calc_compatibility(person_a: dict, person_b: dict) -> dict:
+    """두 사람 사주 + MBTI 궁합 분석"""
+    def make_profile(p):
+        y, m, dd = map(int, p['birth_date'].split('-'))
+        h = int(p['birth_time'].split(':')[0])
+        yp = calc_year_pillar(y)
+        mp = calc_month_pillar(y, m)
+        dp = calc_day_pillar(y, m, dd)
+        tp = calc_time_pillar(dp[0], h)
+        ilgan = dp[0]
+        return {
+            'name': p.get('name') or '익명',
+            'gender': p.get('gender','F'),
+            'ilgan': ilgan,
+            'ilgan_name': ILGAN_NAMES['ko'][ilgan],
+            'ilgan_oheng': CHEONGAN_OHENG[ilgan],
+            'year_jiji': yp[1],
+            'pillars': {'year':yp,'month':mp,'day':dp,'time':tp},
+            'mbti': p['mbti'],
+        }
+
+    a = make_profile(person_a)
+    b = make_profile(person_b)
+
+    # 1) 오행 궁합
+    oh_score, oh_desc = oheng_relation_score(a['ilgan_oheng'], b['ilgan_oheng'])
+    # 2) 띠 궁합
+    z_score, z_desc = zodiac_relation(a['year_jiji'], b['year_jiji'])
+    # 3) MBTI 궁합
+    m_score, m_desc = mbti_relation(a['mbti'], b['mbti'])
+
+    total = round(oh_score * 0.4 + z_score * 0.3 + m_score * 0.3)
+
+    # 종합 등급
+    if total >= 90: grade, grade_emoji, grade_desc = 'S', '💎', '천생연분급 — 평생 함께해도 좋을 환상의 케미'
+    elif total >= 80: grade, grade_emoji, grade_desc = 'A', '⭐', '환상적 — 서로를 빛나게 해주는 관계'
+    elif total >= 70: grade, grade_emoji, grade_desc = 'B', '🌟', '좋아요 — 노력으로 더 깊어질 사이'
+    elif total >= 60: grade, grade_emoji, grade_desc = 'C', '✨', '평범 — 노력과 이해가 필요한 관계'
+    else: grade, grade_emoji, grade_desc = 'D', '⚡', '도전적 — 차이를 인정하고 배워가는 사이'
+
+    return {
+        'person_a': a,
+        'person_b': b,
+        'total_score': total,
+        'grade': grade,
+        'grade_emoji': grade_emoji,
+        'grade_desc': grade_desc,
+        'details': [
+            {'label': '오행 궁합 (일간 기준)', 'score': oh_score, 'desc': oh_desc, 'weight': '40%'},
+            {'label': '띠 궁합 (년지 기준)', 'score': z_score, 'desc': z_desc, 'weight': '30%'},
+            {'label': 'MBTI 궁합', 'score': m_score, 'desc': m_desc, 'weight': '30%'},
+        ],
+        'advice': _build_compatibility_advice(a, b, total),
+    }
+
+
+def _build_compatibility_advice(a, b, score):
+    """간단한 관계 조언"""
+    a_oh = a['ilgan_oheng']
+    b_oh = b['ilgan_oheng']
+    oh_names = {'木':'목(나무)', '火':'화(불)', '土':'토(흙)', '金':'금(금속)', '水':'수(물)'}
+    base = f"{a['name']}님({oh_names[a_oh]} 일간)과 {b['name']}님({oh_names[b_oh]} 일간)은 "
+    if score >= 80:
+        return base + "오행 흐름과 성향이 자연스럽게 맞아 큰 노력 없이도 편안한 관계를 유지할 수 있어요. 다만 익숙함에 안주하지 말고 작은 이벤트로 신선함을 유지하세요."
+    elif score >= 70:
+        return base + "기본 케미는 좋은 편이에요. 서로의 다른 점을 흥미롭게 봐주고, 가끔 작은 갈등이 와도 대화로 풀면 더 깊어집니다."
+    elif score >= 60:
+        return base + "성향 차이가 있어 처음엔 어색할 수 있어요. 서로의 다름을 인정하면 오히려 보완하는 관계가 됩니다. 인내심이 필요해요."
+    else:
+        return base + "기질적으로 도전적인 조합이에요. 하지만 어려운 관계가 깊은 관계가 되기도 합니다. 서로의 차이를 강점으로 바꿀 수 있는 대화가 핵심."
+
+
+@app.post("/get-compatibility-preview")
+async def get_compatibility_preview(data: CompatibilityInput):
+    """미리보기 (점수만, 무료) — 결제 유도용"""
+    result = calc_compatibility(data.person_a.dict(), data.person_b.dict())
+    # 상세 항목 가리고 점수+등급만 노출
+    return {
+        'total_score': result['total_score'],
+        'grade': result['grade'],
+        'grade_emoji': result['grade_emoji'],
+        'grade_desc': result['grade_desc'],
+        'person_a_summary': {'name': result['person_a']['name'], 'ilgan': result['person_a']['ilgan_name'], 'mbti': result['person_a']['mbti']},
+        'person_b_summary': {'name': result['person_b']['name'], 'ilgan': result['person_b']['ilgan_name'], 'mbti': result['person_b']['mbti']},
+        'locked': True,
+        'unlock_price': PRODUCT_PRICES['compatibility'],
+    }
+
+
+@app.post("/confirm-and-get-compatibility")
+async def confirm_and_get_compatibility(data: CompatibilityInput):
+    """토스 결제 검증 → 통과 시 궁합 상세 반환"""
+    expected = PRODUCT_PRICES['compatibility']
+    if data.amount != expected:
+        raise HTTPException(status_code=400, detail=f"잘못된 결제 금액 (요청: {data.amount}원, 정가: {expected}원)")
+
+    await _verify_toss_payment(data.paymentKey, data.orderId, data.amount)
+
+    result = calc_compatibility(data.person_a.dict(), data.person_b.dict())
+    result['unlocked'] = True
+    return result
+
+
+# ─────────────────────────────────────────────
+# 📅 월별 운세 (2,900원)
+# ─────────────────────────────────────────────
+
+MONTH_THEMES_BY_OHENG = {
+    '木': {  # 일간이 목
+        1: ('새싹의 결심', '한 해 목표를 세우기 좋은 달. 너무 욕심내지 말고 한 가지 핵심에 집중하세요.'),
+        2: ('뿌리 다지기', '기반을 다지는 시기. 새로운 인맥보다 기존 관계 관리에 집중하면 좋습니다.'),
+        3: ('성장의 봄', '본격적인 도약기. 미뤄둔 계획을 실행에 옮길 최적의 시기예요.'),
+        4: ('가지를 뻗다', '활동 반경을 넓힐 때. 출장·교류·이직 검토에 우호적입니다.'),
+        5: ('꽃 피우다', '결실의 전조가 보이는 달. 협업과 파트너십에서 행운이 따릅니다.'),
+        6: ('잎이 무성', '에너지 충만한 달. 단, 과로 주의. 휴식과 운동 병행 필수.'),
+        7: ('태양 아래', '재능을 알리고 인정받을 기회. 적극적인 자기 홍보를 추천.'),
+        8: ('열매 익다', '그간의 노력이 보상으로 돌아오는 달. 금전 운 양호.'),
+        9: ('가을의 정돈', '계획을 점검하고 군더더기 정리. 인간관계도 슬림화하세요.'),
+        10: ('단풍의 결실', '한 분야의 마무리를 짓고 새로운 도전 준비.'),
+        11: ('낙엽의 휴식', '안으로 들어가 회복하는 달. 무리한 결정 보류.'),
+        12: ('겨울의 저장', '내년을 위한 학습·휴식. 큰 지출은 자제하세요.'),
+    },
+    '火': {
+        1: ('불꽃의 시작', '의욕 폭발하는 달. 새 도전이 좋지만 사람과 부딪힘 주의.'),
+        2: ('열기 모으기', '하나에 집중하기 좋은 시기. 다중 작업은 피하세요.'),
+        3: ('활활 타오름', '인기와 주목이 따르는 달. 사교 활동에 우호적.'),
+        4: ('태양 정점', '리더십 발휘의 최적기. 발표·면접·승부에 강함.'),
+        5: ('축제의 달', '연애·사교·창작 모두 좋은 시기. 표현력 최고.'),
+        6: ('과열 주의', '에너지가 너무 강해 충돌 가능. 한 박자 쉬어가세요.'),
+        7: ('빛이 깊어짐', '진정성 있는 관계가 깊어지는 달.'),
+        8: ('석양의 따뜻함', '나누고 베푸는 활동에서 보람을 얻어요.'),
+        9: ('등불의 시기', '집중·연구에 좋은 달. 자기 계발 추천.'),
+        10: ('숯의 안정', '드러나지 않게 실력을 쌓는 시기.'),
+        11: ('잿불의 휴식', '깊은 사색과 명상이 도움. 결정은 보류.'),
+        12: ('등불 켜기', '내면의 빛을 다시 켜는 달. 가족과의 시간 ↑.'),
+    },
+    '土': {
+        1: ('대지의 봄 준비', '기초를 다지는 시기. 부동산·자산 점검에 우호적.'),
+        2: ('씨앗 심기', '장기 계획을 세우기 좋은 달. 신중한 결정을.'),
+        3: ('토양 정비', '환경 정리·이사·인테리어에 좋은 시기.'),
+        4: ('새싹 돕기', '주변을 챙기는 행동이 복으로 돌아오는 달.'),
+        5: ('풍요의 시작', '재물·인덕이 함께 들어오는 시기.'),
+        6: ('수확 준비', '결과물을 정리하고 평가받는 달.'),
+        7: ('황금 들판', '재물운 최고조. 부동산·투자 검토 OK.'),
+        8: ('곡식 거두기', '구체적 성과가 손에 잡히는 달.'),
+        9: ('창고 채우기', '저축·자산 관리에 우호적. 큰 지출 자제.'),
+        10: ('대지의 휴식', '내실 다지기. 인간관계 정리도 좋은 시기.'),
+        11: ('얼어붙는 땅', '활동 자제하고 내면 충전. 건강 관리 ↑.'),
+        12: ('봄을 기다림', '내년 큰 그림을 그리는 사색의 시기.'),
+    },
+    '金': {
+        1: ('칼날의 점검', '체계와 원칙을 세우기 좋은 시기. 정리정돈에 우호적.'),
+        2: ('단련의 달', '실력 연마·자격증 도전에 유리.'),
+        3: ('결단의 시기', '중요한 결정을 내리기 좋은 달. 우유부단 X.'),
+        4: ('연마된 빛', '실력이 인정받기 시작하는 시기.'),
+        5: ('투쟁의 봄', '경쟁 상황에서 강함. 승부 기회 적극 활용.'),
+        6: ('차분한 정돈', '시끄러움에서 거리두기. 혼자만의 시간 필요.'),
+        7: ('수확의 가을', '오래 준비한 일의 결실이 보이는 달.'),
+        8: ('명검의 시기', '금(金)의 최절정. 권위·승진·계약에 강함.'),
+        9: ('마무리의 달', '한 사이클을 깔끔히 닫고 정산하는 시기.'),
+        10: ('서리 내림', '날카로움 ↑. 인간관계 갈등 주의.'),
+        11: ('얼음의 강함', '결정력 최고지만 차갑게 보일 수 있음. 부드러움 필요.'),
+        12: ('재단의 시기', '내년 계획을 정밀하게 짜는 달.'),
+    },
+    '水': {
+        1: ('얼음 아래 흐름', '드러나지 않게 준비하는 시기. 학습·연구 우호적.'),
+        2: ('해빙의 시작', '얼었던 일들이 풀리기 시작. 인간관계 회복 ↑.'),
+        3: ('샘물이 솟다', '직관과 영감이 강해지는 달. 창작·기획에 강함.'),
+        4: ('시냇물 흐름', '새로운 사람과의 인연. 네트워킹 적극 권장.'),
+        5: ('강이 넓어짐', '활동 반경 확대. 여행·이동에 우호적.'),
+        6: ('수원지 충만', '에너지가 가장 풍부한 시기. 큰 일 도전 OK.'),
+        7: ('호수의 깊이', '내면이 깊어지는 달. 통찰과 지혜가 빛남.'),
+        8: ('파도의 변화', '갑작스러운 변화 가능. 유연하게 대응.'),
+        9: ('가을 비', '감정이 풍부해지는 시기. 예술·문학과의 인연.'),
+        10: ('서리의 결정', '재정 정리·관계 정리에 좋은 달.'),
+        11: ('겨울 강', '내면 깊이 침잠. 명상·휴식 권장.'),
+        12: ('얼음의 결정', '한 해를 정리하고 응축하는 시기.'),
+    },
+}
+
+def build_yearly_fortune(birth_date: str, birth_time: str, mbti: str, year: int):
+    """년주의 오행 흐름과 사용자 일간을 비교한 월별 운세"""
+    y, m, dd = map(int, birth_date.split('-'))
+    h = int(birth_time.split(':')[0])
+    dp = calc_day_pillar(y, m, dd)
+    ilgan = dp[0]
+    ilgan_oheng = CHEONGAN_OHENG[ilgan]
+    ilgan_name = ILGAN_NAMES['ko'][ilgan]
+
+    base_themes = MONTH_THEMES_BY_OHENG.get(ilgan_oheng, MONTH_THEMES_BY_OHENG['木'])
+
+    # 12개 월별 데이터
+    MONTH_LABELS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월']
+    SEASON = {'봄':[3,4,5],'여름':[6,7,8],'가을':[9,10,11],'겨울':[12,1,2]}
+    def season_of(mon):
+        for s, ms in SEASON.items():
+            if mon in ms: return s
+        return ''
+
+    months = []
+    for mon in range(1, 13):
+        title, desc = base_themes[mon]
+        target_p = calc_month_pillar(year, mon)
+        months.append({
+            'month': mon,
+            'label': MONTH_LABELS[mon-1],
+            'season': season_of(mon),
+            'pillar': f'{target_p[0]}{target_p[1]}',
+            'pillar_oheng': CHEONGAN_OHENG[target_p[0]],
+            'title': title,
+            'desc': desc,
+        })
+
+    # 베스트/주의 월 표시
+    luck_scores = []
+    for mo in months:
+        # 일간 오행과 월주 천간 오행의 관계로 점수
+        ti = ilgan_oheng
+        mo_oh = mo['pillar_oheng']
+        if ti == mo_oh: s = 75
+        elif OHENG_SAENG.get(mo_oh) == ti: s = 90  # 월이 나를 생함
+        elif OHENG_SAENG.get(ti) == mo_oh: s = 80  # 내가 월을 생함
+        elif OHENG_GEUK.get(mo_oh) == ti: s = 50   # 월이 나를 극함
+        elif OHENG_GEUK.get(ti) == mo_oh: s = 65
+        else: s = 70
+        luck_scores.append(s)
+        mo['luck'] = s
+
+    best = max(range(12), key=lambda i: luck_scores[i])
+    worst = min(range(12), key=lambda i: luck_scores[i])
+
+    return {
+        'year': year,
+        'ilgan': ilgan_name,
+        'ilgan_oheng_korean': {'木':'목','火':'화','土':'토','金':'금','水':'수'}[ilgan_oheng],
+        'months': months,
+        'best_month': {'label': months[best]['label'], 'reason': f"{months[best]['pillar']} — {months[best]['title']}"},
+        'caution_month': {'label': months[worst]['label'], 'reason': f"{months[worst]['pillar']} — {months[worst]['title']}"},
+        'summary': f"{year}년 {ilgan_name}에게 가장 빛나는 달은 {months[best]['label']}, 신중해야 할 달은 {months[worst]['label']}이에요.",
+    }
+
+
+@app.post("/get-yearly-fortune-preview")
+async def yearly_preview(data: YearlyFortuneInput):
+    """미리보기 — 결제 유도용 (요약만)"""
+    result = build_yearly_fortune(data.birth_date, data.birth_time, data.mbti, data.target_year)
+    return {
+        'year': result['year'],
+        'ilgan': result['ilgan'],
+        'best_month': result['best_month'],
+        'caution_month': result['caution_month'],
+        'summary': result['summary'],
+        'locked': True,
+        'unlock_price': PRODUCT_PRICES['yearly'],
+    }
+
+
+@app.post("/confirm-and-get-yearly-fortune")
+async def confirm_and_get_yearly(data: YearlyFortuneInput):
+    """결제 검증 → 12개월 전체 응답"""
+    expected = PRODUCT_PRICES['yearly']
+    if data.amount != expected:
+        raise HTTPException(status_code=400, detail=f"잘못된 결제 금액 (요청: {data.amount}원, 정가: {expected}원)")
+    await _verify_toss_payment(data.paymentKey, data.orderId, data.amount)
+
+    result = build_yearly_fortune(data.birth_date, data.birth_time, data.mbti, data.target_year)
+    result['unlocked'] = True
+    return result
 
 
 @app.post("/confirm-payment-credit")

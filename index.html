@@ -410,6 +410,16 @@
             <button class="share-btn copy" onclick="copyLink()">링크 복사</button>
         </div>
 
+        <!-- 추가 서비스 CTA -->
+        <div style="display: flex; gap: 8px; margin: 12px 0;">
+            <button onclick="openCompatibilityScreen()" style="flex:1; padding:14px; background:#FCE4EC; border:1.5px solid #F8BBD0; color:#C2185B; border-radius:14px; font-size:0.85rem; font-weight:800; cursor:pointer;">
+                💕 궁합 분석<br><span style="font-size:0.7rem; font-weight:600;">1,900원</span>
+            </button>
+            <button onclick="openYearlyScreen()" style="flex:1; padding:14px; background:#EDE7F6; border:1.5px solid #D1C4E9; color:#5E35B1; border-radius:14px; font-size:0.85rem; font-weight:800; cursor:pointer;">
+                📅 2026 월별 운세<br><span style="font-size:0.7rem; font-weight:600;">2,900원</span>
+            </button>
+        </div>
+
         <!-- Retry -->
         <button class="retry-btn" onclick="location.reload()">다시 분석하기</button>
 
@@ -424,6 +434,95 @@
         </div>
     </div>
 </div>
+
+    <!-- COMPATIBILITY SCREEN -->
+    <div id="compat-screen" class="screen">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:16px;">
+            <button onclick="backToReport()" style="background:none; border:none; font-size:1.4rem; cursor:pointer; color:#8D6E63;">←</button>
+            <h2 style="font-size:1.2rem; color:#C2185B; font-weight:900;">💕 두 사람 궁합 분석</h2>
+        </div>
+        <p style="font-size:0.85rem; color:#8D6E63; margin-bottom:16px; line-height:1.6;">
+            상대방의 정보를 입력하면 사주 + MBTI 기반 궁합을 계산해드려요. 점수 미리보기는 무료!
+        </p>
+
+        <div style="background:#FCE4EC; border:1.5px solid #F8BBD0; border-radius:14px; padding:14px; margin-bottom:16px;">
+            <div style="font-size:0.78rem; color:#8D6E63; margin-bottom:6px; font-weight:700;">나 (자동 입력)</div>
+            <div id="compat-self-info" style="font-size:0.9rem; color:#C2185B; font-weight:700;">분석 정보 로딩...</div>
+        </div>
+
+        <div style="background:#fff; border:1.5px solid #FFE0B2; border-radius:14px; padding:14px;">
+            <div style="font-size:0.85rem; color:#BF360C; font-weight:800; margin-bottom:12px;">상대방 정보 입력</div>
+            <div class="form-section">
+                <label class="form-label">이름 또는 닉네임</label>
+                <input type="text" class="form-input" id="partner_name" placeholder="예: 박지훈" maxlength="20">
+            </div>
+            <div class="form-section">
+                <label class="form-label">성별</label>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" class="gender-btn" data-pgender="F" onclick="selectPartnerGender('F')">여자</button>
+                    <button type="button" class="gender-btn active" data-pgender="M" onclick="selectPartnerGender('M')">남자</button>
+                </div>
+                <input type="hidden" id="partner_gender" value="M">
+            </div>
+            <div class="form-section">
+                <label class="form-label">생년월일 (양력)</label>
+                <input type="date" class="form-input" id="partner_birth_date" value="1995-01-15" min="1900-01-01" max="2099-12-31" oninput="enforceBirthDate(this)" onblur="enforceBirthDate(this)">
+            </div>
+            <div class="form-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label class="form-label" style="margin-bottom:0;">태어난 시간</label>
+                    <label style="display:flex; align-items:center; gap:6px; font-size:0.78rem; color:#8D6E63; cursor:pointer;">
+                        <input type="checkbox" id="partner_time_unknown" onchange="togglePartnerTimeUnknown()" style="width:14px; height:14px; accent-color:#FF6D00;">
+                        <span>시간 모름</span>
+                    </label>
+                </div>
+                <div style="display: flex; gap: 8px;" id="partner_time_inputs">
+                    <select class="form-select" id="partner_ampm" style="flex: 1;">
+                        <option value="AM">AM</option>
+                        <option value="PM" selected>PM</option>
+                    </select>
+                    <select class="form-select" id="partner_hour" style="flex: 1;">
+                        <option value="12">12</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option>
+                    </select>
+                    <select class="form-select" id="partner_min" style="flex: 1;">
+                        <option value="00">00</option><option value="10">10</option><option value="20">20</option><option value="30">30</option><option value="40">40</option><option value="50">50</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-section">
+                <label class="form-label">MBTI</label>
+                <select class="form-select" id="partner_mbti">
+                    <option value="INTJ">INTJ</option><option value="INTP">INTP</option>
+                    <option value="ENTJ">ENTJ</option><option value="ENTP">ENTP</option>
+                    <option value="INFJ">INFJ</option><option value="INFP">INFP</option>
+                    <option value="ENFJ">ENFJ</option><option value="ENFP">ENFP</option>
+                    <option value="ISTJ">ISTJ</option><option value="ISFJ">ISFJ</option>
+                    <option value="ESTJ">ESTJ</option><option value="ESFJ">ESFJ</option>
+                    <option value="ISTP">ISTP</option><option value="ISFP" selected>ISFP</option>
+                    <option value="ESTP">ESTP</option><option value="ESFP">ESFP</option>
+                </select>
+            </div>
+        </div>
+
+        <button onclick="getCompatibilityPreview()" style="width:100%; margin-top:14px; padding:16px; background:linear-gradient(135deg,#EC407A,#C2185B); color:#fff; border:none; border-radius:14px; font-size:1rem; font-weight:900; cursor:pointer;">
+            ✨ 무료로 점수 보기
+        </button>
+
+        <!-- 결과 표시 영역 -->
+        <div id="compat-result-area" style="margin-top:20px;"></div>
+    </div>
+
+    <!-- YEARLY FORTUNE SCREEN -->
+    <div id="yearly-screen" class="screen">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:16px;">
+            <button onclick="backToReport()" style="background:none; border:none; font-size:1.4rem; cursor:pointer; color:#8D6E63;">←</button>
+            <h2 style="font-size:1.2rem; color:#5E35B1; font-weight:900;">📅 2026 월별 운세</h2>
+        </div>
+        <p style="font-size:0.85rem; color:#8D6E63; margin-bottom:16px; line-height:1.6;">
+            2026년 한 해 12개월의 흐름을 한눈에! 가장 빛나는 달과 신중해야 할 달을 미리 알아보세요.
+        </p>
+        <div id="yearly-result-area"></div>
+    </div>
 
 <!-- Floating CTA -->
 <div class="floating-cta" id="floating-cta">
@@ -933,11 +1032,11 @@
             closePaymentModal();
             await purchaseAdditionalAnalysisCredit();
         } else if (type === 'compatibility') {
-            alert('💕 두 사람 궁합 분석은 곧 오픈 예정입니다!\n지금은 먼저 \'프리미엄 해석 열기\'를 이용해보세요.');
             closePaymentModal();
+            openCompatibilityScreen();
         } else if (type === 'yearly') {
-            alert('📅 2026년 상세 운세는 곧 오픈 예정입니다!\n지금은 먼저 \'프리미엄 해석 열기\'를 이용해보세요.');
             closePaymentModal();
+            openYearlyScreen();
         }
     }
 
@@ -1154,6 +1253,57 @@
         }
         const input = JSON.parse(stored);
 
+        // ✦ 궁합 분석 결제 처리
+        if (kind === 'compat') {
+            const { personA, personB } = input;
+            document.getElementById("loading").classList.add("active");
+            document.querySelector(".loading-text").textContent = "궁합 분석 중...";
+            try {
+                const res = await fetch(`${API_URL}/confirm-and-get-compatibility`, {
+                    method: 'POST',
+                    headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({ person_a: personA, person_b: personB, paymentKey, orderId, amount })
+                });
+                const data = await res.json();
+                if (!res.ok) { alert(`결제 검증 실패: ${data.detail || ''}`); return; }
+                showScreen('compat-screen');
+                document.getElementById('compat-self-info').textContent = `${personA.name === '당신' ? '나' : personA.name + '님'} · ${personA.mbti}`;
+                renderCompatibilityFull(data);
+                localStorage.removeItem(`pending_${orderId}`);
+            } catch(e) {
+                console.error(e); alert('궁합 응답 실패');
+            } finally {
+                document.getElementById("loading").classList.remove("active");
+                document.querySelector(".loading-text").textContent = "운명을 해석하고 있습니다...";
+            }
+            return;
+        }
+
+        // ✦ 월별 운세 결제 처리
+        if (kind === 'yearly') {
+            const meInput = input.meInput;
+            document.getElementById("loading").classList.add("active");
+            document.querySelector(".loading-text").textContent = "월별 운세 생성 중...";
+            try {
+                const res = await fetch(`${API_URL}/confirm-and-get-yearly-fortune`, {
+                    method: 'POST',
+                    headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({ ...meInput, target_year: 2026, paymentKey, orderId, amount })
+                });
+                const data = await res.json();
+                if (!res.ok) { alert(`결제 검증 실패: ${data.detail || ''}`); return; }
+                showScreen('yearly-screen');
+                renderYearlyFull(data);
+                localStorage.removeItem(`pending_${orderId}`);
+            } catch(e) {
+                console.error(e); alert('월별 운세 응답 실패');
+            } finally {
+                document.getElementById("loading").classList.remove("active");
+                document.querySelector(".loading-text").textContent = "운명을 해석하고 있습니다...";
+            }
+            return;
+        }
+
         // ✦ 추가 분석 권한 구매 처리
         if (kind === 'credit') {
             const product = params.get('product') || 'additional';
@@ -1228,6 +1378,285 @@
 
     // 페이지 로드 시 결제 결과 자동 처리
     document.addEventListener('DOMContentLoaded', handlePaymentReturn);
+
+    // ═══════════════════════════════════════════════
+    // 💕 두 사람 궁합 분석
+    // ═══════════════════════════════════════════════
+    function selectPartnerGender(g) {
+        document.getElementById('partner_gender').value = g;
+        document.querySelectorAll('[data-pgender]').forEach(b => {
+            b.classList.toggle('active', b.dataset.pgender === g);
+        });
+    }
+    function togglePartnerTimeUnknown() {
+        const unknown = document.getElementById('partner_time_unknown').checked;
+        document.getElementById('partner_time_inputs').style.display = unknown ? 'none' : 'flex';
+    }
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        document.getElementById('floating-cta').style.display = 'none';
+        window.scrollTo(0,0);
+    }
+    function backToReport() {
+        if (reportData) {
+            showScreen('report-screen');
+            document.getElementById('floating-cta').style.display = 'block';
+        } else {
+            showScreen('intro-screen');
+        }
+    }
+    function openCompatibilityScreen() {
+        if (!reportData) { alert('먼저 내 사주 분석을 진행해주세요.'); return; }
+        // 내 정보 표시
+        const selfInput = collectAnalysisInput();
+        const selfSummary = `${selfInput.name === '당신' ? '나' : selfInput.name + '님'} · ${reportData.ilgan.name} · ${selfInput.mbti}`;
+        document.getElementById('compat-self-info').textContent = selfSummary;
+        document.getElementById('compat-result-area').innerHTML = '';
+        showScreen('compat-screen');
+    }
+    function collectPartnerInput() {
+        const bd = document.getElementById('partner_birth_date').value;
+        const tu = document.getElementById('partner_time_unknown').checked;
+        let bt;
+        if (tu) {
+            bt = '12:00';
+        } else {
+            const ampm = document.getElementById('partner_ampm').value;
+            let h = parseInt(document.getElementById('partner_hour').value);
+            const min = document.getElementById('partner_min').value;
+            if (ampm === 'PM' && h !== 12) h += 12;
+            if (ampm === 'AM' && h === 12) h = 0;
+            bt = `${h.toString().padStart(2,'0')}:${min}`;
+        }
+        return {
+            name: document.getElementById('partner_name').value.trim() || '상대방',
+            gender: document.getElementById('partner_gender').value,
+            birth_date: bd,
+            birth_time: bt,
+            mbti: document.getElementById('partner_mbti').value,
+            time_unknown: tu,
+        };
+    }
+
+    async function getCompatibilityPreview() {
+        const me = collectAnalysisInput();
+        const you = collectPartnerInput();
+        if (!you.birth_date) { alert('상대방의 생년월일을 입력해주세요.'); return; }
+
+        document.getElementById("loading").classList.add("active");
+        document.querySelector(".loading-text").textContent = "두 사람 궁합 계산 중...";
+
+        try {
+            const personA = { name: me.name, gender: me.gender, birth_date: me.birth_date, birth_time: me.birth_time, mbti: me.mbti, time_unknown: me.time_unknown };
+            const res = await fetch(`${API_URL}/get-compatibility-preview`, {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ person_a: personA, person_b: you })
+            });
+            const data = await res.json();
+            if (!res.ok) { alert(data.detail || '계산 실패'); return; }
+            renderCompatibilityPreview(data, personA, you);
+        } catch(e) {
+            console.error(e); alert('서버 연결 실패');
+        } finally {
+            document.getElementById("loading").classList.remove("active");
+            document.querySelector(".loading-text").textContent = "운명을 해석하고 있습니다...";
+        }
+    }
+
+    function renderCompatibilityPreview(data, personA, personB) {
+        const area = document.getElementById('compat-result-area');
+        area.innerHTML = `
+            <div style="background:linear-gradient(135deg,#FCE4EC,#F8BBD0); border:2px solid #F48FB1; border-radius:20px; padding:24px; text-align:center;">
+                <div style="font-size:4rem; margin-bottom:8px;">${data.grade_emoji}</div>
+                <div style="font-size:2.4rem; font-weight:900; color:#C2185B; line-height:1;">${data.total_score}<span style="font-size:1rem;">점</span></div>
+                <div style="font-size:1.1rem; font-weight:800; color:#C2185B; margin-top:6px;">등급: ${data.grade}</div>
+                <div style="font-size:0.85rem; color:#6D4C41; margin-top:12px; padding:10px; background:rgba(255,255,255,0.6); border-radius:10px;">${data.grade_desc}</div>
+                <div style="display:flex; gap:10px; margin-top:14px; font-size:0.78rem;">
+                    <div style="flex:1; padding:8px; background:rgba(255,255,255,0.5); border-radius:8px;">
+                        <strong>${data.person_a_summary.name}</strong><br>${data.person_a_summary.ilgan} · ${data.person_a_summary.mbti}
+                    </div>
+                    <div style="flex:1; padding:8px; background:rgba(255,255,255,0.5); border-radius:8px;">
+                        <strong>${data.person_b_summary.name}</strong><br>${data.person_b_summary.ilgan} · ${data.person_b_summary.mbti}
+                    </div>
+                </div>
+            </div>
+            <div style="background:#F3E5F5; border:1.5px solid #CE93D8; border-radius:16px; padding:20px; margin-top:16px; text-align:center;">
+                <div style="font-size:0.95rem; font-weight:800; color:#6A1B9A; margin-bottom:6px;">🔓 상세 궁합 분석 잠금 해제</div>
+                <div style="font-size:0.82rem; color:#7B1FA2; margin-bottom:14px;">오행/띠/MBTI 3종 상세 분석 + 맞춤 조언</div>
+                <button onclick='purchaseCompatibility(${JSON.stringify(personA)}, ${JSON.stringify(personB)})' style="padding:14px 30px; background:linear-gradient(135deg,#7B1FA2,#9C27B0); color:#fff; border:none; border-radius:14px; font-size:0.95rem; font-weight:800; cursor:pointer;">
+                    💎 1,900원 결제하고 상세 보기
+                </button>
+            </div>`;
+        area.scrollIntoView({behavior:'smooth', block:'start'});
+    }
+
+    async function purchaseCompatibility(personA, personB) {
+        if (typeof TossPayments === 'undefined') { alert('결제 모듈 로드 중'); return; }
+        try {
+            const cfg = await ensureTossConfig();
+            const orderId = `compat_${Date.now()}_${Math.random().toString(36).slice(2,10)}`;
+            localStorage.setItem(`pending_${orderId}`, JSON.stringify({ kind:'compatibility', personA, personB }));
+
+            const tp = TossPayments(cfg.client_key);
+            const payment = tp.payment({ customerKey: TossPayments.ANONYMOUS });
+            await payment.requestPayment({
+                method: 'CARD',
+                amount: { currency: 'KRW', value: 1900 },
+                orderId,
+                orderName: '두 사람 궁합 분석',
+                customerName: personA.name,
+                successUrl: `${window.location.origin}${window.location.pathname}?payment=success&kind=compat`,
+                failUrl: `${window.location.origin}${window.location.pathname}?payment=fail`,
+            });
+        } catch(e) {
+            if (e && e.code === 'USER_CANCEL') return;
+            alert(`결제창 오류: ${e.message || e}`);
+        }
+    }
+
+    function renderCompatibilityFull(data) {
+        const area = document.getElementById('compat-result-area');
+        const detailsHTML = data.details.map(d => `
+            <div style="background:#fff; border:1px solid #F8BBD0; border-radius:12px; padding:14px; margin-bottom:10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <strong style="color:#C2185B; font-size:0.9rem;">${d.label}</strong>
+                    <span style="font-size:0.7rem; color:#8D6E63;">가중치 ${d.weight}</span>
+                </div>
+                <div style="font-size:1.4rem; font-weight:900; color:#C2185B;">${d.score}점</div>
+                <div style="font-size:0.85rem; color:#5D4037; margin-top:6px;">${d.desc}</div>
+            </div>`).join('');
+
+        area.innerHTML = `
+            <div style="background:linear-gradient(135deg,#FCE4EC,#F8BBD0); border:2px solid #F48FB1; border-radius:20px; padding:24px; text-align:center;">
+                <div style="font-size:4rem; margin-bottom:8px;">${data.grade_emoji}</div>
+                <div style="font-size:2.4rem; font-weight:900; color:#C2185B; line-height:1;">${data.total_score}<span style="font-size:1rem;">점</span></div>
+                <div style="font-size:1.1rem; font-weight:800; color:#C2185B; margin-top:6px;">등급: ${data.grade}</div>
+                <div style="font-size:0.85rem; color:#6D4C41; margin-top:12px; padding:10px; background:rgba(255,255,255,0.6); border-radius:10px;">${data.grade_desc}</div>
+            </div>
+            <div style="margin-top:16px;">
+                <h3 style="font-size:0.95rem; font-weight:800; color:#C2185B; margin-bottom:10px;">📊 상세 점수 (잠금 해제)</h3>
+                ${detailsHTML}
+            </div>
+            <div style="background:#E8F5E9; border:1.5px solid #C8E6C9; border-radius:14px; padding:16px; margin-top:14px;">
+                <div style="font-size:0.85rem; font-weight:800; color:#2E7D32; margin-bottom:6px;">💡 관계 조언</div>
+                <div style="font-size:0.85rem; color:#1B5E20; line-height:1.7;">${data.advice}</div>
+            </div>
+            <button onclick="backToReport()" style="width:100%; margin-top:14px; padding:14px; background:#fff; border:2px solid #FFE0B2; color:#8D6E63; border-radius:14px; font-weight:700; cursor:pointer;">← 분석 결과로 돌아가기</button>`;
+        area.scrollIntoView({behavior:'smooth', block:'start'});
+    }
+
+    // ═══════════════════════════════════════════════
+    // 📅 2026 월별 운세
+    // ═══════════════════════════════════════════════
+    async function openYearlyScreen() {
+        if (!reportData) { alert('먼저 내 사주 분석을 진행해주세요.'); return; }
+        showScreen('yearly-screen');
+        const me = collectAnalysisInput();
+        document.getElementById("loading").classList.add("active");
+        document.querySelector(".loading-text").textContent = "2026년 운세 미리보기 생성 중...";
+
+        try {
+            const res = await fetch(`${API_URL}/get-yearly-fortune-preview`, {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ ...me, target_year: 2026 })
+            });
+            const data = await res.json();
+            if (!res.ok) { alert(data.detail || '미리보기 실패'); return; }
+            renderYearlyPreview(data, me);
+        } catch(e) {
+            console.error(e); alert('서버 연결 실패');
+        } finally {
+            document.getElementById("loading").classList.remove("active");
+            document.querySelector(".loading-text").textContent = "운명을 해석하고 있습니다...";
+        }
+    }
+
+    function renderYearlyPreview(data, meInput) {
+        const area = document.getElementById('yearly-result-area');
+        area.innerHTML = `
+            <div style="background:linear-gradient(135deg,#EDE7F6,#D1C4E9); border:2px solid #B39DDB; border-radius:20px; padding:24px; text-align:center;">
+                <div style="font-size:0.85rem; color:#5E35B1; font-weight:700;">2026년 ${data.ilgan}의 한 해</div>
+                <div style="font-size:1rem; color:#4527A0; margin-top:12px; padding:12px; background:rgba(255,255,255,0.6); border-radius:10px; line-height:1.6;">
+                    ${data.summary}
+                </div>
+                <div style="display:flex; gap:10px; margin-top:14px;">
+                    <div style="flex:1; padding:12px; background:#E8F5E9; border-radius:10px;">
+                        <div style="font-size:0.7rem; color:#2E7D32; font-weight:700;">✨ 가장 빛나는 달</div>
+                        <div style="font-size:1.1rem; font-weight:900; color:#1B5E20; margin-top:4px;">${data.best_month.label}</div>
+                        <div style="font-size:0.72rem; color:#388E3C; margin-top:4px;">${data.best_month.reason}</div>
+                    </div>
+                    <div style="flex:1; padding:12px; background:#FBE9E7; border-radius:10px;">
+                        <div style="font-size:0.7rem; color:#BF360C; font-weight:700;">⚠️ 신중해야 할 달</div>
+                        <div style="font-size:1.1rem; font-weight:900; color:#BF360C; margin-top:4px;">${data.caution_month.label}</div>
+                        <div style="font-size:0.72rem; color:#D84315; margin-top:4px;">${data.caution_month.reason}</div>
+                    </div>
+                </div>
+            </div>
+            <div style="background:#F3E5F5; border:1.5px solid #CE93D8; border-radius:16px; padding:20px; margin-top:16px; text-align:center;">
+                <div style="font-size:0.95rem; font-weight:800; color:#6A1B9A; margin-bottom:6px;">🔓 12개월 전체 상세 운세 잠금 해제</div>
+                <div style="font-size:0.82rem; color:#7B1FA2; margin-bottom:14px;">월별 테마·조언·운 흐름까지 한눈에</div>
+                <button onclick='purchaseYearly(${JSON.stringify(meInput)})' style="padding:14px 30px; background:linear-gradient(135deg,#7B1FA2,#9C27B0); color:#fff; border:none; border-radius:14px; font-size:0.95rem; font-weight:800; cursor:pointer;">
+                    💎 2,900원 결제하고 12개월 다 보기
+                </button>
+            </div>
+            <button onclick="backToReport()" style="width:100%; margin-top:14px; padding:14px; background:#fff; border:2px solid #FFE0B2; color:#8D6E63; border-radius:14px; font-weight:700; cursor:pointer;">← 분석 결과로 돌아가기</button>`;
+    }
+
+    async function purchaseYearly(meInput) {
+        if (typeof TossPayments === 'undefined') { alert('결제 모듈 로드 중'); return; }
+        try {
+            const cfg = await ensureTossConfig();
+            const orderId = `yearly_${Date.now()}_${Math.random().toString(36).slice(2,10)}`;
+            localStorage.setItem(`pending_${orderId}`, JSON.stringify({ kind:'yearly', meInput }));
+
+            const tp = TossPayments(cfg.client_key);
+            const payment = tp.payment({ customerKey: TossPayments.ANONYMOUS });
+            await payment.requestPayment({
+                method: 'CARD',
+                amount: { currency: 'KRW', value: 2900 },
+                orderId,
+                orderName: '2026년 월별 운세',
+                customerName: meInput.name,
+                successUrl: `${window.location.origin}${window.location.pathname}?payment=success&kind=yearly`,
+                failUrl: `${window.location.origin}${window.location.pathname}?payment=fail`,
+            });
+        } catch(e) {
+            if (e && e.code === 'USER_CANCEL') return;
+            alert(`결제창 오류: ${e.message || e}`);
+        }
+    }
+
+    function renderYearlyFull(data) {
+        const area = document.getElementById('yearly-result-area');
+        const monthCards = data.months.map(m => {
+            const luckColor = m.luck >= 85 ? '#2E7D32' : m.luck >= 70 ? '#5E35B1' : m.luck >= 60 ? '#F57C00' : '#BF360C';
+            const luckBg = m.luck >= 85 ? '#E8F5E9' : m.luck >= 70 ? '#EDE7F6' : m.luck >= 60 ? '#FFF8E1' : '#FBE9E7';
+            return `
+                <div style="background:${luckBg}; border-radius:12px; padding:14px; margin-bottom:8px; border-left:4px solid ${luckColor};">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <span style="font-size:0.95rem; font-weight:900; color:${luckColor};">${m.label}</span>
+                            <span style="font-size:0.7rem; color:#8D6E63; margin-left:6px;">${m.season} · ${m.pillar}</span>
+                        </div>
+                        <div style="font-size:0.8rem; font-weight:700; color:${luckColor};">${m.luck}점</div>
+                    </div>
+                    <div style="font-size:0.88rem; font-weight:800; color:#3D3D3D; margin-top:6px;">${m.title}</div>
+                    <div style="font-size:0.8rem; color:#5D4037; margin-top:4px; line-height:1.6;">${m.desc}</div>
+                </div>`;
+        }).join('');
+
+        area.innerHTML = `
+            <div style="background:linear-gradient(135deg,#EDE7F6,#D1C4E9); border:2px solid #B39DDB; border-radius:20px; padding:24px; text-align:center; margin-bottom:16px;">
+                <div style="font-size:1.1rem; font-weight:900; color:#4527A0;">2026년 ${data.ilgan}의 12개월</div>
+                <div style="font-size:0.85rem; color:#5E35B1; margin-top:8px;">${data.summary}</div>
+            </div>
+            ${monthCards}
+            <button onclick="backToReport()" style="width:100%; margin-top:14px; padding:14px; background:#fff; border:2px solid #FFE0B2; color:#8D6E63; border-radius:14px; font-weight:700; cursor:pointer;">← 분석 결과로 돌아가기</button>`;
+        area.scrollIntoView({behavior:'smooth', block:'start'});
+    }
 
     function renderPremiumResult(premium, lifestyle, aiError) {
         // 티저와 배너 숨기기
