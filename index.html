@@ -218,11 +218,91 @@
         .payment-option-desc { font-size: 0.78rem; color: #8D6E63; margin-top: 4px; }
         .payment-close { width: 100%; padding: 14px; background: none; border: 2px solid #E0E0E0; border-radius: 14px; color: #8D6E63; font-size: 0.9rem; font-weight: 700; cursor: pointer; margin-top: 8px; }
 
-        /* Result Modal */
-        #result-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(5px); }
-        #result-card { width: 100%; max-width: 360px; background: linear-gradient(160deg, #FAF7FF, #E1BEE7); border: 2px solid #CE93D8; border-radius: 24px; padding: 32px 24px; text-align: center; position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.15); }
-        .card-name { font-size: 1.3rem; font-weight: 900; color: #4A148C; margin-bottom: 4px; }
-        .card-mbti { display: inline-block; padding: 4px 14px; border: 2px solid #7B1FA2; border-radius: 20px; font-size: 0.8rem; color: #7B1FA2; margin-bottom: 16px; font-weight: 700; }
+        /* 🎴 인스타 스토리 스타일 결과 카드 (9:16) */
+        #result-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 100; justify-content: center; align-items: center; padding: 16px; backdrop-filter: blur(8px); overflow-y: auto; }
+        #result-card {
+            width: 100%;
+            max-width: 360px;
+            aspect-ratio: 9 / 16;
+            background: linear-gradient(160deg, #2E0854 0%, #4A148C 35%, #7B1FA2 70%, #BA68C8 100%);
+            border-radius: 24px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            padding: 26px 22px 22px;
+            color: #fff;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+        /* 별 반짝 (배경 패턴) */
+        #result-card::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background-image:
+                radial-gradient(2px 2px at 20px 30px, rgba(255,255,255,0.7), transparent),
+                radial-gradient(2px 2px at 40px 70px, rgba(255,193,7,0.6), transparent),
+                radial-gradient(1px 1px at 90px 40px, rgba(255,255,255,0.5), transparent),
+                radial-gradient(1.5px 1.5px at 160px 120px, rgba(255,255,255,0.4), transparent),
+                radial-gradient(2px 2px at 220px 80px, rgba(255,193,7,0.5), transparent),
+                radial-gradient(1px 1px at 280px 200px, rgba(255,255,255,0.6), transparent),
+                radial-gradient(2px 2px at 50px 350px, rgba(255,193,7,0.5), transparent),
+                radial-gradient(1.5px 1.5px at 300px 450px, rgba(255,255,255,0.5), transparent),
+                radial-gradient(1px 1px at 150px 580px, rgba(255,193,7,0.5), transparent);
+            background-size: 100% 100%;
+            pointer-events: none;
+        }
+        .rc-brand { font-size: 0.7rem; font-weight: 700; letter-spacing: 2px; color: rgba(255,255,255,0.7); text-align: center; margin-bottom: 4px; position: relative; z-index: 1; }
+        .rc-brand-emoji { font-size: 0.9rem; vertical-align: -1px; margin-right: 4px; }
+        .rc-cat-wrap { display: flex; justify-content: center; margin: 8px 0 4px; position: relative; z-index: 1; }
+        .rc-name { font-size: 1.4rem; font-weight: 900; text-align: center; line-height: 1.3; margin: 4px 0 12px; position: relative; z-index: 1; text-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        .rc-name-highlight { color: #FFD54F; }
+        .rc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; position: relative; z-index: 1; }
+        .rc-chip {
+            background: rgba(255,255,255,0.12);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 14px;
+            padding: 10px 8px;
+            text-align: center;
+        }
+        .rc-chip-icon { font-size: 1.3rem; line-height: 1; }
+        .rc-chip-label { font-size: 0.62rem; font-weight: 700; color: rgba(255,255,255,0.7); margin-top: 4px; letter-spacing: 0.5px; }
+        .rc-chip-value { font-size: 0.85rem; font-weight: 800; color: #fff; margin-top: 2px; line-height: 1.25; }
+        .rc-quote {
+            background: rgba(255,255,255,0.18);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-left: 3px solid #FFD54F;
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin: 4px 0 10px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            line-height: 1.55;
+            color: #fff;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            font-style: italic;
+        }
+        .rc-quote::before { content: '"'; font-size: 1.5rem; color: #FFD54F; margin-right: 4px; vertical-align: -4px; }
+        .rc-quote::after { content: '"'; font-size: 1.5rem; color: #FFD54F; margin-left: 4px; vertical-align: -4px; }
+        .rc-footer { margin-top: auto; text-align: center; position: relative; z-index: 1; }
+        .rc-footer-brand { font-size: 0.75rem; font-weight: 800; color: rgba(255,255,255,0.85); letter-spacing: 1px; }
+        .rc-footer-url { font-size: 0.62rem; color: rgba(255,255,255,0.55); margin-top: 3px; letter-spacing: 0.3px; }
+        .rc-footer-cta {
+            display: inline-block;
+            margin-top: 8px;
+            background: rgba(255,213,79,0.95);
+            color: #2E0854;
+            padding: 6px 14px;
+            border-radius: 16px;
+            font-size: 0.72rem;
+            font-weight: 800;
+        }
+
         .btn-save { width: 100%; padding: 14px; background: linear-gradient(135deg, #7B1FA2, #9C27B0); color: #fff; border: none; border-radius: 12px; font-size: 1rem; font-weight: 700; cursor: pointer; margin-top: 12px; }
 
         /* Oheng colors for bars */
@@ -755,19 +835,49 @@
     </div>
 </div>
 
-<!-- Result Card Modal -->
+<!-- 🎴 인스타 스토리 결과 카드 -->
 <div id="result-modal" onclick="closeModal()">
     <div onclick="event.stopPropagation()" style="width:100%;max-width:360px;">
         <div id="result-card">
-            <div style="font-size:0.65rem;color:#7B1FA2;letter-spacing:3px;margin-bottom:12px;">🔮 DESTINY CARD</div>
-            <div class="card-name" id="rc-name"></div>
-            <div class="card-mbti" id="rc-mbti"></div>
-            <div class="pillar-grid" id="rc-pillars" style="margin-bottom:16px;"></div>
-            <div style="background:rgba(191,54,12,0.05);padding:16px;border-radius:16px;font-size:0.85rem;color:#5D4037;line-height:1.6;text-align:left;" id="rc-desc"></div>
-            <div style="margin-top:16px;font-size:0.65rem;color:#BCAAA4;">사주 x MBTI — 운명의 길잡이</div>
+            <!-- 브랜드 헤더 -->
+            <div class="rc-brand"><span class="rc-brand-emoji">🐈‍⬛</span>또또의 운명 카드</div>
+
+            <!-- 또또 캐릭터 -->
+            <div class="rc-cat-wrap">
+                <svg width="110" height="155" viewBox="0 0 260 360" class="toto">
+                    <g transform="translate(20, 0)">
+                        <ellipse cx="110" cy="346" rx="66" ry="6" fill="#FFD54F" opacity="0.18"/>
+                        <path d="M 90 318 Q 160 352 202 335 Q 224 308 220 254 Q 214 226 192 232 Q 184 244 192 258 Q 205 280 188 306 Q 145 326 110 322 Z" fill="#FFFFFF"/>
+                        <path d="M 90 165 Q 70 220 62 280 Q 60 332 90 340 Q 110 346 130 340 Q 160 332 158 280 Q 150 220 130 165 Z" fill="#FFFFFF"/>
+                        <path d="M 50 80 Q 26 88 22 115 Q 26 158 80 162 Q 110 165 140 162 Q 194 158 198 115 Q 194 88 170 80 L 150 12 L 132 78 Q 110 70 88 78 L 70 12 L 50 80 Z" fill="#FFFFFF"/>
+                        <ellipse cx="85" cy="115" rx="15" ry="20" fill="#2E0854"/>
+                        <ellipse cx="85" cy="115" rx="3.2" ry="8" fill="#FFD54F"/>
+                        <circle cx="83.4" cy="110.2" r="1.4" fill="#FFFFFF"/>
+                        <ellipse cx="135" cy="115" rx="15" ry="20" fill="#2E0854"/>
+                        <ellipse cx="135" cy="115" rx="3.2" ry="8" fill="#FFD54F"/>
+                        <circle cx="133.4" cy="110.2" r="1.4" fill="#FFFFFF"/>
+                    </g>
+                </svg>
+            </div>
+
+            <!-- 이름 타이틀 -->
+            <div class="rc-name" id="rc-name"></div>
+
+            <!-- 정보 카드 4종 -->
+            <div class="rc-grid" id="rc-grid"></div>
+
+            <!-- 시너지 인용구 -->
+            <div class="rc-quote" id="rc-quote"></div>
+
+            <!-- 푸터 -->
+            <div class="rc-footer">
+                <div class="rc-footer-brand">사주 × MBTI</div>
+                <div class="rc-footer-url">roromong-mbti-saju.hf.space</div>
+                <div class="rc-footer-cta">→ 너도 받아보기 🐾</div>
+            </div>
         </div>
-        <button class="btn-save" onclick="saveCard()">이미지로 저장하기</button>
-        <button class="btn-save" style="background:none;color:#8D6E63;font-size:0.8rem;border:1px solid #ccc;" onclick="closeModal()">닫기</button>
+        <button class="btn-save" onclick="saveCard()">📥 이미지로 저장하기</button>
+        <button class="btn-save" style="background:none;color:var(--text-light);font-size:0.8rem;border:1px solid var(--border);" onclick="closeModal()">닫기</button>
     </div>
 </div>
 
@@ -1361,25 +1471,63 @@
         }
     }
 
-    // Result Card
+    // 🎴 인스타 스토리 결과 카드
     function showResultCard() {
         if (!reportData) return;
         const r = reportData;
-        document.getElementById("rc-name").textContent = r.ilgan.title;
-        document.getElementById("rc-mbti").textContent = `MBTI: ${r.mbti}`;
-        document.getElementById("rc-pillars").innerHTML = document.getElementById("pillar-grid").innerHTML;
-        document.getElementById("rc-desc").textContent = r.ilgan.desc;
-        document.getElementById("result-modal").style.display = "flex";
+        const me = userInfo || { name: '당신' };
+        const myName = (me.name && me.name !== '당신') ? `${me.name}님의` : '당신의';
+
+        // 이름 타이틀
+        document.getElementById('rc-name').innerHTML =
+            `${myName}<br>운명 카드 <span class="rc-name-highlight">✨</span>`;
+
+        // 4개 정보 카드: 일간, MBTI, 띠, 신살
+        const ilganShort = r.ilgan.name; // 예: "병화(丙火)"
+        const zodiac = r.zodiac ? `${r.zodiac.icon} ${r.zodiac.name}` : '—';
+        const sinsalTop = (r.sinsal && r.sinsal.length > 0)
+            ? r.sinsal.slice(0, 2).map(s => s.key).join('·')
+            : '특별 신살 없음';
+        const items = [
+            { icon: '💎', label: 'ILGAN',  value: ilganShort },
+            { icon: '✨', label: 'MBTI',   value: r.mbti },
+            { icon: '🐾', label: 'ZODIAC', value: zodiac },
+            { icon: '🌸', label: 'SINSAL', value: sinsalTop },
+        ];
+        document.getElementById('rc-grid').innerHTML = items.map(it => `
+            <div class="rc-chip">
+                <div class="rc-chip-icon">${it.icon}</div>
+                <div class="rc-chip-label">${it.label}</div>
+                <div class="rc-chip-value">${it.value}</div>
+            </div>
+        `).join('');
+
+        // 시너지 인용구
+        const quoteText = r.ilgan.title || (r.synergy && r.synergy.title) || '나만의 운명 카드';
+        document.getElementById('rc-quote').textContent = quoteText;
+
+        document.getElementById('result-modal').style.display = 'flex';
     }
     function closeModal() { document.getElementById("result-modal").style.display = "none"; }
 
     async function saveCard() {
         const card = document.getElementById("result-card");
-        const canvas = await html2canvas(card, { backgroundColor: "#FAF7FF", scale: 2 });
-        const link = document.createElement("a");
-        link.download = "saju-mbti-card.png";
-        link.href = canvas.toDataURL();
-        link.click();
+        try {
+            const canvas = await html2canvas(card, {
+                backgroundColor: null,
+                scale: 3,  // 인스타 스토리 해상도 (360*3 = 1080px)
+                useCORS: true,
+                logging: false,
+            });
+            const link = document.createElement("a");
+            link.download = `또또운명카드_${(userInfo?.name || 'me')}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            showToast('✨ 카드가 저장됐어요! 인스타에 공유해보세요 🐾', 'success');
+        } catch(e) {
+            console.error(e);
+            showCatError('카드 저장에 실패했어요. 다시 시도해주세요.');
+        }
     }
 
     // Share
