@@ -183,6 +183,23 @@
         .referral-btn { padding: 12px 24px; background: linear-gradient(135deg, #43A047, #66BB6A); color: #fff; border: none; border-radius: 12px; font-size: 0.9rem; font-weight: 700; cursor: pointer; }
         .referral-code { font-family: monospace; background: #fff; padding: 6px 14px; border-radius: 8px; border: 1px solid #A5D6A7; font-size: 0.85rem; color: #2E7D32; font-weight: 700; margin-top: 10px; display: none; }
 
+        /* Zodiac (12지신) card */
+        .zodiac-hero { background: linear-gradient(135deg, #FFF8E1, #FFE0B2); border: 1.5px solid #FFCC80; border-radius: 16px; padding: 20px 16px; text-align: center; margin-top: 10px; }
+        .zodiac-emoji { font-size: 4rem; line-height: 1; margin-bottom: 6px; }
+        .zodiac-name { font-size: 1.3rem; font-weight: 900; color: #BF360C; margin-bottom: 4px; }
+        .zodiac-tagline { font-size: 0.85rem; color: #6D4C41; font-weight: 600; margin-bottom: 12px; }
+        .zodiac-desc { font-size: 0.85rem; color: #5D4037; line-height: 1.7; background: rgba(255,255,255,0.6); padding: 12px; border-radius: 10px; text-align: left; }
+        .zodiac-traits { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-top: 12px; }
+        .zodiac-chip { padding: 4px 12px; background: #fff; border: 1px solid #FFCC80; border-radius: 16px; font-size: 0.75rem; font-weight: 700; color: #BF360C; }
+        .zodiac-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+        .zodiac-mini { background: #fff; border: 1px solid #FFE0B2; border-radius: 10px; padding: 10px; text-align: left; }
+        .zodiac-mini-label { font-size: 0.72rem; color: #8D6E63; font-weight: 700; margin-bottom: 4px; }
+        .zodiac-mini-value { font-size: 0.8rem; color: #5D4037; line-height: 1.5; }
+        .zodiac-match { display: flex; gap: 8px; margin-top: 10px; }
+        .zodiac-match-box { flex: 1; padding: 10px; border-radius: 10px; text-align: center; font-size: 0.78rem; font-weight: 700; }
+        .zodiac-match-best { background: #E8F5E9; color: #2E7D32; border: 1px solid #C8E6C9; }
+        .zodiac-match-avoid { background: #FBE9E7; color: #BF360C; border: 1px solid #FFCCBC; }
+
         /* Sinsal cards */
         .sinsal-list { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
         .sinsal-card { background: linear-gradient(135deg, #FFF8F0, #FFF3E0); border: 1.5px solid #FFCC80; border-radius: 14px; padding: 14px 16px; }
@@ -748,6 +765,39 @@
                 </div>
                 <div class="tag-row">${(d.health.weak_points||[]).map(p => `<span class="tag" style="background:#FFEBEE;color:#C62828;">주의: ${p}</span>`).join('')}</div>`;
             sections.push({ icon: '🏥', bg: '#E8F5E9', title: d.health.title, desc: d.health.desc, extra: healthExtra });
+        }
+
+        // 🐉 12지신 띠 분석 (년지 기준)
+        if (r.zodiac) {
+            const z = r.zodiac;
+            const traitChips = z.traits.map(t => `<span class="zodiac-chip">${t}</span>`).join('');
+            const zHTML = `
+                <div class="zodiac-hero">
+                    <div class="zodiac-emoji">${z.icon}</div>
+                    <div class="zodiac-name">${z.name} (${z.hanja})</div>
+                    <div class="zodiac-tagline">${z.tagline}</div>
+                    <div class="zodiac-desc">${z.desc}</div>
+                    <div class="zodiac-traits">${traitChips}</div>
+                </div>
+                <div class="zodiac-grid">
+                    <div class="zodiac-mini">
+                        <div class="zodiac-mini-label">💕 연애 스타일</div>
+                        <div class="zodiac-mini-value">${z.love}</div>
+                    </div>
+                    <div class="zodiac-mini">
+                        <div class="zodiac-mini-label">💼 어울리는 일</div>
+                        <div class="zodiac-mini-value">${z.career}</div>
+                    </div>
+                </div>
+                <div class="zodiac-match">
+                    <div class="zodiac-match-box zodiac-match-best">
+                        💖 최고 궁합<br>${z.best_match.join(' · ')}
+                    </div>
+                    <div class="zodiac-match-box zodiac-match-avoid">
+                        ⚠️ 주의 궁합<br>${z.avoid_match.join(' · ')}
+                    </div>
+                </div>`;
+            sections.push({ icon: z.icon, bg: '#FFF8E1', title: `${z.name} — ${z.tagline}`, desc: '', extra: zHTML });
         }
 
         // ✨ 신살 (특수 별자리)
