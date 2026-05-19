@@ -289,6 +289,19 @@
         }
         .rc-quote::before { content: '"'; font-size: 1.5rem; color: #FFD54F; margin-right: 4px; vertical-align: -4px; }
         .rc-quote::after { content: '"'; font-size: 1.5rem; color: #FFD54F; margin-left: 4px; vertical-align: -4px; }
+        .rc-summary {
+            background: rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-bottom: 8px;
+            font-size: 0.78rem;
+            line-height: 1.65;
+            color: rgba(255,255,255,0.92);
+            position: relative;
+            z-index: 1;
+            text-align: left;
+            letter-spacing: -0.2px;
+        }
         .rc-footer { margin-top: auto; text-align: center; position: relative; z-index: 1; }
         .rc-footer-brand { font-size: 0.75rem; font-weight: 800; color: rgba(255,255,255,0.85); letter-spacing: 1px; }
         .rc-footer-url { font-size: 0.62rem; color: rgba(255,255,255,0.55); margin-top: 3px; letter-spacing: 0.3px; }
@@ -842,32 +855,17 @@
             <!-- 브랜드 헤더 -->
             <div class="rc-brand"><span class="rc-brand-emoji">🐈‍⬛</span>또또의 운명 카드</div>
 
-            <!-- 또또 캐릭터 -->
-            <div class="rc-cat-wrap">
-                <svg width="110" height="155" viewBox="0 0 260 360" class="toto">
-                    <g transform="translate(20, 0)">
-                        <ellipse cx="110" cy="346" rx="66" ry="6" fill="#FFD54F" opacity="0.18"/>
-                        <path d="M 90 318 Q 160 352 202 335 Q 224 308 220 254 Q 214 226 192 232 Q 184 244 192 258 Q 205 280 188 306 Q 145 326 110 322 Z" fill="#FFFFFF"/>
-                        <path d="M 90 165 Q 70 220 62 280 Q 60 332 90 340 Q 110 346 130 340 Q 160 332 158 280 Q 150 220 130 165 Z" fill="#FFFFFF"/>
-                        <path d="M 50 80 Q 26 88 22 115 Q 26 158 80 162 Q 110 165 140 162 Q 194 158 198 115 Q 194 88 170 80 L 150 12 L 132 78 Q 110 70 88 78 L 70 12 L 50 80 Z" fill="#FFFFFF"/>
-                        <ellipse cx="85" cy="115" rx="15" ry="20" fill="#2E0854"/>
-                        <ellipse cx="85" cy="115" rx="3.2" ry="8" fill="#FFD54F"/>
-                        <circle cx="83.4" cy="110.2" r="1.4" fill="#FFFFFF"/>
-                        <ellipse cx="135" cy="115" rx="15" ry="20" fill="#2E0854"/>
-                        <ellipse cx="135" cy="115" rx="3.2" ry="8" fill="#FFD54F"/>
-                        <circle cx="133.4" cy="110.2" r="1.4" fill="#FFFFFF"/>
-                    </g>
-                </svg>
-            </div>
-
             <!-- 이름 타이틀 -->
             <div class="rc-name" id="rc-name"></div>
 
             <!-- 정보 카드 4종 -->
             <div class="rc-grid" id="rc-grid"></div>
 
-            <!-- 시너지 인용구 -->
+            <!-- 시너지 한 줄 키워드 (인용구) -->
             <div class="rc-quote" id="rc-quote"></div>
+
+            <!-- 사주 요약 (3~4줄) -->
+            <div class="rc-summary" id="rc-summary"></div>
 
             <!-- 푸터 -->
             <div class="rc-footer">
@@ -1505,9 +1503,30 @@
             </div>
         `).join('');
 
-        // 시너지 인용구
+        // 시너지 인용구 (한 줄 키워드)
         const quoteText = r.ilgan.title || (r.synergy && r.synergy.title) || '나만의 운명 카드';
         document.getElementById('rc-quote').textContent = quoteText;
+
+        // 사주 요약 (3~4줄)
+        const summaryParts = [];
+        // 1줄: 일간 설명 첫 문장
+        if (r.ilgan && r.ilgan.desc) {
+            const first = r.ilgan.desc.split(/[.!?]/)[0];
+            if (first) summaryParts.push(first.trim() + '.');
+        }
+        // 2줄: 시너지 핵심
+        if (r.synergy && r.synergy.desc) {
+            const synFirst = r.synergy.desc.split(/[.!?]/)[0];
+            if (synFirst && synFirst.length < 80) summaryParts.push(synFirst.trim() + '.');
+        }
+        // 3줄: 띠 또는 신살 한 줄
+        if (r.zodiac && r.zodiac.tagline) {
+            summaryParts.push(`${r.zodiac.icon} ${r.zodiac.name}: ${r.zodiac.tagline}`);
+        } else if (r.sinsal && r.sinsal.length > 0) {
+            const topSinsal = r.sinsal[0];
+            summaryParts.push(`${topSinsal.icon} ${topSinsal.name} — ${topSinsal.type}`);
+        }
+        document.getElementById('rc-summary').innerHTML = summaryParts.join('<br>');
 
         document.getElementById('result-modal').style.display = 'flex';
     }
