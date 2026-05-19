@@ -7,16 +7,41 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800;900&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background-color: #FFF8F0; font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; justify-content: center; color: #2D2D2D; }
-        #app { width: 100%; max-width: 480px; min-height: 100dvh; background: #FFF8F0; display: flex; flex-direction: column; position: relative; padding-bottom: 80px; }
+
+        /* 🎨 보라 마법 테마 컬러 시스템 */
+        :root {
+            --primary: #7B1FA2;
+            --primary-dark: #4A148C;
+            --primary-light: #BA68C8;
+            --accent: #FFC107;          /* 골든 별 */
+            --accent-pink: #F8BBD0;     /* 핑크 볼터치 */
+            --bg-main: #FAF7FF;         /* 배경 (보라 빛 화이트) */
+            --bg-soft: #F3E5F5;         /* 라이트 라벤더 */
+            --bg-card: #FFFFFF;
+            --border: #E1BEE7;          /* 보라 보더 */
+            --border-soft: #EDE7F6;
+            --text-dark: #2D2D2D;
+            --text-mid: #5D4037;
+            --text-light: #8E7E94;
+        }
+
+        body { background-color: var(--bg-main); font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; justify-content: center; color: var(--text-dark); }
+        #app { width: 100%; max-width: 480px; min-height: 100dvh; background: var(--bg-main); display: flex; flex-direction: column; position: relative; padding-bottom: 80px; }
 
         /* Header */
-        header { padding: 14px 20px; background: rgba(255,248,240,0.95); border-bottom: 2px solid #FFE0B2; display: flex; justify-content: space-between; align-items: center; backdrop-filter: blur(10px); z-index: 10; position: sticky; top: 0; }
-        .header-title { font-weight: 900; font-size: 1rem; color: #E65100; letter-spacing: 1px; }
-        .header-logo { font-size: 1.2rem; }
-        .lang-switch { display: flex; gap: 4px; background: #FFF3E0; padding: 4px; border-radius: 8px; border: 1px solid #FFE0B2; }
-        .lang-btn { padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; cursor: pointer; border: none; background: transparent; color: #BF360C; transition: all 0.2s; }
-        .lang-btn.active { background: #FF6D00; color: #fff; }
+        header { padding: 14px 20px; background: rgba(250,247,255,0.95); border-bottom: 2px solid var(--border-soft); display: flex; justify-content: space-between; align-items: center; backdrop-filter: blur(10px); z-index: 10; position: sticky; top: 0; }
+        .header-title { font-weight: 900; font-size: 1rem; color: var(--primary); letter-spacing: 1px; }
+        .header-logo { font-size: 1.2rem; display: flex; align-items: center; }
+        .lang-switch { display: flex; gap: 4px; background: var(--bg-soft); padding: 4px; border-radius: 8px; border: 1px solid var(--border-soft); }
+        .lang-btn { padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; cursor: pointer; border: none; background: transparent; color: var(--primary); transition: all 0.2s; }
+        .lang-btn.active { background: var(--primary); color: #fff; }
+
+        /* 🐱 고양이 마스코트 SVG 컴포넌트 */
+        .cat-mascot { display: inline-block; line-height: 0; }
+        .cat-mascot.bounce { animation: catBounce 2s ease-in-out infinite; }
+        .cat-mascot.wiggle { animation: catWiggle 1.5s ease-in-out infinite; }
+        @keyframes catBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+        @keyframes catWiggle { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
 
         /* Screens */
         .screen { display: none; padding: 24px 20px; }
@@ -25,31 +50,31 @@
         /* Intro */
         .intro-hero { text-align: center; padding: 40px 0 30px; }
         .intro-emoji { font-size: 3.5rem; margin-bottom: 12px; }
-        .intro-title { font-size: 1.6rem; font-weight: 900; line-height: 1.4; margin-bottom: 8px; color: #BF360C; }
+        .intro-title { font-size: 1.6rem; font-weight: 900; line-height: 1.4; margin-bottom: 8px; color: #4A148C; }
         .intro-sub { color: #8D6E63; font-size: 0.9rem; margin-bottom: 32px; }
         .form-section { margin-bottom: 16px; }
         .form-label { display: block; margin-bottom: 8px; font-size: 0.85rem; color: #6D4C41; font-weight: 700; }
-        .form-input, .form-select { width: 100%; padding: 14px; background: #fff; border: 2px solid #FFE0B2; border-radius: 14px; color: #2D2D2D; font-size: 1rem; outline: none; transition: all 0.2s; font-family: inherit; }
-        .form-input:focus, .form-select:focus { border-color: #FF6D00; box-shadow: 0 0 0 3px rgba(255,109,0,0.1); }
+        .form-input, .form-select { width: 100%; padding: 14px; background: #fff; border: 2px solid #E1BEE7; border-radius: 14px; color: #2D2D2D; font-size: 1rem; outline: none; transition: all 0.2s; font-family: inherit; }
+        .form-input:focus, .form-select:focus { border-color: #7B1FA2; box-shadow: 0 0 0 3px rgba(123,31,162,0.1); }
         .form-select {
             appearance: none;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23FF6D00' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
             background-repeat: no-repeat; background-position: right 14px center; background-size: 18px; padding-right: 40px; cursor: pointer;
         }
-        .start-btn { width: 100%; padding: 18px; background: linear-gradient(135deg, #FF6D00, #FF8F00); color: #fff; border: none; border-radius: 16px; font-size: 1.1rem; font-weight: 900; cursor: pointer; margin-top: 10px; box-shadow: 0 4px 15px rgba(255,109,0,0.3); transition: transform 0.2s; }
+        .start-btn { width: 100%; padding: 18px; background: linear-gradient(135deg, #7B1FA2, #9C27B0); color: #fff; border: none; border-radius: 16px; font-size: 1.1rem; font-weight: 900; cursor: pointer; margin-top: 10px; box-shadow: 0 4px 15px rgba(123,31,162,0.3); transition: transform 0.2s; }
         .start-btn:active { transform: scale(0.98); }
         .free-badge { display: inline-block; background: #E8F5E9; color: #2E7D32; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; margin-bottom: 16px; }
 
         /* Report - Header Card */
-        .report-header-card { background: linear-gradient(135deg, #FFF3E0, #FFE0B2); border-radius: 20px; padding: 24px; margin-bottom: 20px; text-align: center; border: 2px solid #FFCC80; }
-        .report-name { font-size: 1.1rem; font-weight: 700; color: #E65100; margin-bottom: 8px; }
+        .report-header-card { background: linear-gradient(135deg, #F3E5F5, #E1BEE7); border-radius: 20px; padding: 24px; margin-bottom: 20px; text-align: center; border: 2px solid #CE93D8; }
+        .report-name { font-size: 1.1rem; font-weight: 700; color: #7B1FA2; margin-bottom: 8px; }
         .report-birth-info { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 12px; }
-        .info-chip { background: #fff; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; color: #6D4C41; font-weight: 600; border: 1px solid #FFCC80; }
+        .info-chip { background: #fff; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; color: #6D4C41; font-weight: 600; border: 1px solid #CE93D8; }
 
         /* Pillar Grid */
         .pillar-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 16px 0; }
         .pillar-item { border-radius: 12px; text-align: center; overflow: hidden; }
-        .pillar-label { font-size: 0.7rem; color: #6D4C41; padding: 6px 0 2px; font-weight: 600; background: #FFF3E0; }
+        .pillar-label { font-size: 0.7rem; color: #6D4C41; padding: 6px 0 2px; font-weight: 600; background: #F3E5F5; }
         .pillar-gan { padding: 10px 4px 2px; font-size: 1.8rem; font-weight: 900; }
         .pillar-gan-sub { font-size: 0.65rem; padding-bottom: 6px; }
         .pillar-ji { padding: 2px 4px 10px; font-size: 1.8rem; font-weight: 900; }
@@ -69,8 +94,8 @@
 
         /* Accordion Sections */
         .section-guide { text-align: center; color: #8D6E63; font-size: 0.8rem; margin: 16px 0 12px; }
-        .accordion-section { background: #fff; border: 1.5px solid #FFE0B2; border-radius: 16px; margin-bottom: 10px; overflow: hidden; transition: all 0.3s; }
-        .accordion-section:hover { border-color: #FFAB40; }
+        .accordion-section { background: #fff; border: 1.5px solid #E1BEE7; border-radius: 16px; margin-bottom: 10px; overflow: hidden; transition: all 0.3s; }
+        .accordion-section:hover { border-color: #BA68C8; }
         .accordion-header { display: flex; align-items: center; gap: 12px; padding: 16px 18px; cursor: pointer; user-select: none; }
         .accordion-icon { font-size: 1.3rem; flex-shrink: 0; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 10px; }
         .accordion-title { flex: 1; font-size: 0.9rem; font-weight: 700; color: #2D2D2D; line-height: 1.4; }
@@ -82,16 +107,16 @@
         .accordion-desc { font-size: 0.88rem; line-height: 1.8; color: #5D4037; }
         .accordion-sub { margin-top: 12px; }
         .accordion-sub-item { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; font-size: 0.82rem; color: #6D4C41; }
-        .accordion-sub-label { font-weight: 700; color: #E65100; white-space: nowrap; min-width: 70px; }
+        .accordion-sub-label { font-weight: 700; color: #7B1FA2; white-space: nowrap; min-width: 70px; }
         .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
         .tag { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
 
         /* Lucky Items Grid */
         .lucky-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
-        .lucky-card { background: linear-gradient(135deg, #FFF8E1, #FFF3E0); border: 1.5px solid #FFE0B2; border-radius: 14px; padding: 14px; text-align: center; }
+        .lucky-card { background: linear-gradient(135deg, #FFF8E1, #F3E5F5); border: 1.5px solid #E1BEE7; border-radius: 14px; padding: 14px; text-align: center; }
         .lucky-card-icon { font-size: 1.5rem; margin-bottom: 4px; }
         .lucky-card-label { font-size: 0.7rem; color: #8D6E63; font-weight: 600; }
-        .lucky-card-value { font-size: 0.85rem; font-weight: 700; color: #E65100; margin-top: 2px; }
+        .lucky-card-value { font-size: 0.85rem; font-weight: 700; color: #7B1FA2; margin-top: 2px; }
 
         /* Share & Actions */
         .share-container { display: flex; gap: 8px; margin: 20px 0; }
@@ -99,7 +124,7 @@
         .share-btn:active { transform: scale(0.96); }
         .share-btn.kakao { background: #FEE500; color: #3c1e1e; }
         .share-btn.copy { background: #E8EAF6; color: #283593; }
-        .retry-btn { width: 100%; padding: 14px; background: #fff; border: 2px solid #FFE0B2; color: #8D6E63; border-radius: 14px; font-size: 0.9rem; font-weight: 700; cursor: pointer; margin-bottom: 20px; }
+        .retry-btn { width: 100%; padding: 14px; background: #fff; border: 2px solid #E1BEE7; color: #8D6E63; border-radius: 14px; font-size: 0.9rem; font-weight: 700; cursor: pointer; margin-bottom: 20px; }
 
         /* Floating CTA */
         .floating-cta { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; z-index: 50; padding: 0; display: none; }
@@ -113,20 +138,20 @@
         .payment-handle { width: 40px; height: 4px; background: #E0E0E0; border-radius: 2px; margin: 0 auto 20px; }
         .payment-title { font-size: 1.2rem; font-weight: 900; margin-bottom: 6px; color: #2D2D2D; }
         .payment-sub { font-size: 0.85rem; color: #8D6E63; margin-bottom: 20px; }
-        .payment-option { background: #FFF8F0; border: 2px solid #FFE0B2; border-radius: 16px; padding: 18px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
-        .payment-option:hover { border-color: #FF6D00; background: #FFF3E0; }
+        .payment-option { background: #FAF7FF; border: 2px solid #E1BEE7; border-radius: 16px; padding: 18px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
+        .payment-option:hover { border-color: #7B1FA2; background: #F3E5F5; }
         .payment-option-row { display: flex; justify-content: space-between; align-items: center; }
         .payment-option-label { font-weight: 700; font-size: 0.95rem; }
-        .payment-option-price { font-weight: 900; color: #FF6D00; font-size: 1.1rem; }
+        .payment-option-price { font-weight: 900; color: #7B1FA2; font-size: 1.1rem; }
         .payment-option-desc { font-size: 0.78rem; color: #8D6E63; margin-top: 4px; }
         .payment-close { width: 100%; padding: 14px; background: none; border: 2px solid #E0E0E0; border-radius: 14px; color: #8D6E63; font-size: 0.9rem; font-weight: 700; cursor: pointer; margin-top: 8px; }
 
         /* Result Modal */
         #result-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(5px); }
-        #result-card { width: 100%; max-width: 360px; background: linear-gradient(160deg, #FFF8F0, #FFE0B2); border: 2px solid #FFCC80; border-radius: 24px; padding: 32px 24px; text-align: center; position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.15); }
-        .card-name { font-size: 1.3rem; font-weight: 900; color: #BF360C; margin-bottom: 4px; }
-        .card-mbti { display: inline-block; padding: 4px 14px; border: 2px solid #FF6D00; border-radius: 20px; font-size: 0.8rem; color: #FF6D00; margin-bottom: 16px; font-weight: 700; }
-        .btn-save { width: 100%; padding: 14px; background: linear-gradient(135deg, #FF6D00, #FF8F00); color: #fff; border: none; border-radius: 12px; font-size: 1rem; font-weight: 700; cursor: pointer; margin-top: 12px; }
+        #result-card { width: 100%; max-width: 360px; background: linear-gradient(160deg, #FAF7FF, #E1BEE7); border: 2px solid #CE93D8; border-radius: 24px; padding: 32px 24px; text-align: center; position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.15); }
+        .card-name { font-size: 1.3rem; font-weight: 900; color: #4A148C; margin-bottom: 4px; }
+        .card-mbti { display: inline-block; padding: 4px 14px; border: 2px solid #7B1FA2; border-radius: 20px; font-size: 0.8rem; color: #7B1FA2; margin-bottom: 16px; font-weight: 700; }
+        .btn-save { width: 100%; padding: 14px; background: linear-gradient(135deg, #7B1FA2, #9C27B0); color: #fff; border: none; border-radius: 12px; font-size: 1rem; font-weight: 700; cursor: pointer; margin-top: 12px; }
 
         /* Oheng colors for bars */
         .bar-wood { background: linear-gradient(180deg, #66BB6A, #43A047); }
@@ -136,23 +161,23 @@
         .bar-water { background: linear-gradient(180deg, #42A5F5, #1565C0); }
 
         /* Loading */
-        .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,248,240,0.9); z-index: 200; justify-content: center; align-items: center; flex-direction: column; }
+        .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(250,247,255,0.9); z-index: 200; justify-content: center; align-items: center; flex-direction: column; }
         .loading-overlay.active { display: flex; }
-        .loading-spinner { width: 50px; height: 50px; border: 4px solid #FFE0B2; border-top: 4px solid #FF6D00; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
+        .loading-spinner { width: 50px; height: 50px; border: 4px solid #E1BEE7; border-top: 4px solid #7B1FA2; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .loading-text { font-size: 0.95rem; color: #8D6E63; font-weight: 600; }
 
         /* Travel place cards */
         .travel-places { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
-        .travel-place { display: flex; align-items: flex-start; gap: 8px; background: #FFF8F0; padding: 10px 12px; border-radius: 10px; border: 1px solid #FFE0B2; }
+        .travel-place { display: flex; align-items: flex-start; gap: 8px; background: #FAF7FF; padding: 10px 12px; border-radius: 10px; border: 1px solid #E1BEE7; }
         .travel-place-flag { font-size: 1.1rem; flex-shrink: 0; }
-        .travel-place-name { font-weight: 700; font-size: 0.82rem; color: #BF360C; }
+        .travel-place-name { font-weight: 700; font-size: 0.82rem; color: #4A148C; }
         .travel-place-reason { font-size: 0.78rem; color: #6D4C41; margin-top: 2px; }
-        .travel-avoid { background: #FBE9E7; border: 1px solid #FFCCBC; border-radius: 10px; padding: 10px 12px; margin-top: 10px; font-size: 0.82rem; color: #BF360C; }
+        .travel-avoid { background: #FBE9E7; border: 1px solid #FFCCBC; border-radius: 10px; padding: 10px 12px; margin-top: 10px; font-size: 0.82rem; color: #4A148C; }
         .travel-tip { background: #E8F5E9; border: 1px solid #C8E6C9; border-radius: 10px; padding: 10px 12px; margin-top: 8px; font-size: 0.82rem; color: #2E7D32; }
 
         /* Dev mode button */
-        .dev-badge { position: fixed; top: 60px; right: 8px; z-index: 999; background: #FF6D00; color: #fff; border: none; padding: 4px 10px; border-radius: 8px; font-size: 0.65rem; font-weight: 700; cursor: pointer; opacity: 0.7; }
+        .dev-badge { position: fixed; top: 60px; right: 8px; z-index: 999; background: #7B1FA2; color: #fff; border: none; padding: 4px 10px; border-radius: 8px; font-size: 0.65rem; font-weight: 700; cursor: pointer; opacity: 0.7; }
         .dev-badge:hover { opacity: 1; }
 
         /* Premium locked teaser */
@@ -184,56 +209,56 @@
         .referral-code { font-family: monospace; background: #fff; padding: 6px 14px; border-radius: 8px; border: 1px solid #A5D6A7; font-size: 0.85rem; color: #2E7D32; font-weight: 700; margin-top: 10px; display: none; }
 
         /* Zodiac (12지신) card */
-        .zodiac-hero { background: linear-gradient(135deg, #FFF8E1, #FFE0B2); border: 1.5px solid #FFCC80; border-radius: 16px; padding: 20px 16px; text-align: center; margin-top: 10px; }
+        .zodiac-hero { background: linear-gradient(135deg, #FFF8E1, #E1BEE7); border: 1.5px solid #CE93D8; border-radius: 16px; padding: 20px 16px; text-align: center; margin-top: 10px; }
         .zodiac-emoji { font-size: 4rem; line-height: 1; margin-bottom: 6px; }
-        .zodiac-name { font-size: 1.3rem; font-weight: 900; color: #BF360C; margin-bottom: 4px; }
+        .zodiac-name { font-size: 1.3rem; font-weight: 900; color: #4A148C; margin-bottom: 4px; }
         .zodiac-tagline { font-size: 0.85rem; color: #6D4C41; font-weight: 600; margin-bottom: 12px; }
         .zodiac-desc { font-size: 0.85rem; color: #5D4037; line-height: 1.7; background: rgba(255,255,255,0.6); padding: 12px; border-radius: 10px; text-align: left; }
         .zodiac-traits { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-top: 12px; }
-        .zodiac-chip { padding: 4px 12px; background: #fff; border: 1px solid #FFCC80; border-radius: 16px; font-size: 0.75rem; font-weight: 700; color: #BF360C; }
+        .zodiac-chip { padding: 4px 12px; background: #fff; border: 1px solid #CE93D8; border-radius: 16px; font-size: 0.75rem; font-weight: 700; color: #4A148C; }
         .zodiac-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
-        .zodiac-mini { background: #fff; border: 1px solid #FFE0B2; border-radius: 10px; padding: 10px; text-align: left; }
+        .zodiac-mini { background: #fff; border: 1px solid #E1BEE7; border-radius: 10px; padding: 10px; text-align: left; }
         .zodiac-mini-label { font-size: 0.72rem; color: #8D6E63; font-weight: 700; margin-bottom: 4px; }
         .zodiac-mini-value { font-size: 0.8rem; color: #5D4037; line-height: 1.5; }
         .zodiac-match { display: flex; gap: 8px; margin-top: 10px; }
         .zodiac-match-box { flex: 1; padding: 10px; border-radius: 10px; text-align: center; font-size: 0.78rem; font-weight: 700; }
         .zodiac-match-best { background: #E8F5E9; color: #2E7D32; border: 1px solid #C8E6C9; }
-        .zodiac-match-avoid { background: #FBE9E7; color: #BF360C; border: 1px solid #FFCCBC; }
+        .zodiac-match-avoid { background: #FBE9E7; color: #4A148C; border: 1px solid #FFCCBC; }
 
         /* Sinsal cards */
         .sinsal-list { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
-        .sinsal-card { background: linear-gradient(135deg, #FFF8F0, #FFF3E0); border: 1.5px solid #FFCC80; border-radius: 14px; padding: 14px 16px; }
+        .sinsal-card { background: linear-gradient(135deg, #FAF7FF, #F3E5F5); border: 1.5px solid #CE93D8; border-radius: 14px; padding: 14px 16px; }
         .sinsal-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
-        .sinsal-icon { font-size: 1.5rem; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 10px; border: 1px solid #FFE0B2; }
+        .sinsal-icon { font-size: 1.5rem; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 10px; border: 1px solid #E1BEE7; }
         .sinsal-meta { flex: 1; }
-        .sinsal-name { font-size: 0.95rem; font-weight: 800; color: #BF360C; line-height: 1.2; }
+        .sinsal-name { font-size: 0.95rem; font-weight: 800; color: #4A148C; line-height: 1.2; }
         .sinsal-type { font-size: 0.72rem; color: #8D6E63; font-weight: 600; margin-top: 2px; }
         .sinsal-desc { font-size: 0.83rem; color: #5D4037; line-height: 1.6; margin-top: 4px; }
-        .sinsal-tip { background: #fff; border: 1px solid #FFE0B2; border-radius: 8px; padding: 8px 10px; margin-top: 8px; font-size: 0.78rem; color: #6D4C41; }
-        .sinsal-empty { text-align: center; padding: 20px; font-size: 0.85rem; color: #8D6E63; background: #FFF8F0; border-radius: 10px; line-height: 1.6; }
+        .sinsal-tip { background: #fff; border: 1px solid #E1BEE7; border-radius: 8px; padding: 8px 10px; margin-top: 8px; font-size: 0.78rem; color: #6D4C41; }
+        .sinsal-empty { text-align: center; padding: 20px; font-size: 0.85rem; color: #8D6E63; background: #FAF7FF; border-radius: 10px; line-height: 1.6; }
 
         /* Lifestyle cards (fengshui/accessory/scent unlocked) */
         .lifestyle-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
-        .lifestyle-item { background: #FFF8F0; border: 1px solid #FFE0B2; border-radius: 10px; padding: 10px 12px; }
+        .lifestyle-item { background: #FAF7FF; border: 1px solid #E1BEE7; border-radius: 10px; padding: 10px 12px; }
         .lifestyle-item-title { font-weight: 800; font-size: 0.85rem; color: #6A1B9A; margin-bottom: 4px; }
         .lifestyle-item-sub { font-size: 0.78rem; color: #8D6E63; margin-bottom: 4px; }
         .lifestyle-item-reason { font-size: 0.78rem; color: #5D4037; line-height: 1.5; }
         .lifestyle-meta { background: linear-gradient(135deg, #F3E5F5, #fff); border: 1px solid #CE93D8; border-radius: 10px; padding: 10px 12px; margin-top: 10px; font-size: 0.82rem; color: #6A1B9A; font-weight: 600; }
-        .lifestyle-avoid { background: #FBE9E7; border: 1px solid #FFCCBC; border-radius: 10px; padding: 10px 12px; margin-top: 8px; font-size: 0.8rem; color: #BF360C; }
+        .lifestyle-avoid { background: #FBE9E7; border: 1px solid #FFCCBC; border-radius: 10px; padding: 10px 12px; margin-top: 8px; font-size: 0.8rem; color: #4A148C; }
         .lifestyle-tip { background: #E8F5E9; border: 1px solid #C8E6C9; border-radius: 10px; padding: 10px 12px; margin-top: 8px; font-size: 0.8rem; color: #2E7D32; }
 
         /* Gender select buttons */
-        .gender-btn { flex: 1; padding: 14px; background: #fff; border: 2px solid #FFE0B2; border-radius: 14px; color: #8D6E63; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit; }
-        .gender-btn.active { background: linear-gradient(135deg, #FF6D00, #FF8F00); color: #fff; border-color: #FF6D00; box-shadow: 0 4px 12px rgba(255,109,0,0.2); }
+        .gender-btn { flex: 1; padding: 14px; background: #fff; border: 2px solid #E1BEE7; border-radius: 14px; color: #8D6E63; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+        .gender-btn.active { background: linear-gradient(135deg, #7B1FA2, #9C27B0); color: #fff; border-color: #7B1FA2; box-shadow: 0 4px 12px rgba(123,31,162,0.2); }
         .gender-btn:active { transform: scale(0.97); }
 
         /* Life cycle period cards */
         .lifecycle-periods { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
-        .lifecycle-period { display: flex; align-items: flex-start; gap: 10px; background: #FFF8F0; padding: 10px 12px; border-radius: 10px; border: 1px solid #FFE0B2; }
-        .lifecycle-age { font-weight: 800; font-size: 0.8rem; color: #E65100; white-space: nowrap; min-width: 60px; }
-        .lifecycle-theme { font-weight: 700; font-size: 0.78rem; color: #BF360C; }
+        .lifecycle-period { display: flex; align-items: flex-start; gap: 10px; background: #FAF7FF; padding: 10px 12px; border-radius: 10px; border: 1px solid #E1BEE7; }
+        .lifecycle-age { font-weight: 800; font-size: 0.8rem; color: #7B1FA2; white-space: nowrap; min-width: 60px; }
+        .lifecycle-theme { font-weight: 700; font-size: 0.78rem; color: #4A148C; }
         .lifecycle-desc { font-size: 0.76rem; color: #6D4C41; margin-top: 2px; }
-        .lifecycle-keyyear { background: linear-gradient(135deg, #FFF3E0, #FFE0B2); border: 1px solid #FFCC80; border-radius: 10px; padding: 10px 12px; margin-top: 10px; font-size: 0.82rem; color: #BF360C; font-weight: 600; }
+        .lifecycle-keyyear { background: linear-gradient(135deg, #F3E5F5, #E1BEE7); border: 1px solid #CE93D8; border-radius: 10px; padding: 10px 12px; margin-top: 10px; font-size: 0.82rem; color: #4A148C; font-weight: 600; }
         .lifecycle-premium-hint { background: #F3E5F5; border: 1px solid #CE93D8; border-radius: 10px; padding: 10px 12px; margin-top: 8px; font-size: 0.8rem; color: #7B1FA2; display: flex; align-items: center; gap: 6px; cursor: pointer; }
 
         /* Animations */
@@ -248,7 +273,20 @@
 <div id="app">
     <header>
         <div style="display:flex;align-items:center;gap:8px;">
-            <span class="header-logo">🔮</span>
+            <span class="header-logo">
+                <!-- 미니 마법사 고양이 (헤더) -->
+                <svg width="28" height="28" viewBox="0 0 40 40">
+                    <path d="M10 14 Q20 -2 30 16 Q22 13 20 14 Q18 13 10 14 Z" fill="#7B1FA2"/>
+                    <circle cx="19.6" cy="3" r="1.2" fill="#FFC107"/>
+                    <ellipse cx="20" cy="24" rx="11" ry="10" fill="#fff" stroke="#E1BEE7" stroke-width="1"/>
+                    <ellipse cx="16" cy="23" rx="1.8" ry="2.2" fill="#2D2D2D"/>
+                    <ellipse cx="24" cy="23" rx="1.8" ry="2.2" fill="#2D2D2D"/>
+                    <circle cx="16.5" cy="22.2" r="0.6" fill="#fff"/>
+                    <circle cx="24.5" cy="22.2" r="0.6" fill="#fff"/>
+                    <ellipse cx="13" cy="26" rx="1.8" ry="1.2" fill="#F8BBD0" opacity="0.7"/>
+                    <ellipse cx="27" cy="26" rx="1.8" ry="1.2" fill="#F8BBD0" opacity="0.7"/>
+                </svg>
+            </span>
             <span class="header-title">사주 x MBTI</span>
         </div>
         <div class="lang-switch">
@@ -260,9 +298,60 @@
     <!-- INTRO SCREEN -->
     <div id="intro-screen" class="screen active">
         <div class="intro-hero">
-            <div class="intro-emoji">🔮</div>
+            <div class="cat-mascot bounce" id="cat-intro" style="margin-bottom:8px;">
+                <!-- 🐱 마법사 고양이 SVG (인트로용) -->
+                <svg width="180" height="200" viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <radialGradient id="crystalGrad" cx="40%" cy="35%">
+                            <stop offset="0%" stop-color="#F3E5F5"/>
+                            <stop offset="70%" stop-color="#CE93D8"/>
+                            <stop offset="100%" stop-color="#7B1FA2"/>
+                        </radialGradient>
+                    </defs>
+                    <!-- Sparkles -->
+                    <g opacity="0.9">
+                        <text x="20" y="40" font-size="22" fill="#FFC107">✦</text>
+                        <text x="165" y="55" font-size="18" fill="#BA68C8">✧</text>
+                        <text x="170" y="140" font-size="16" fill="#FFC107">✦</text>
+                    </g>
+                    <!-- Wizard hat (cone) -->
+                    <path d="M55 75 Q100 -10 150 80 Q125 70 100 72 Q75 70 55 75 Z" fill="#7B1FA2"/>
+                    <path d="M55 75 Q100 65 150 80 L150 88 Q100 75 55 88 Z" fill="#4A148C"/>
+                    <circle cx="98" cy="22" r="4" fill="#FFC107"/>
+                    <!-- Ears under hat -->
+                    <path d="M62 88 L70 68 L80 90 Z" fill="#FAFAFA" stroke="#E1BEE7" stroke-width="1.5"/>
+                    <path d="M138 88 L130 68 L120 90 Z" fill="#FAFAFA" stroke="#E1BEE7" stroke-width="1.5"/>
+                    <path d="M68 85 L72 76 L77 88 Z" fill="#F8BBD0"/>
+                    <path d="M132 85 L128 76 L123 88 Z" fill="#F8BBD0"/>
+                    <!-- Head -->
+                    <ellipse cx="100" cy="128" rx="55" ry="48" fill="#FFFFFF" stroke="#E1BEE7" stroke-width="2"/>
+                    <!-- Cheeks (pink blush) -->
+                    <ellipse cx="68" cy="138" rx="9" ry="6" fill="#F8BBD0" opacity="0.85"/>
+                    <ellipse cx="132" cy="138" rx="9" ry="6" fill="#F8BBD0" opacity="0.85"/>
+                    <!-- Eyes (sparkly) -->
+                    <ellipse cx="82" cy="123" rx="9" ry="11" fill="#2D2D2D"/>
+                    <ellipse cx="118" cy="123" rx="9" ry="11" fill="#2D2D2D"/>
+                    <circle cx="85" cy="119" r="3.5" fill="#FFFFFF"/>
+                    <circle cx="121" cy="119" r="3.5" fill="#FFFFFF"/>
+                    <circle cx="80" cy="126" r="1.5" fill="#FFFFFF"/>
+                    <circle cx="116" cy="126" r="1.5" fill="#FFFFFF"/>
+                    <!-- Nose -->
+                    <path d="M97 140 L103 140 L100 144 Z" fill="#FFB6C1"/>
+                    <!-- Smile -->
+                    <path d="M92 147 Q100 153 108 147" fill="none" stroke="#2D2D2D" stroke-width="2" stroke-linecap="round"/>
+                    <!-- Whiskers -->
+                    <line x1="55" y1="141" x2="65" y2="143" stroke="#9E9E9E" stroke-width="1"/>
+                    <line x1="55" y1="146" x2="65" y2="146" stroke="#9E9E9E" stroke-width="1"/>
+                    <line x1="135" y1="143" x2="145" y2="141" stroke="#9E9E9E" stroke-width="1"/>
+                    <line x1="135" y1="146" x2="145" y2="146" stroke="#9E9E9E" stroke-width="1"/>
+                    <!-- Crystal ball -->
+                    <ellipse cx="100" cy="198" rx="28" ry="6" fill="#7B1FA2" opacity="0.25"/>
+                    <circle cx="100" cy="192" r="20" fill="url(#crystalGrad)" opacity="0.95"/>
+                    <ellipse cx="94" cy="186" rx="5" ry="3" fill="#FFFFFF" opacity="0.7"/>
+                </svg>
+            </div>
             <div class="intro-title" id="t-intro-title">사주와 MBTI가 만나면<br>운명이 보입니다</div>
-            <p class="intro-sub" id="t-intro-sub">동양 명리학 + 서양 성격유형의 운명적 조합</p>
+            <p class="intro-sub" id="t-intro-sub">🐱 운명을 풀어주는 마법사 고양이가 도와드려요</p>
             <span class="free-badge">첫 분석 무료</span>
         </div>
 
@@ -288,7 +377,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                 <label class="form-label" id="t-label-time" style="margin-bottom: 0;">태어난 시간</label>
                 <label style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: #8D6E63; cursor: pointer;">
-                    <input type="checkbox" id="time_unknown" onchange="toggleTimeUnknown()" style="width: 14px; height: 14px; accent-color: #FF6D00;">
+                    <input type="checkbox" id="time_unknown" onchange="toggleTimeUnknown()" style="width: 14px; height: 14px; accent-color: #7B1FA2;">
                     <span>시간 모름</span>
                 </label>
             </div>
@@ -309,7 +398,7 @@
                     <option value="30">30</option><option value="40">40</option><option value="50">50</option>
                 </select>
             </div>
-            <div id="time_unknown_notice" style="display:none; background:#FFF3E0; border:1px solid #FFE0B2; border-radius:10px; padding:10px 12px; font-size:0.78rem; color:#8D6E63; line-height:1.5;">
+            <div id="time_unknown_notice" style="display:none; background:#F3E5F5; border:1px solid #E1BEE7; border-radius:10px; padding:10px 12px; font-size:0.78rem; color:#8D6E63; line-height:1.5;">
                 ℹ️ 시간 모를 때는 정오(낮 12시)로 분석합니다. 시주(時柱)는 참고용으로만 봐주세요.
             </div>
         </div>
@@ -330,7 +419,7 @@
 
         <p style="text-align:center; font-size:0.72rem; color:#8D6E63; margin-top:14px; line-height:1.6;">
             입력하신 정보는 분석에만 사용되고 서버에 저장되지 않아요.<br>
-            <a href="/privacy" target="_blank" style="color:#BF360C; text-decoration:underline;">개인정보 처리방침</a>
+            <a href="/privacy" target="_blank" style="color:#4A148C; text-decoration:underline;">개인정보 처리방침</a>
             을 확인해 주세요.
         </p>
     </div>
@@ -339,6 +428,32 @@
     <div id="report-screen" class="screen">
         <!-- Header Card -->
         <div class="report-header-card fade-in" id="report-header">
+            <!-- 🐱 두루마리 든 고양이 (결과 헤더) -->
+            <div class="cat-mascot bounce" style="margin-bottom:4px;">
+                <svg width="80" height="80" viewBox="0 0 100 100">
+                    <!-- Wizard hat -->
+                    <path d="M28 30 Q50 -8 72 32 Q60 26 50 27 Q40 26 28 30 Z" fill="#7B1FA2"/>
+                    <circle cx="49" cy="3" r="2" fill="#FFC107"/>
+                    <!-- Ears -->
+                    <path d="M30 38 L36 24 L43 40 Z" fill="#FFFFFF" stroke="#E1BEE7" stroke-width="1"/>
+                    <path d="M70 38 L64 24 L57 40 Z" fill="#FFFFFF" stroke="#E1BEE7" stroke-width="1"/>
+                    <!-- Head -->
+                    <ellipse cx="50" cy="56" rx="25" ry="22" fill="#FFFFFF" stroke="#E1BEE7" stroke-width="1.5"/>
+                    <!-- Eyes (happy) -->
+                    <path d="M38 56 Q42 53 46 56" stroke="#2D2D2D" stroke-width="2" fill="none" stroke-linecap="round"/>
+                    <path d="M54 56 Q58 53 62 56" stroke="#2D2D2D" stroke-width="2" fill="none" stroke-linecap="round"/>
+                    <!-- Cheeks -->
+                    <ellipse cx="33" cy="62" rx="4" ry="2.5" fill="#F8BBD0" opacity="0.8"/>
+                    <ellipse cx="67" cy="62" rx="4" ry="2.5" fill="#F8BBD0" opacity="0.8"/>
+                    <!-- Smile -->
+                    <path d="M46 66 Q50 70 54 66" stroke="#2D2D2D" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                    <!-- Scroll (left paw) -->
+                    <rect x="15" y="70" width="20" height="14" rx="2" fill="#FFF8E1" stroke="#FFC107" stroke-width="1"/>
+                    <line x1="19" y1="74" x2="31" y2="74" stroke="#9C27B0" stroke-width="0.8"/>
+                    <line x1="19" y1="77" x2="29" y2="77" stroke="#9C27B0" stroke-width="0.8"/>
+                    <line x1="19" y1="80" x2="30" y2="80" stroke="#9C27B0" stroke-width="0.8"/>
+                </svg>
+            </div>
             <div class="report-name" id="report-name-display"></div>
             <div class="report-birth-info" id="report-birth-info"></div>
             <div class="pillar-grid" id="pillar-grid"></div>
@@ -424,11 +539,11 @@
         <button class="retry-btn" onclick="location.reload()">다시 분석하기</button>
 
         <!-- Footer (정책/문의) -->
-        <div style="margin-top:24px; padding-top:16px; border-top:1px dashed #FFE0B2; text-align:center; font-size:0.72rem; color:#8D6E63; line-height:1.7;">
+        <div style="margin-top:24px; padding-top:16px; border-top:1px dashed #E1BEE7; text-align:center; font-size:0.72rem; color:#8D6E63; line-height:1.7;">
             <div style="margin-bottom:6px;">
-                <a href="/privacy" target="_blank" style="color:#BF360C; text-decoration:none; margin:0 8px;">개인정보 처리방침</a>
+                <a href="/privacy" target="_blank" style="color:#4A148C; text-decoration:none; margin:0 8px;">개인정보 처리방침</a>
                 ·
-                <a href="mailto:se.beauty2017@gmail.com" style="color:#BF360C; text-decoration:none; margin:0 8px;">문의하기</a>
+                <a href="mailto:se.beauty2017@gmail.com" style="color:#4A148C; text-decoration:none; margin:0 8px;">문의하기</a>
             </div>
             <div>© 2026 사주 × MBTI · AI 분석 결과는 참고용입니다</div>
         </div>
@@ -450,8 +565,8 @@
             <div id="compat-self-info" style="font-size:0.9rem; color:#C2185B; font-weight:700;">분석 정보 로딩...</div>
         </div>
 
-        <div style="background:#fff; border:1.5px solid #FFE0B2; border-radius:14px; padding:14px;">
-            <div style="font-size:0.85rem; color:#BF360C; font-weight:800; margin-bottom:12px;">상대방 정보 입력</div>
+        <div style="background:#fff; border:1.5px solid #E1BEE7; border-radius:14px; padding:14px;">
+            <div style="font-size:0.85rem; color:#4A148C; font-weight:800; margin-bottom:12px;">상대방 정보 입력</div>
             <div class="form-section">
                 <label class="form-label">이름 또는 닉네임</label>
                 <input type="text" class="form-input" id="partner_name" placeholder="예: 박지훈" maxlength="20">
@@ -472,7 +587,7 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                     <label class="form-label" style="margin-bottom:0;">태어난 시간</label>
                     <label style="display:flex; align-items:center; gap:6px; font-size:0.78rem; color:#8D6E63; cursor:pointer;">
-                        <input type="checkbox" id="partner_time_unknown" onchange="togglePartnerTimeUnknown()" style="width:14px; height:14px; accent-color:#FF6D00;">
+                        <input type="checkbox" id="partner_time_unknown" onchange="togglePartnerTimeUnknown()" style="width:14px; height:14px; accent-color:#7B1FA2;">
                         <span>시간 모름</span>
                     </label>
                 </div>
@@ -572,7 +687,7 @@
 <div id="result-modal" onclick="closeModal()">
     <div onclick="event.stopPropagation()" style="width:100%;max-width:360px;">
         <div id="result-card">
-            <div style="font-size:0.65rem;color:#E65100;letter-spacing:3px;margin-bottom:12px;">🔮 DESTINY CARD</div>
+            <div style="font-size:0.65rem;color:#7B1FA2;letter-spacing:3px;margin-bottom:12px;">🔮 DESTINY CARD</div>
             <div class="card-name" id="rc-name"></div>
             <div class="card-mbti" id="rc-mbti"></div>
             <div class="pillar-grid" id="rc-pillars" style="margin-bottom:16px;"></div>
@@ -584,9 +699,88 @@
     </div>
 </div>
 
+<!-- 😿 Error Modal (운명의 실이 꼬였어요) -->
+<div id="cat-error-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(74,20,140,0.55); z-index:200; justify-content:center; align-items:center; padding:20px; backdrop-filter:blur(4px);" onclick="closeCatError()">
+    <div onclick="event.stopPropagation()" style="background:#fff; border-radius:24px; padding:32px 24px; max-width:340px; width:100%; text-align:center; box-shadow:0 10px 40px rgba(74,20,140,0.3);">
+        <div class="cat-mascot" style="margin-bottom:8px;">
+            <!-- 😿 당황한 고양이 -->
+            <svg width="120" height="140" viewBox="0 0 200 220">
+                <!-- Tangled threads -->
+                <path d="M40 20 Q50 30 45 45 Q35 55 50 65 Q65 70 55 85" stroke="#CE93D8" stroke-width="2" fill="none" opacity="0.7"/>
+                <path d="M155 20 Q145 30 150 45 Q160 55 145 65 Q130 70 140 85" stroke="#CE93D8" stroke-width="2" fill="none" opacity="0.7"/>
+                <text x="35" y="100" font-size="16" fill="#7B1FA2">★</text>
+                <text x="155" y="100" font-size="14" fill="#FFC107">✦</text>
+                <!-- Wizard hat (tilted) -->
+                <g transform="rotate(-15 100 80)">
+                    <path d="M55 80 Q100 5 150 85 Q125 75 100 77 Q75 75 55 80 Z" fill="#7B1FA2"/>
+                    <circle cx="98" cy="28" r="4" fill="#FFC107"/>
+                </g>
+                <!-- Ears -->
+                <path d="M55 95 L66 75 L76 98 Z" fill="#FFFFFF" stroke="#E1BEE7" stroke-width="1.5"/>
+                <path d="M145 95 L134 75 L124 98 Z" fill="#FFFFFF" stroke="#E1BEE7" stroke-width="1.5"/>
+                <!-- Head -->
+                <ellipse cx="100" cy="135" rx="55" ry="48" fill="#FFFFFF" stroke="#E1BEE7" stroke-width="2"/>
+                <!-- Worried eyes -->
+                <ellipse cx="82" cy="130" rx="8" ry="10" fill="#2D2D2D"/>
+                <ellipse cx="118" cy="130" rx="8" ry="10" fill="#2D2D2D"/>
+                <circle cx="80" cy="128" r="2.5" fill="#FFFFFF"/>
+                <circle cx="116" cy="128" r="2.5" fill="#FFFFFF"/>
+                <!-- Sweat drops -->
+                <ellipse cx="60" cy="115" rx="3" ry="5" fill="#42A5F5" opacity="0.8"/>
+                <ellipse cx="140" cy="115" rx="3" ry="5" fill="#42A5F5" opacity="0.8"/>
+                <!-- Cheeks (red) -->
+                <ellipse cx="68" cy="145" rx="9" ry="6" fill="#FFCDD2" opacity="0.9"/>
+                <ellipse cx="132" cy="145" rx="9" ry="6" fill="#FFCDD2" opacity="0.9"/>
+                <!-- Worried mouth -->
+                <path d="M90 155 Q100 148 110 155" stroke="#2D2D2D" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <!-- Whiskers -->
+                <line x1="55" y1="148" x2="65" y2="150" stroke="#9E9E9E" stroke-width="1"/>
+                <line x1="135" y1="150" x2="145" y2="148" stroke="#9E9E9E" stroke-width="1"/>
+                <!-- Tiny paws raised -->
+                <ellipse cx="75" cy="195" rx="8" ry="6" fill="#FFFFFF" stroke="#E1BEE7" stroke-width="1.5"/>
+                <ellipse cx="125" cy="195" rx="8" ry="6" fill="#FFFFFF" stroke="#E1BEE7" stroke-width="1.5"/>
+            </svg>
+        </div>
+        <div style="font-size:1.1rem; font-weight:800; color:#4A148C; margin-bottom:6px;">앗, 운명의 실이 꼬였어요!</div>
+        <div id="cat-error-msg" style="font-size:0.88rem; color:#6D4C41; margin-bottom:18px; line-height:1.6;">잠시 후 다시 시도해주세요 🐾</div>
+        <button onclick="closeCatError()" style="width:100%; padding:14px; background:linear-gradient(135deg,#7B1FA2,#9C27B0); color:#fff; border:none; border-radius:14px; font-size:0.95rem; font-weight:800; cursor:pointer;">알겠어요!</button>
+    </div>
+</div>
+
 <!-- Loading -->
 <div class="loading-overlay" id="loading">
-    <div class="loading-spinner"></div>
+    <div class="cat-mascot wiggle" style="margin-bottom: 14px;">
+        <!-- 🐱 노트북 두드리는 고양이 (로딩) -->
+        <svg width="140" height="140" viewBox="0 0 200 200">
+            <!-- 타닥타닥 효과 -->
+            <text x="20" y="40" font-size="14" fill="#9C27B0" opacity="0.7">타닥</text>
+            <text x="155" y="35" font-size="14" fill="#9C27B0" opacity="0.7">타닥</text>
+            <!-- Wizard hat -->
+            <path d="M55 70 Q100 -5 150 75 Q125 65 100 67 Q75 65 55 70 Z" fill="#7B1FA2"/>
+            <circle cx="98" cy="20" r="4" fill="#FFC107"/>
+            <!-- Ears -->
+            <path d="M62 82 L70 62 L80 85 Z" fill="#FAFAFA" stroke="#E1BEE7" stroke-width="1.5"/>
+            <path d="M138 82 L130 62 L120 85 Z" fill="#FAFAFA" stroke="#E1BEE7" stroke-width="1.5"/>
+            <!-- Head -->
+            <ellipse cx="100" cy="115" rx="50" ry="44" fill="#FFFFFF" stroke="#E1BEE7" stroke-width="2"/>
+            <!-- Concentrated eyes (lines) -->
+            <path d="M75 112 Q82 110 90 112" stroke="#2D2D2D" stroke-width="3" stroke-linecap="round" fill="none"/>
+            <path d="M110 112 Q118 110 125 112" stroke="#2D2D2D" stroke-width="3" stroke-linecap="round" fill="none"/>
+            <!-- Cheeks -->
+            <ellipse cx="68" cy="125" rx="8" ry="5" fill="#F8BBD0" opacity="0.8"/>
+            <ellipse cx="132" cy="125" rx="8" ry="5" fill="#F8BBD0" opacity="0.8"/>
+            <!-- Nose -->
+            <path d="M97 128 L103 128 L100 132 Z" fill="#FFB6C1"/>
+            <!-- Mouth (focused) -->
+            <line x1="95" y1="138" x2="105" y2="138" stroke="#2D2D2D" stroke-width="2" stroke-linecap="round"/>
+            <!-- Laptop -->
+            <rect x="55" y="160" width="90" height="25" rx="3" fill="#7B1FA2"/>
+            <rect x="60" y="163" width="80" height="19" fill="#1A1A2E"/>
+            <rect x="50" y="180" width="100" height="6" rx="2" fill="#4A148C"/>
+            <!-- Paw print on laptop -->
+            <circle cx="100" cy="172" r="2" fill="#FFC107"/>
+        </svg>
+    </div>
     <div class="loading-text">운명을 해석하고 있습니다...</div>
 </div>
 
@@ -627,6 +821,15 @@
     function toggleAccordion(header) {
         const section = header.parentElement;
         section.classList.toggle('open');
+    }
+
+    // 🐱 친절한 고양이 에러 모달
+    function showCatError(msg) {
+        document.getElementById('cat-error-msg').innerHTML = msg || '잠시 후 다시 시도해주세요 🐾';
+        document.getElementById('cat-error-modal').style.display = 'flex';
+    }
+    function closeCatError() {
+        document.getElementById('cat-error-modal').style.display = 'none';
     }
 
     function selectGender(g) {
@@ -742,7 +945,7 @@
             localStorage.setItem('freeUsed', 'true');
             freeUsed = true;
         } catch(e) {
-            alert("서버 연결 실패!");
+            showCatError("서버랑 연결이 안 됐어요. 잠시 후 다시 시도해주세요!");
         } finally {
             document.getElementById("loading").classList.remove("active");
         }
@@ -760,7 +963,7 @@
             <span class="info-chip">${genderChip}</span>
             <span class="info-chip">${r.mbti}</span>
             <span class="info-chip">일간: ${r.ilgan.name}</span>
-            ${timeChip ? `<span class="info-chip" style="background:#FFF3E0;color:#BF360C;">${timeChip}</span>` : ''}
+            ${timeChip ? `<span class="info-chip" style="background:#F3E5F5;color:#4A148C;">${timeChip}</span>` : ''}
         `;
 
         // Pillars with colors
@@ -810,7 +1013,7 @@
         container.innerHTML = '';
 
         const sections = [
-            { icon: '🌟', bg: '#FFF3E0', title: r.ilgan.title, desc: r.ilgan.desc },
+            { icon: '🌟', bg: '#F3E5F5', title: r.ilgan.title, desc: r.ilgan.desc },
             { icon: '🔮', bg: '#F3E5F5', title: r.synergy.title, desc: r.synergy.desc,
               extra: r.combo_detail && r.combo_detail.strength ? `
                 <div class="accordion-sub">
@@ -957,9 +1160,9 @@
                 `<div class="travel-place"><div class="travel-place-flag">✈️</div><div><div class="travel-place-name">${p.place}</div><div class="travel-place-reason">${p.reason}</div></div></div>`
             ).join('');
             const travelExtra = `
-                <div style="font-weight:700;font-size:0.82rem;color:#E65100;margin-top:14px;">국내 추천</div>
+                <div style="font-weight:700;font-size:0.82rem;color:#7B1FA2;margin-top:14px;">국내 추천</div>
                 <div class="travel-places">${domesticHTML}</div>
-                <div style="font-weight:700;font-size:0.82rem;color:#E65100;margin-top:14px;">해외 추천</div>
+                <div style="font-weight:700;font-size:0.82rem;color:#7B1FA2;margin-top:14px;">해외 추천</div>
                 <div class="travel-places">${intlHTML}</div>
                 <div class="travel-avoid">⚠️ ${d.travel.avoid}</div>
                 <div class="travel-tip">💡 ${d.travel.travel_tip}</div>
@@ -978,7 +1181,7 @@
 
         // Final message
         if (d.final_message) {
-            sections.push({ icon: '✨', bg: '#FFF3E0', title: '당신에게 전하는 마지막 한마디', desc: d.final_message });
+            sections.push({ icon: '✨', bg: '#F3E5F5', title: '당신에게 전하는 마지막 한마디', desc: d.final_message });
         }
 
         // Render all sections
@@ -1043,7 +1246,7 @@
     // 추가 사주 분석 1회 권한 구매 (990원)
     async function purchaseAdditionalAnalysisCredit() {
         if (typeof TossPayments === 'undefined') {
-            alert('결제 모듈 로드 중입니다. 잠시 후 다시 시도해주세요.');
+            showCatError("결제 모듈을 불러오고 있어요. 잠깐만 기다려주세요!");
             return;
         }
         try {
@@ -1069,7 +1272,7 @@
         } catch (e) {
             if (e && e.code === 'USER_CANCEL') return;
             console.error(e);
-            alert(`결제창 열기 실패: ${e.message || e}`);
+            showCatError(`결제창을 못 열었어요. <br>(${e.message || e})`);
         }
     }
 
@@ -1087,7 +1290,7 @@
 
     async function saveCard() {
         const card = document.getElementById("result-card");
-        const canvas = await html2canvas(card, { backgroundColor: "#FFF8F0", scale: 2 });
+        const canvas = await html2canvas(card, { backgroundColor: "#FAF7FF", scale: 2 });
         const link = document.createElement("a");
         link.download = "saju-mbti-card.png";
         link.href = canvas.toDataURL();
@@ -1188,7 +1391,7 @@
     async function requestPremium() {
         if (!reportData) return;
         if (typeof TossPayments === 'undefined') {
-            alert('결제 모듈 로드 중입니다. 잠시 후 다시 시도해주세요.');
+            showCatError("결제 모듈을 불러오고 있어요. 잠깐만 기다려주세요!");
             return;
         }
 
@@ -1219,7 +1422,7 @@
         } catch (e) {
             if (e && e.code === 'USER_CANCEL') return; // 사용자 취소는 무시
             console.error(e);
-            alert(`결제창 열기 실패: ${e.message || e}`);
+            showCatError(`결제창을 못 열었어요. <br>(${e.message || e})`);
         }
     }
 
@@ -1248,7 +1451,7 @@
 
         const stored = localStorage.getItem(`pending_${orderId}`);
         if (!stored) {
-            alert('결제 정보를 찾을 수 없어요. 새로 입력 후 다시 시도해주세요.');
+            showCatError("결제 정보를 찾을 수 없어요. <br>다시 시도해주세요.");
             return;
         }
         const input = JSON.parse(stored);
@@ -1265,13 +1468,13 @@
                     body: JSON.stringify({ person_a: personA, person_b: personB, paymentKey, orderId, amount })
                 });
                 const data = await res.json();
-                if (!res.ok) { alert(`결제 검증 실패: ${data.detail || ''}`); return; }
+                if (!res.ok) { showCatError(`결제 확인이 잘 안 됐어요.<br>${data.detail || ''}`); return; }
                 showScreen('compat-screen');
                 document.getElementById('compat-self-info').textContent = `${personA.name === '당신' ? '나' : personA.name + '님'} · ${personA.mbti}`;
                 renderCompatibilityFull(data);
                 localStorage.removeItem(`pending_${orderId}`);
             } catch(e) {
-                console.error(e); alert('궁합 응답 실패');
+                console.error(e); showCatError("궁합 결과를 받지 못했어요. <br>새로고침 후 다시 시도해주세요.");
             } finally {
                 document.getElementById("loading").classList.remove("active");
                 document.querySelector(".loading-text").textContent = "운명을 해석하고 있습니다...";
@@ -1291,12 +1494,12 @@
                     body: JSON.stringify({ ...meInput, target_year: 2026, paymentKey, orderId, amount })
                 });
                 const data = await res.json();
-                if (!res.ok) { alert(`결제 검증 실패: ${data.detail || ''}`); return; }
+                if (!res.ok) { showCatError(`결제 확인이 잘 안 됐어요.<br>${data.detail || ''}`); return; }
                 showScreen('yearly-screen');
                 renderYearlyFull(data);
                 localStorage.removeItem(`pending_${orderId}`);
             } catch(e) {
-                console.error(e); alert('월별 운세 응답 실패');
+                console.error(e); showCatError("월별 운세를 받지 못했어요. <br>새로고침 후 다시 시도해주세요.");
             } finally {
                 document.getElementById("loading").classList.remove("active");
                 document.querySelector(".loading-text").textContent = "운명을 해석하고 있습니다...";
@@ -1317,7 +1520,7 @@
                 });
                 const data = await res.json();
                 if (!res.ok) {
-                    alert(`결제 검증 실패: ${data.detail || ''}`);
+                    showCatError(`결제 확인이 잘 안 됐어요.<br>${data.detail || ''}`);
                     return;
                 }
                 // 결제 통과 → 무료 사용 권한 다시 부여
@@ -1362,7 +1565,7 @@
             });
             const data = await res.json();
             if (!res.ok) {
-                alert(`결제 검증 실패: ${data.detail || ''}`);
+                showCatError(`결제 확인이 잘 안 됐어요.<br>${data.detail || ''}`);
                 return;
             }
             renderPremiumResult(data.premium, data.lifestyle, data.ai_error);
@@ -1458,7 +1661,7 @@
             if (!res.ok) { alert(data.detail || '계산 실패'); return; }
             renderCompatibilityPreview(data, personA, you);
         } catch(e) {
-            console.error(e); alert('서버 연결 실패');
+            console.error(e); showCatError("서버랑 연결이 안 됐어요. 다시 시도해주세요!");
         } finally {
             document.getElementById("loading").classList.remove("active");
             document.querySelector(".loading-text").textContent = "운명을 해석하고 있습니다...";
@@ -1543,7 +1746,7 @@
                 <div style="font-size:0.85rem; font-weight:800; color:#2E7D32; margin-bottom:6px;">💡 관계 조언</div>
                 <div style="font-size:0.85rem; color:#1B5E20; line-height:1.7;">${data.advice}</div>
             </div>
-            <button onclick="backToReport()" style="width:100%; margin-top:14px; padding:14px; background:#fff; border:2px solid #FFE0B2; color:#8D6E63; border-radius:14px; font-weight:700; cursor:pointer;">← 분석 결과로 돌아가기</button>`;
+            <button onclick="backToReport()" style="width:100%; margin-top:14px; padding:14px; background:#fff; border:2px solid #E1BEE7; color:#8D6E63; border-radius:14px; font-weight:700; cursor:pointer;">← 분석 결과로 돌아가기</button>`;
         area.scrollIntoView({behavior:'smooth', block:'start'});
     }
 
@@ -1567,7 +1770,7 @@
             if (!res.ok) { alert(data.detail || '미리보기 실패'); return; }
             renderYearlyPreview(data, me);
         } catch(e) {
-            console.error(e); alert('서버 연결 실패');
+            console.error(e); showCatError("서버랑 연결이 안 됐어요. 다시 시도해주세요!");
         } finally {
             document.getElementById("loading").classList.remove("active");
             document.querySelector(".loading-text").textContent = "운명을 해석하고 있습니다...";
@@ -1589,8 +1792,8 @@
                         <div style="font-size:0.72rem; color:#388E3C; margin-top:4px;">${data.best_month.reason}</div>
                     </div>
                     <div style="flex:1; padding:12px; background:#FBE9E7; border-radius:10px;">
-                        <div style="font-size:0.7rem; color:#BF360C; font-weight:700;">⚠️ 신중해야 할 달</div>
-                        <div style="font-size:1.1rem; font-weight:900; color:#BF360C; margin-top:4px;">${data.caution_month.label}</div>
+                        <div style="font-size:0.7rem; color:#4A148C; font-weight:700;">⚠️ 신중해야 할 달</div>
+                        <div style="font-size:1.1rem; font-weight:900; color:#4A148C; margin-top:4px;">${data.caution_month.label}</div>
                         <div style="font-size:0.72rem; color:#D84315; margin-top:4px;">${data.caution_month.reason}</div>
                     </div>
                 </div>
@@ -1602,7 +1805,7 @@
                     💎 2,900원 결제하고 12개월 다 보기
                 </button>
             </div>
-            <button onclick="backToReport()" style="width:100%; margin-top:14px; padding:14px; background:#fff; border:2px solid #FFE0B2; color:#8D6E63; border-radius:14px; font-weight:700; cursor:pointer;">← 분석 결과로 돌아가기</button>`;
+            <button onclick="backToReport()" style="width:100%; margin-top:14px; padding:14px; background:#fff; border:2px solid #E1BEE7; color:#8D6E63; border-radius:14px; font-weight:700; cursor:pointer;">← 분석 결과로 돌아가기</button>`;
     }
 
     async function purchaseYearly(meInput) {
@@ -1632,7 +1835,7 @@
     function renderYearlyFull(data) {
         const area = document.getElementById('yearly-result-area');
         const monthCards = data.months.map(m => {
-            const luckColor = m.luck >= 85 ? '#2E7D32' : m.luck >= 70 ? '#5E35B1' : m.luck >= 60 ? '#F57C00' : '#BF360C';
+            const luckColor = m.luck >= 85 ? '#2E7D32' : m.luck >= 70 ? '#5E35B1' : m.luck >= 60 ? '#F57C00' : '#4A148C';
             const luckBg = m.luck >= 85 ? '#E8F5E9' : m.luck >= 70 ? '#EDE7F6' : m.luck >= 60 ? '#FFF8E1' : '#FBE9E7';
             return `
                 <div style="background:${luckBg}; border-radius:12px; padding:14px; margin-bottom:8px; border-left:4px solid ${luckColor};">
@@ -1654,7 +1857,7 @@
                 <div style="font-size:0.85rem; color:#5E35B1; margin-top:8px;">${data.summary}</div>
             </div>
             ${monthCards}
-            <button onclick="backToReport()" style="width:100%; margin-top:14px; padding:14px; background:#fff; border:2px solid #FFE0B2; color:#8D6E63; border-radius:14px; font-weight:700; cursor:pointer;">← 분석 결과로 돌아가기</button>`;
+            <button onclick="backToReport()" style="width:100%; margin-top:14px; padding:14px; background:#fff; border:2px solid #E1BEE7; color:#8D6E63; border-radius:14px; font-weight:700; cursor:pointer;">← 분석 결과로 돌아가기</button>`;
         area.scrollIntoView({behavior:'smooth', block:'start'});
     }
 
@@ -1670,7 +1873,7 @@
 
         // AI 에러 메시지 (있을 때만)
         if (aiError) {
-            html += `<div style="background:#FFF3E0; border:1px solid #FFCC80; border-radius:12px; padding:12px 14px; margin-bottom:10px; font-size:0.82rem; color:#BF360C;">⚠️ ${aiError}</div>`;
+            html += `<div style="background:#F3E5F5; border:1px solid #CE93D8; border-radius:12px; padding:12px 14px; margin-bottom:10px; font-size:0.82rem; color:#4A148C;">⚠️ ${aiError}</div>`;
         }
 
         // 1) 풍수/악세사리/향기 (JSON 데이터)
