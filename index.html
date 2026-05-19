@@ -263,7 +263,9 @@
         </div>
         <div class="form-section">
             <label class="form-label" id="t-label-birth">생년월일 (양력)</label>
-            <input type="date" class="form-input" id="birth_date" value="1995-05-15">
+            <input type="date" class="form-input" id="birth_date" value="1995-05-15"
+                   min="1900-01-01" max="2099-12-31"
+                   oninput="enforceBirthDate(this)" onblur="enforceBirthDate(this)">
         </div>
         <div class="form-section">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -524,6 +526,31 @@
         document.getElementById('time_unknown_notice').style.display = unknown ? 'block' : 'none';
     }
 
+    // 생년월일 입력 검증 — 연도 4자리 강제 (1900~2099)
+    function enforceBirthDate(input) {
+        const v = input.value; // "YYYY-MM-DD" 또는 "YYYYY-MM-DD" 등
+        if (!v) return;
+        const match = v.match(/^(\d+)-(\d{2})-(\d{2})$/);
+        if (!match) return;
+        let [_, year, mm, dd] = match;
+        // 5자리 이상이면 첫 4자리만 사용
+        if (year.length > 4) {
+            year = year.slice(0, 4);
+            input.value = `${year}-${mm}-${dd}`;
+        }
+        // 4자리 미만은 입력 중일 수 있으니 그대로 두되, blur 시점에 보정
+        const y = parseInt(year, 10);
+        if (year.length === 4) {
+            if (y < 1900) {
+                input.value = `1900-${mm}-${dd}`;
+                alert('생년월일은 1900년 이후만 입력 가능해요.');
+            } else if (y > 2099) {
+                input.value = `2099-${mm}-${dd}`;
+                alert('생년월일은 2099년 이전까지만 입력 가능해요.');
+            }
+        }
+    }
+
     let userInfo = { name: '', gender: 'F', timeUnknown: false };
 
     async function getReport() {
@@ -544,6 +571,15 @@
         const name = document.getElementById("user_name").value.trim() || '당신';
         const gender = document.getElementById("user_gender").value;
         if (!bd) return alert("생년월일을 입력해주세요.");
+        // 연도 4자리 검증
+        const yearMatch = bd.match(/^(\d+)-/);
+        if (!yearMatch || yearMatch[1].length !== 4) {
+            return alert("생년월일의 연도는 4자리(예: 1995)로 입력해주세요.");
+        }
+        const yearNum = parseInt(yearMatch[1], 10);
+        if (yearNum < 1900 || yearNum > 2099) {
+            return alert("생년월일은 1900~2099년 사이로 입력해주세요.");
+        }
 
         // 사용자 정보 보관 (렌더링용)
         userInfo = { name, gender, timeUnknown };
