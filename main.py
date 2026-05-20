@@ -254,8 +254,80 @@ def calc_daewoon(year: int, month: int, day: int, hour: int, gender: str = 'F',
     }
 
 
+# ─────────────────────────────────────────────
+# ⏰ 시간 보정 — 서머타임 + 1954~1961 GMT+8:30 + 시태양시(경도)
+# ─────────────────────────────────────────────
+# 한국 서머타임 시행 이력 (KST → 시계 시간 -1시간 = 실제 시간)
+_KOREAN_DST_PERIODS = [
+    ((1948, 6, 1),  (1948, 9, 13)),
+    ((1949, 4, 3),  (1949, 9, 11)),
+    ((1950, 4, 1),  (1950, 9, 10)),
+    ((1951, 5, 6),  (1951, 9, 9)),
+    ((1955, 5, 5),  (1955, 9, 9)),
+    ((1956, 5, 20), (1956, 9, 30)),
+    ((1957, 5, 5),  (1957, 9, 22)),
+    ((1958, 5, 4),  (1958, 9, 21)),
+    ((1959, 5, 3),  (1959, 9, 20)),
+    ((1960, 5, 1),  (1960, 9, 18)),
+    ((1987, 5, 10), (1987, 10, 11)),
+    ((1988, 5, 8),  (1988, 10, 9)),
+]
+# 한국 표준시 GMT+8:30 시기 (시계가 30분 늦음 → 실제 시간 +30분)
+_KST_830_RANGE = ((1954, 3, 21), (1961, 8, 9))
+
+# 주요 도시 동경 (시태양시 보정용)
+_CITY_LONGITUDES = {
+    'Seoul':    126.978,  # 서울
+    'Busan':    129.075,  # 부산
+    'Incheon':  126.706,  # 인천
+    'Daegu':    128.602,
+    'Daejeon':  127.385,
+    'Gwangju':  126.853,
+    'Jeju':     126.531,
+}
+_KST_BASE_LONGITUDE = 135.0  # 한국 표준시 기준 경도
+
+def adjust_birth_time(year, month, day, hour, minute=0,
+                       apply_dst=True, apply_solar_time=False, city='Seoul'):
+    """
+    출생 시계 시간을 사주 계산용 '실제 천문 시간'으로 보정.
+    Returns: (year, month, day, hour, minute, adjustments)
+    """
+    from datetime import datetime as _dt, timedelta as _td
+    dt = _dt(year, month, day, hour, minute)
+    adjustments = []
+
+    # 1) 서머타임: 시계가 1시간 빨랐으므로 빼기
+    if apply_dst:
+        for (sy, sm, sd), (ey, em, ed) in _KOREAN_DST_PERIODS:
+            start = _dt(sy, sm, sd, 0, 0)
+            end = _dt(ey, em, ed, 23, 59)
+            if start <= dt <= end:
+                dt -= _td(hours=1)
+                adjustments.append({'type': 'summertime', 'minutes': -60})
+                break
+
+    # 2) 1954-1961 GMT+8:30: 표준시 30분 늦었으므로 더하기
+    (s1y, s1m, s1d), (e1y, e1m, e1d) = _KST_830_RANGE
+    s1 = _dt(s1y, s1m, s1d)
+    e1 = _dt(e1y, e1m, e1d, 23, 59)
+    if s1 <= dt <= e1:
+        dt += _td(minutes=30)
+        adjustments.append({'type': 'kst_830_offset', 'minutes': 30})
+
+    # 3) 시태양시 (경도 보정)
+    if apply_solar_time:
+        lon = _CITY_LONGITUDES.get(city, 126.978)
+        diff = (lon - _KST_BASE_LONGITUDE) * 4  # 1도 = 4분
+        dt += _td(minutes=diff)
+        adjustments.append({'type': 'solar_time', 'minutes': round(diff, 1), 'city': city, 'longitude': lon})
+
+    return dt.year, dt.month, dt.day, dt.hour, dt.minute, adjustments
+
+
 def calc_pillars_accurate(year: int, month: int, day: int, hour: int,
-                          calendar_type: str = 'solar', is_leap_month: bool = False):
+                          calendar_type: str = 'solar', is_leap_month: bool = False,
+                          apply_dst: bool = True, apply_solar_time: bool = False, city: str = 'Seoul'):
     """
     📿 sxtwl(수신통일력) 기반 정확한 사주 4기둥
     - 24절기 기반 월주 (입춘, 경칩, 청명, 입하 등 정확)
@@ -276,6 +348,12 @@ def calc_pillars_accurate(year: int, month: int, day: int, hour: int,
     else:
         sy, sm, sd = year, month, day
 
+    # 1.5) 시간 보정 (서머타임 + GMT+8:30 + 시태양시)
+    sy, sm, sd, hour, _min, _adjs = adjust_birth_time(
+        sy, sm, sd, hour, 0,
+        apply_dst=apply_dst, apply_solar_time=apply_solar_time, city=city
+    )
+
     # 2) 자시 처리: 23시 출생은 양력 +1일
     if hour == 23:
         d = _date(sy, sm, sd) + _td(days=1)
@@ -293,6 +371,8 @@ def calc_pillars_accurate(year: int, month: int, day: int, hour: int,
     # 4) 시주: 일간 + 시간 기반 (5호둔)
     time_p = calc_time_pillar(day_p[0], hour)
 
+    # 메타데이터를 함수 속성에 저장 (호출자가 필요 시 접근)
+    calc_pillars_accurate.last_adjustments = _adjs
     return year_p, month_p, day_p, time_p
 
 # Gemini API 설정
@@ -551,6 +631,34 @@ GONGMANG_BY_SUN = {
     3: ['진', '사'], 4: ['인', '묘'], 5: ['자', '축'],
 }
 
+# 천덕귀인 — 월지 → 해당 글자
+CHEONDEOK_MAP = {
+    '인': '정', '묘': '신', '진': '임', '사': '신',
+    '오': '해', '미': '갑', '신': '계', '유': '인',
+    '술': '병', '해': '을', '자': '사', '축': '경',
+}
+# 월덕귀인 — 월지 → 해당 천간
+WEOLDEOK_MAP = {
+    '인': '병', '오': '병', '술': '병',
+    '신': '임', '자': '임', '진': '임',
+    '사': '경', '유': '경', '축': '경',
+    '해': '갑', '묘': '갑', '미': '갑',
+}
+# 홍염살 — 일간 → 해당 지지
+HONGYEOM_MAP = {
+    '갑': '오', '을': '오', '병': '인', '정': '미',
+    '무': '진', '기': '진', '경': '술', '신': '유',
+    '임': '자', '계': '신',
+}
+# 괴강살 — 일주 한정 (특정 조합)
+GOEGANG_PAIRS = {('경', '진'), ('경', '술'), ('임', '진'), ('임', '술'), ('무', '술'), ('무', '진')}
+# 금여록 — 일간 → 해당 지지
+KEUMYEO_MAP = {
+    '갑': '진', '을': '사', '병': '미', '정': '신',
+    '무': '미', '기': '신', '경': '술', '신': '해',
+    '임': '축', '계': '인',
+}
+
 def _calc_day_idx_in_60(day_gan, day_ji):
     """일주의 60갑자 인덱스 (0=갑자, 59=계해)"""
     CHEONGAN = ['갑','을','병','정','무','기','경','신','임','계']
@@ -776,6 +884,31 @@ SINSAL_DATA = {
         'desc': '학문과 글쓰기의 별. 머리가 명석하고 공부·시험에 강한 운을 타고났어요. 작가·교수·연구원·강사에게서 자주 발견되며, 자격증 취득과 시험 합격 운이 좋습니다.',
         'tip': '시험·자격증·자기개발에 적극 도전하세요. 글쓰기·강의·콘텐츠 제작도 잘 어울려요.'
     },
+    '천덕귀인': {
+        'icon': '🌟', 'name': '천덕귀인 (天德貴人)', 'type': '하늘의 보호',
+        'desc': '하늘이 내린 덕의 별. 큰 위기 속에서도 보이지 않는 손길의 도움을 받아 무사히 넘어갑니다. 인덕이 두텁고 베푼 만큼 돌아오는 사주예요.',
+        'tip': '주변에 베푸세요. 당신의 선행이 위기 때 보호막이 됩니다.'
+    },
+    '월덕귀인': {
+        'icon': '🌙', 'name': '월덕귀인 (月德貴人)', 'type': '안정의 별',
+        'desc': '달처럼 부드럽고 안정적인 보호의 별. 가정과 인간관계에서 따뜻한 인복이 있어요. 어머니·연인·배우자의 도움이 큰 사주입니다.',
+        'tip': '가족과의 시간을 소중히 하세요. 결혼·가정 운이 특히 좋습니다.'
+    },
+    '홍염살': {
+        'icon': '🌹', 'name': '홍염살 (紅艶殺)', 'type': '치명적 매력',
+        'desc': '도화살의 강화 버전. 강렬하고 치명적인 매력으로 이성을 끌어당기는 별. 연예·예술·미용 분야에서 두각을 나타냅니다. 다만 구설수와 삼각관계 주의.',
+        'tip': '매력을 무기로 쓰되 관계 정리는 분명하게. 진정성 있는 인연을 찾으세요.'
+    },
+    '괴강살': {
+        'icon': '⚒️', 'name': '괴강살 (魁罡殺)', 'type': '극단의 카리스마',
+        'desc': '극과 극을 오가는 강력한 별. 큰 성공 또는 큰 실패의 양극단. 리더십과 카리스마는 압도적이지만, 한번 무너지면 크게 다칩니다. 군경·법조·의학·정치에 강한 사주.',
+        'tip': '극단을 피하고 중도를 유지. 자만하지 말고 겸손하면 평생 강력한 영향력.'
+    },
+    '금여록': {
+        'icon': '🏆', 'name': '금여록 (金輿祿)', 'type': '풍요의 별',
+        'desc': '황금 마차의 별. 부부 인연이 좋고 배우자가 부와 명예를 가져오는 사주. 또한 본인도 풍요로운 삶을 누리는 복록이 큰 별입니다.',
+        'tip': '인연을 소중히. 결혼 후 더 큰 운이 열립니다. 배우자 선택이 인생 좌우.'
+    },
 }
 
 
@@ -850,6 +983,41 @@ def analyze_sinsal(pillars, ilgan):
     if any(j in gongmang_jiji for j in other_jiji_no_day):
         found.append('공망')
 
+    # ────────────────────────────────────────
+    # 8) 천덕귀인 — 월지 기준 해당 천간이 사주에 있으면 작동
+    # ────────────────────────────────────────
+    cheondeok_target = CHEONDEOK_MAP.get(month_p[1])
+    all_gan = [year_p[0], month_p[0], day_p[0], time_p[0]]
+    if cheondeok_target and cheondeok_target in all_gan:
+        found.append('천덕귀인')
+
+    # ────────────────────────────────────────
+    # 9) 월덕귀인 — 월지 기준 해당 천간이 사주에 있으면 작동
+    # ────────────────────────────────────────
+    weoldeok_target = WEOLDEOK_MAP.get(month_p[1])
+    if weoldeok_target and weoldeok_target in all_gan:
+        found.append('월덕귀인')
+
+    # ────────────────────────────────────────
+    # 10) 홍염살 — 일간 기준 해당 지지가 사주에 있으면 작동
+    # ────────────────────────────────────────
+    hongyeom_target = HONGYEOM_MAP.get(ilgan)
+    if hongyeom_target and hongyeom_target in all_jiji:
+        found.append('홍염살')
+
+    # ────────────────────────────────────────
+    # 11) 괴강살 — 일주 한정
+    # ────────────────────────────────────────
+    if (day_p[0], day_p[1]) in GOEGANG_PAIRS:
+        found.append('괴강살')
+
+    # ────────────────────────────────────────
+    # 12) 금여록 — 일간 기준 해당 지지가 사주에 있으면 작동
+    # ────────────────────────────────────────
+    keumyeo_target = KEUMYEO_MAP.get(ilgan)
+    if keumyeo_target and keumyeo_target in all_jiji:
+        found.append('금여록')
+
     return [{'key': k, **SINSAL_DATA[k]} for k in found]
 
 # ═══════════════════════════════════════════════
@@ -868,7 +1036,9 @@ ANALYSIS_DATA = load_analysis_data()
 
 async def get_report_analysis(birth_date: str, birth_time: str, mbti: str, lang: str = 'ko',
                               calendar_type: str = 'solar', is_leap_month: bool = False,
-                              gender: str = 'F'):
+                              gender: str = 'F',
+                              apply_dst: bool = True, apply_solar_time: bool = False,
+                              birth_city: str = 'Seoul'):
     # 음력 입력 시 양력 변환 (응답 메타용)
     solar_date, lunar_original = resolve_birth_date(birth_date, calendar_type, is_leap_month)
     # 원본 입력 그대로 라이브러리에 넣어 계산 (음력은 음력대로)
@@ -876,10 +1046,12 @@ async def get_report_analysis(birth_date: str, birth_time: str, mbti: str, lang:
     year, month, day = map(int, solar_date.split('-'))
     hour = int(birth_time.split(':')[0])
 
-    # 📿 정확한 사주 (24절기 + 자시 + 라이브러리 기반)
+    # 📿 정확한 사주 (24절기 + 자시 + 시간보정)
     year_p, month_p, day_p, time_p = calc_pillars_accurate(
-        raw_y, raw_m, raw_d, hour, calendar_type, is_leap_month
+        raw_y, raw_m, raw_d, hour, calendar_type, is_leap_month,
+        apply_dst=apply_dst, apply_solar_time=apply_solar_time, city=birth_city
     )
+    time_adjustments = getattr(calc_pillars_accurate, 'last_adjustments', [])
 
     pillars = [year_p, month_p, day_p, time_p]
     oheng_simple = analyze_oheng(pillars)              # 기본 카운트 (호환)
@@ -897,6 +1069,15 @@ async def get_report_analysis(birth_date: str, birth_time: str, mbti: str, lang:
 
     # 📜 대운 분석 (10년 단위 인생 흐름)
     daewoon = calc_daewoon(raw_y, raw_m, raw_d, hour, gender, calendar_type, is_leap_month, count=10)
+
+    # ⏰ 시간 보정 정보 (응답용)
+    time_correction = {
+        'applied': len(time_adjustments) > 0,
+        'adjustments': time_adjustments,
+        'apply_dst': apply_dst,
+        'apply_solar_time': apply_solar_time,
+        'birth_city': birth_city if apply_solar_time else None,
+    }
 
     weakest_oheng = min(oheng, key=oheng.get)
     current_lucky_map = LUCKY_MAP.get(lang, LUCKY_MAP['ko'])
@@ -987,6 +1168,7 @@ async def get_report_analysis(birth_date: str, birth_time: str, mbti: str, lang:
         'sinsal': sinsal,
         'zodiac': zodiac,
         'daewoon': daewoon,
+        'time_correction': time_correction,
         'calendar_info': {
             'type': calendar_type,
             'solar_date': solar_date,
@@ -1011,6 +1193,10 @@ class ReportInput(BaseModel):
     time_unknown: bool = False
     calendar_type: str = 'solar'   # 'solar' | 'lunar'
     is_leap_month: bool = False    # 음력 윤달 여부
+    # ⏰ 시간 보정 옵션
+    apply_dst: bool = True              # 서머타임 자동 보정 (1948-1988)
+    apply_solar_time: bool = False      # 시태양시 (경도) 보정
+    birth_city: str = 'Seoul'           # 시태양시 보정용 도시
 
 class PremiumReportInput(BaseModel):
     birth_date: str
@@ -1083,7 +1269,9 @@ async def get_report(input_data: ReportInput):
         report = await get_report_analysis(
             input_data.birth_date, input_data.birth_time, input_data.mbti, input_data.lang,
             calendar_type=input_data.calendar_type, is_leap_month=input_data.is_leap_month,
-            gender=input_data.gender
+            gender=input_data.gender,
+            apply_dst=input_data.apply_dst, apply_solar_time=input_data.apply_solar_time,
+            birth_city=input_data.birth_city
         )
         return report
     except HTTPException:
