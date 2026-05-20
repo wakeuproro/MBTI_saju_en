@@ -60,6 +60,77 @@ _DAEWOON_THEMES = {
     '水': '내면·지혜·휴식의 시기. 깊어지고 흐르는 운',
 }
 
+# ─────────────────────────────────────────────
+# 🌟 십성(十星) — 일간과 다른 천간의 관계
+# ─────────────────────────────────────────────
+_GAN_YIN_YANG = {
+    '갑':'양','을':'음','병':'양','정':'음','무':'양',
+    '기':'음','경':'양','신':'음','임':'양','계':'음'
+}
+_OHENG_SAENG_CYCLE = {'木':'火', '火':'土', '土':'金', '金':'水', '水':'木'}
+_OHENG_GEUK_CYCLE  = {'木':'土', '土':'水', '水':'火', '火':'金', '金':'木'}
+
+def calc_sipsung(ilgan: str, target_gan: str) -> str:
+    """일간 → 대상 천간의 십성 반환"""
+    if ilgan == target_gan:
+        return '비견'  # 같은 글자
+    ig_oh = CHEONGAN_OHENG[ilgan]
+    tg_oh = CHEONGAN_OHENG[target_gan]
+    same_yy = (_GAN_YIN_YANG[ilgan] == _GAN_YIN_YANG[target_gan])
+
+    if ig_oh == tg_oh:
+        return '비견' if same_yy else '겁재'
+    if _OHENG_SAENG_CYCLE[ig_oh] == tg_oh:        # 내가 낳음 → 식상
+        return '식신' if same_yy else '상관'
+    if _OHENG_SAENG_CYCLE[tg_oh] == ig_oh:        # 나를 낳음 → 인성
+        return '편인' if same_yy else '정인'
+    if _OHENG_GEUK_CYCLE[ig_oh] == tg_oh:         # 내가 극함 → 재성
+        return '편재' if same_yy else '정재'
+    if _OHENG_GEUK_CYCLE[tg_oh] == ig_oh:         # 나를 극함 → 관성
+        return '편관' if same_yy else '정관'
+    return '미정'
+
+_SIPSUNG_INFO = {
+    '비견': {'icon':'🤝', 'theme':'동료·자립·경쟁', 'desc':'동료·형제의 도움이 늘어요. 자기 주도성과 협업이 핵심.'},
+    '겁재': {'icon':'⚔️', 'theme':'경쟁·소비·도전', 'desc':'경쟁자가 많아지고 큰 지출이 따라요. 도전 정신은 폭발.'},
+    '식신': {'icon':'🍀', 'theme':'표현·여유·즐거움', 'desc':'여유와 풍요의 시기. 취미·자식·창작 운이 좋아져요.'},
+    '상관': {'icon':'💡', 'theme':'창의·반항·변화', 'desc':'창의력이 폭발하고 기존 틀을 깨는 시기. 표현 자유.'},
+    '편재': {'icon':'💰', 'theme':'큰돈·사업·이동', 'desc':'큰 재물 기회와 사업 운. 활동 반경이 확장돼요.'},
+    '정재': {'icon':'💴', 'theme':'안정·저축·결실', 'desc':'꾸준한 수입과 가정 안정. 결혼·재산 운이 좋아요.'},
+    '편관': {'icon':'⚡', 'theme':'권위·변화·위기', 'desc':'권력·명예 기회와 함께 큰 변화. 도전과 시련의 시기.'},
+    '정관': {'icon':'👑', 'theme':'명예·승진·안정', 'desc':'명예와 직장 운이 빛나요. 사회적 지위가 상승합니다.'},
+    '편인': {'icon':'📿', 'theme':'학문·종교·고독', 'desc':'깊은 사색과 학문, 영적 성장의 시기. 혼자 시간 필요.'},
+    '정인': {'icon':'📚', 'theme':'학문·보호·인덕', 'desc':'귀인을 만나고 학업·자격 성취. 정신적 풍요로움.'},
+    '미정': {'icon':'❓', 'theme':'중립', 'desc':'특별한 강조 없는 평이한 시기.'},
+}
+
+
+def _daewoon_score(ilgan: str, gan: str, ji: str) -> int:
+    """대운의 일간 보완도 점수 (0~100). 단순화: 일간을 생하거나 같으면 높음"""
+    ig_oh = CHEONGAN_OHENG[ilgan]
+    gan_oh = CHEONGAN_OHENG[gan]
+    ji_oh  = JIJI_OHENG[ji]
+    score = 50
+    # 천간 영향
+    if gan_oh == ig_oh:
+        score += 15   # 같은 오행 = 비겁
+    elif _OHENG_SAENG_CYCLE[gan_oh] == ig_oh:
+        score += 20   # 나를 낳음 = 인성
+    elif _OHENG_SAENG_CYCLE[ig_oh] == gan_oh:
+        score += 5    # 내가 낳음 = 식상
+    elif _OHENG_GEUK_CYCLE[ig_oh] == gan_oh:
+        score -= 5    # 내가 극함 = 재성
+    elif _OHENG_GEUK_CYCLE[gan_oh] == ig_oh:
+        score -= 15   # 나를 극함 = 관성 (도전)
+    # 지지 영향 (절반)
+    if ji_oh == ig_oh:
+        score += 8
+    elif _OHENG_SAENG_CYCLE[ji_oh] == ig_oh:
+        score += 10
+    elif _OHENG_GEUK_CYCLE[ji_oh] == ig_oh:
+        score -= 8
+    return max(15, min(95, score))
+
 
 def _days_to_nearest_jieqi(year: int, month: int, day: int, forward: bool) -> int:
     """기준일에서 가까운 절기까지의 일수 (절기 기반 대운 시작 나이 계산용)"""
@@ -120,6 +191,7 @@ def calc_daewoon(year: int, month: int, day: int, hour: int, gender: str = 'F',
     start_age = round(days / 3.0, 1)
 
     # 5) 대운 시퀀스 (월주 ± 1씩)
+    ilgan = dp[0]
     mg_idx = _CHEONGAN.index(mp[0])
     mj_idx = _JIJI.index(mp[1])
     pillars = []
@@ -134,8 +206,16 @@ def calc_daewoon(year: int, month: int, day: int, hour: int, gender: str = 'F',
         ji = _JIJI[ji_idx]
         oheng_gan = CHEONGAN_OHENG[gan]
         oheng_ji = JIJI_OHENG[ji]
-        # 주된 오행은 천간으로
         theme = _DAEWOON_THEMES.get(oheng_gan, '변화의 시기')
+
+        # 십성 (일간 → 대운 천간)
+        sipsung_name = calc_sipsung(ilgan, gan)
+        sipsung_info = _SIPSUNG_INFO[sipsung_name]
+
+        # 대운 점수
+        score = _daewoon_score(ilgan, gan, ji)
+        grade = '🌟매우 좋음' if score >= 75 else '✨좋음' if score >= 60 else '➖평이' if score >= 45 else '⚠️주의' if score >= 35 else '🔥큰 도전'
+
         a_start = round(start_age + (i - 1) * 10, 1)
         a_end = round(start_age + i * 10, 1)
         pillars.append({
@@ -143,6 +223,12 @@ def calc_daewoon(year: int, month: int, day: int, hour: int, gender: str = 'F',
             'age_start': a_start, 'age_end': a_end,
             'oheng_gan': oheng_gan, 'oheng_ji': oheng_ji,
             'theme': theme,
+            'sipsung': sipsung_name,
+            'sipsung_icon': sipsung_info['icon'],
+            'sipsung_theme': sipsung_info['theme'],
+            'sipsung_desc': sipsung_info['desc'],
+            'score': score,
+            'grade': grade,
         })
 
     # 6) 현재 대운 찾기

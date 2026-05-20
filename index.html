@@ -722,7 +722,12 @@
         </div>
 
         <!-- 추가 서비스 CTA -->
-        <div style="display: flex; gap: 8px; margin: 12px 0;">
+        <div style="display: flex; gap: 8px; margin: 12px 0 8px;">
+            <button onclick="openDaewoonScreen()" style="flex:1; padding:14px; background:linear-gradient(135deg,#EDE7F6,#D1C4E9); border:1.5px solid #B39DDB; color:#4527A0; border-radius:14px; font-size:0.9rem; font-weight:800; cursor:pointer;">
+                📜 내 인생 대운<br><span style="font-size:0.7rem; font-weight:600; color:#7B1FA2;">10년 단위 흐름 자세히</span>
+            </button>
+        </div>
+        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
             <button onclick="openCompatibilityScreen()" style="flex:1; padding:14px; background:#FCE4EC; border:1.5px solid #F8BBD0; color:#C2185B; border-radius:14px; font-size:0.85rem; font-weight:800; cursor:pointer;">
                 💕 궁합 분석<br><span style="font-size:0.7rem; font-weight:600;">1,900원</span>
             </button>
@@ -745,6 +750,15 @@
         </div>
     </div>
 </div>
+
+    <!-- 📜 대운 상세 화면 -->
+    <div id="daewoon-screen" class="screen">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:16px;">
+            <button onclick="backToReport()" style="background:none; border:none; font-size:1.4rem; cursor:pointer; color:var(--text-light);">←</button>
+            <h2 style="font-size:1.2rem; color:var(--primary-dark); font-weight:900;">📜 내 인생 대운 흐름</h2>
+        </div>
+        <div id="daewoon-detail-area"></div>
+    </div>
 
     <!-- COMPATIBILITY SCREEN -->
     <div id="compat-screen" class="screen">
@@ -2057,6 +2071,104 @@
             showScreen('intro-screen');
         }
     }
+    // 📜 대운 상세 화면
+    function openDaewoonScreen() {
+        if (!reportData || !reportData.daewoon) {
+            showCatError('먼저 무료 사주 분석을 진행해주세요.');
+            return;
+        }
+        showScreen('daewoon-screen');
+        renderDaewoonDetail(reportData.daewoon);
+    }
+
+    function renderDaewoonDetail(dw) {
+        const area = document.getElementById('daewoon-detail-area');
+        const ohengColorMap = {'木':'#43A047','火':'#E53935','土':'#FB8C00','金':'#8E24AA','水':'#1E88E5'};
+        const currentIdx = dw.current_idx;
+
+        // 1) 상단 요약
+        const currentP = dw.current_pillar;
+        const summaryHTML = `
+            <div style="background:linear-gradient(135deg,#EDE7F6,#D1C4E9); border:2px solid #B39DDB; border-radius:18px; padding:20px; margin-bottom:14px;">
+                <div style="font-size:0.78rem; color:#5E35B1; font-weight:700; margin-bottom:4px;">📅 ${dw.direction_kr} 대운 · 첫 시작 ${dw.start_age}세</div>
+                ${currentP ? `
+                <div style="font-size:0.82rem; color:#7B1FA2; margin-bottom:8px;">현재 ${dw.current_age}세 — <b>${currentP.label} 대운</b> (${currentP.age_start.toFixed(0)}~${currentP.age_end.toFixed(0)}세)</div>
+                <div style="background:rgba(255,255,255,0.7); padding:12px; border-radius:10px;">
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                        <span style="font-size:1.4rem;">${currentP.sipsung_icon}</span>
+                        <span style="font-weight:800; color:#4A148C;">${currentP.sipsung} (${currentP.sipsung_theme})</span>
+                        <span style="margin-left:auto; font-size:0.75rem; padding:3px 8px; border-radius:10px; background:${ohengColorMap[currentP.oheng_gan]}22; color:${ohengColorMap[currentP.oheng_gan]}; font-weight:700;">${currentP.grade}</span>
+                    </div>
+                    <div style="font-size:0.82rem; color:#5D4037; line-height:1.6;">${currentP.sipsung_desc}</div>
+                </div>` : '<div style="font-size:0.9rem; color:#5D4037;">현재 대운 진입 전이에요.</div>'}
+            </div>`;
+
+        // 2) 인생 그래프 (SVG 라인 차트)
+        const W = 320, H = 180, PAD = 30;
+        const pts = dw.pillars.map((p, i) => {
+            const x = PAD + (W - PAD*2) * i / (dw.pillars.length - 1);
+            const y = H - PAD - (H - PAD*2) * (p.score - 15) / 80;
+            return { x, y, p, i };
+        });
+        const linePath = pts.map((pt,i) => `${i===0?'M':'L'}${pt.x.toFixed(1)},${pt.y.toFixed(1)}`).join(' ');
+        const dotsHTML = pts.map(pt => {
+            const color = ohengColorMap[pt.p.oheng_gan] || '#666';
+            const isCur = pt.i === currentIdx;
+            return `<circle cx="${pt.x}" cy="${pt.y}" r="${isCur?7:5}" fill="${color}" stroke="${isCur?'#FFC107':'#fff'}" stroke-width="${isCur?3:2}"/>`;
+        }).join('');
+        const labelsHTML = pts.map(pt => `<text x="${pt.x}" y="${H-8}" text-anchor="middle" font-size="9" fill="#666">${pt.p.age_start.toFixed(0)}</text>`).join('');
+        const graphHTML = `
+            <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:14px; padding:14px; margin-bottom:14px;">
+                <div style="font-size:0.85rem; font-weight:800; color:var(--primary-dark); margin-bottom:8px;">📊 인생 운세 그래프 (일간 기준)</div>
+                <svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;">
+                    <line x1="${PAD}" y1="${H-PAD}" x2="${W-PAD}" y2="${H-PAD}" stroke="#E0E0E0" stroke-width="1"/>
+                    <line x1="${PAD}" y1="${PAD}" x2="${PAD}" y2="${H-PAD}" stroke="#E0E0E0" stroke-width="1"/>
+                    <text x="6" y="${PAD+4}" font-size="9" fill="#666">좋음</text>
+                    <text x="6" y="${H-PAD+4}" font-size="9" fill="#666">평이</text>
+                    <path d="${linePath}" stroke="#7B1FA2" stroke-width="2.5" fill="none"/>
+                    ${dotsHTML}
+                    ${labelsHTML}
+                </svg>
+                <div style="font-size:0.7rem; color:var(--text-light); text-align:center; margin-top:4px;">★현재 대운 (골든 테두리)</div>
+            </div>`;
+
+        // 3) 각 대운 카드 (상세)
+        const cardsHTML = dw.pillars.map((p, i) => {
+            const ohColor = ohengColorMap[p.oheng_gan] || '#666';
+            let bg = 'var(--bg-card)';
+            let borderColor = 'var(--border-soft)';
+            let opacity = '1';
+            if (i === currentIdx) { bg = 'linear-gradient(135deg,#FFF9C4,#FFF59D)'; borderColor = '#FFC107'; }
+            else if (i < currentIdx) opacity = '0.7';
+            return `
+                <div style="background:${bg}; border:2px solid ${borderColor}; border-radius:14px; padding:14px; margin-bottom:10px; opacity:${opacity};">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span style="font-size:1.5rem; font-weight:900; color:var(--primary-dark);">${p.label}</span>
+                            <span style="background:${ohColor}22; color:${ohColor}; font-size:0.7rem; padding:3px 8px; border-radius:10px; font-weight:700;">${OHENG_MAP[p.oheng_gan]}(${p.oheng_gan})</span>
+                            ${i === currentIdx ? '<span style="background:#FFC107; color:#fff; font-size:0.65rem; padding:3px 8px; border-radius:10px; font-weight:800;">★ 지금</span>' : ''}
+                        </div>
+                        <div style="font-size:0.8rem; color:var(--text-mid); font-weight:700;">${p.age_start.toFixed(0)}~${p.age_end.toFixed(0)}세</div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px; font-size:0.85rem;">
+                        <span style="font-size:1.2rem;">${p.sipsung_icon}</span>
+                        <b style="color:var(--primary-dark);">${p.sipsung}</b>
+                        <span style="color:var(--text-light); font-size:0.78rem;">${p.sipsung_theme}</span>
+                        <span style="margin-left:auto; font-size:0.7rem; padding:2px 6px; border-radius:8px; background:${ohColor}22; color:${ohColor}; font-weight:700;">${p.score}점</span>
+                    </div>
+                    <div style="font-size:0.8rem; color:var(--text-mid); line-height:1.55; padding-top:6px; border-top:1px dashed var(--border-soft);">${p.sipsung_desc}</div>
+                </div>`;
+        }).join('');
+
+        area.innerHTML = `
+            ${summaryHTML}
+            ${graphHTML}
+            <div style="font-size:0.85rem; font-weight:800; color:var(--primary-dark); margin:10px 0 8px;">10개 대운 상세</div>
+            ${cardsHTML}
+            <button onclick="backToReport()" style="width:100%; margin-top:14px; padding:14px; background:var(--bg-card); border:2px solid var(--border); color:var(--text-light); border-radius:14px; font-weight:700; cursor:pointer;">← 분석 결과로 돌아가기</button>
+        `;
+    }
+
     function openCompatibilityScreen() {
         if (!reportData) { alert('먼저 내 사주 분석을 진행해주세요.'); return; }
         // 내 정보 표시
