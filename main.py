@@ -42,6 +42,132 @@ def resolve_birth_date(birth_date: str, calendar_type: str = 'solar', is_leap_mo
     return birth_date, None
 
 
+# ─────────────────────────────────────────────
+# 📜 대운(大運) 계산 — 인생 10년 단위 흐름
+# 양년+남자/음년+여자 → 순행 / 양년+여자/음년+남자 → 역행
+# 첫 대운 시작 나이 = (가까운 절기까지 일수) / 3
+# ─────────────────────────────────────────────
+_CHEONGAN = ['갑','을','병','정','무','기','경','신','임','계']
+_JIJI = ['자','축','인','묘','진','사','오','미','신','유','술','해']
+_YANG_GAN = {'갑', '병', '무', '경', '임'}
+
+# 대운 시기별 키워드 (오행 흐름 기반)
+_DAEWOON_THEMES = {
+    '木': '성장·도전·새 출발의 시기. 적극적으로 뻗어나가는 운',
+    '火': '확장·인기·표현의 시기. 빛을 발하고 사람이 모이는 운',
+    '土': '안정·축적·신뢰의 시기. 결실을 다지는 운',
+    '金': '결단·정리·완성의 시기. 단단해지고 정제되는 운',
+    '水': '내면·지혜·휴식의 시기. 깊어지고 흐르는 운',
+}
+
+
+def _days_to_nearest_jieqi(year: int, month: int, day: int, forward: bool) -> int:
+    """기준일에서 가까운 절기까지의 일수 (절기 기반 대운 시작 나이 계산용)"""
+    import sxtwl as _sx
+    base = _sx.fromSolar(year, month, day)
+    cur = base
+    for i in range(1, 90):
+        cur = cur.after(1) if forward else cur.before(1)
+        if cur.hasJieQi():
+            return i
+    return 15  # 기본값
+
+
+def calc_daewoon(year: int, month: int, day: int, hour: int, gender: str = 'F',
+                 calendar_type: str = 'solar', is_leap_month: bool = False, count: int = 10):
+    """
+    📜 대운 분석
+    Returns:
+        {
+            'direction': 'forward'|'backward',
+            'direction_kr': '순행'|'역행',
+            'start_age': float,         # 첫 대운 시작 나이 (소수점)
+            'gender': 'M'|'F',
+            'policy': str,              # 계산 정책 (절기 기반)
+            'pillars': [               # 10개 대운
+                {'gan': '갑', 'ji': '인', 'label': '갑인',
+                 'age_start': 5.3, 'age_end': 14.3,
+                 'oheng_gan': '木', 'oheng_ji': '木',
+                 'theme': '성장·도전...'}
+            ],
+            'current_idx': int,         # 오늘 기준 현재 대운 인덱스
+            'current_age': float,
+            'current_pillar': dict,     # 현재 대운 정보
+        }
+    """
+    from datetime import date as _date
+
+    # 1) 양력 정규화
+    if calendar_type == 'lunar':
+        cal_conv = KoreanLunarCalendar()
+        cal_conv.setLunarDate(year, month, day, bool(is_leap_month))
+        solar_str = cal_conv.SolarIsoFormat()
+        sy, sm, sd = map(int, solar_str.split('-'))
+    else:
+        sy, sm, sd = year, month, day
+
+    # 2) 사주 계산 (월주 사용)
+    yp, mp, dp, tp = calc_pillars_accurate(year, month, day, hour, calendar_type, is_leap_month)
+
+    # 3) 대운 방향 결정 (양년+남자, 음년+여자 → 순행)
+    is_yang_year = yp[0] in _YANG_GAN
+    is_male = (gender == 'M')
+    forward = (is_yang_year and is_male) or (not is_yang_year and not is_male)
+    direction = 'forward' if forward else 'backward'
+
+    # 4) 첫 대운 시작 나이 (절기까지 일수 / 3)
+    days = _days_to_nearest_jieqi(sy, sm, sd, forward)
+    start_age = round(days / 3.0, 1)
+
+    # 5) 대운 시퀀스 (월주 ± 1씩)
+    mg_idx = _CHEONGAN.index(mp[0])
+    mj_idx = _JIJI.index(mp[1])
+    pillars = []
+    for i in range(1, count + 1):
+        if forward:
+            gan_idx = (mg_idx + i) % 10
+            ji_idx = (mj_idx + i) % 12
+        else:
+            gan_idx = (mg_idx - i) % 10
+            ji_idx = (mj_idx - i) % 12
+        gan = _CHEONGAN[gan_idx]
+        ji = _JIJI[ji_idx]
+        oheng_gan = CHEONGAN_OHENG[gan]
+        oheng_ji = JIJI_OHENG[ji]
+        # 주된 오행은 천간으로
+        theme = _DAEWOON_THEMES.get(oheng_gan, '변화의 시기')
+        a_start = round(start_age + (i - 1) * 10, 1)
+        a_end = round(start_age + i * 10, 1)
+        pillars.append({
+            'gan': gan, 'ji': ji, 'label': f'{gan}{ji}',
+            'age_start': a_start, 'age_end': a_end,
+            'oheng_gan': oheng_gan, 'oheng_ji': oheng_ji,
+            'theme': theme,
+        })
+
+    # 6) 현재 대운 찾기
+    today = _date.today()
+    birth = _date(sy, sm, sd)
+    current_age = round((today - birth).days / 365.25, 1)
+    current_idx = -1
+    for i, p in enumerate(pillars):
+        if p['age_start'] <= current_age < p['age_end']:
+            current_idx = i
+            break
+
+    return {
+        'direction': direction,
+        'direction_kr': '순행' if forward else '역행',
+        'start_age': start_age,
+        'gender': gender,
+        'policy': '절기 기반 (입춘/경칩/청명...)',
+        'pillars': pillars,
+        'current_idx': current_idx,
+        'current_age': current_age,
+        'current_pillar': pillars[current_idx] if current_idx >= 0 else None,
+    }
+
+
 def calc_pillars_accurate(year: int, month: int, day: int, hour: int,
                           calendar_type: str = 'solar', is_leap_month: bool = False):
     """
@@ -655,7 +781,8 @@ def load_analysis_data():
 ANALYSIS_DATA = load_analysis_data()
 
 async def get_report_analysis(birth_date: str, birth_time: str, mbti: str, lang: str = 'ko',
-                              calendar_type: str = 'solar', is_leap_month: bool = False):
+                              calendar_type: str = 'solar', is_leap_month: bool = False,
+                              gender: str = 'F'):
     # 음력 입력 시 양력 변환 (응답 메타용)
     solar_date, lunar_original = resolve_birth_date(birth_date, calendar_type, is_leap_month)
     # 원본 입력 그대로 라이브러리에 넣어 계산 (음력은 음력대로)
@@ -681,6 +808,9 @@ async def get_report_analysis(birth_date: str, birth_time: str, mbti: str, lang:
 
     # 🐉 12지신 띠 분석 (년지 기준)
     zodiac = analyze_zodiac(year_p[1])
+
+    # 📜 대운 분석 (10년 단위 인생 흐름)
+    daewoon = calc_daewoon(raw_y, raw_m, raw_d, hour, gender, calendar_type, is_leap_month, count=10)
 
     weakest_oheng = min(oheng, key=oheng.get)
     current_lucky_map = LUCKY_MAP.get(lang, LUCKY_MAP['ko'])
@@ -770,6 +900,7 @@ async def get_report_analysis(birth_date: str, birth_time: str, mbti: str, lang:
         'lucky': lucky,
         'sinsal': sinsal,
         'zodiac': zodiac,
+        'daewoon': daewoon,
         'calendar_info': {
             'type': calendar_type,
             'solar_date': solar_date,
@@ -865,7 +996,8 @@ async def get_report(input_data: ReportInput):
     try:
         report = await get_report_analysis(
             input_data.birth_date, input_data.birth_time, input_data.mbti, input_data.lang,
-            calendar_type=input_data.calendar_type, is_leap_month=input_data.is_leap_month
+            calendar_type=input_data.calendar_type, is_leap_month=input_data.is_leap_month,
+            gender=input_data.gender
         )
         return report
     except HTTPException:

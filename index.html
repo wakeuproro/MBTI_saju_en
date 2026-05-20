@@ -374,6 +374,20 @@
         .referral-btn { padding: 12px 24px; background: linear-gradient(135deg, #43A047, #66BB6A); color: #fff; border: none; border-radius: 12px; font-size: 0.9rem; font-weight: 700; cursor: pointer; }
         .referral-code { font-family: monospace; background: var(--bg-card); padding: 6px 14px; border-radius: 8px; border: 1px solid #A5D6A7; font-size: 0.85rem; color: #2E7D32; font-weight: 700; margin-top: 10px; display: none; }
 
+        /* 📜 대운 타임라인 */
+        .daewoon-summary { background: linear-gradient(135deg, #EDE7F6, #D1C4E9); border: 1.5px solid #B39DDB; border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; }
+        .daewoon-meta { font-size: 0.78rem; color: #5E35B1; font-weight: 700; margin-bottom: 4px; }
+        .daewoon-current { font-size: 1rem; font-weight: 800; color: #4527A0; margin-bottom: 4px; }
+        .daewoon-current-theme { font-size: 0.82rem; color: #6A1B9A; line-height: 1.5; }
+        .daewoon-timeline { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+        .daewoon-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--bg-card); border-radius: 10px; border: 1px solid var(--border-soft); font-size: 0.82rem; }
+        .daewoon-item.current { background: linear-gradient(135deg, #FFF9C4, #FFF59D); border: 2px solid #FFC107; box-shadow: 0 2px 8px rgba(255,193,7,0.3); }
+        .daewoon-item.past { opacity: 0.65; }
+        .daewoon-age { font-weight: 700; color: var(--primary-dark); font-size: 0.75rem; min-width: 70px; }
+        .daewoon-label { font-weight: 800; font-size: 0.95rem; color: var(--primary-dark); min-width: 50px; }
+        .daewoon-oheng { font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; font-weight: 700; }
+        .daewoon-theme-text { flex: 1; font-size: 0.78rem; color: var(--text-mid); }
+
         /* Zodiac (12지신) card */
         .zodiac-hero { background: linear-gradient(135deg, #FFF8E1, #E1BEE7); border: 1.5px solid #CE93D8; border-radius: 16px; padding: 20px 16px; text-align: center; margin-top: 10px; }
         .zodiac-emoji { font-size: 4rem; line-height: 1; margin-bottom: 6px; }
@@ -1337,6 +1351,43 @@
                     </div>
                 </div>`;
             sections.push({ icon: z.icon, bg: '#FFF8E1', title: `${z.name} — ${z.tagline}`, desc: '', extra: zHTML });
+        }
+
+        // 📜 대운 (10년 단위 인생 흐름)
+        if (r.daewoon && r.daewoon.pillars && r.daewoon.pillars.length > 0) {
+            const dw = r.daewoon;
+            const currentIdx = dw.current_idx;
+            const ohengColorMap = {'木':'#43A047','火':'#E53935','土':'#FB8C00','金':'#8E24AA','水':'#1E88E5'};
+            const itemsHTML = dw.pillars.map((p, i) => {
+                let cls = '';
+                if (i === currentIdx) cls = 'current';
+                else if (i < currentIdx) cls = 'past';
+                const ohColor = ohengColorMap[p.oheng_gan] || '#666';
+                return `
+                    <div class="daewoon-item ${cls}">
+                        <span class="daewoon-age">${p.age_start.toFixed(0)}~${p.age_end.toFixed(0)}세</span>
+                        <span class="daewoon-label">${p.label}</span>
+                        <span class="daewoon-oheng" style="background:${ohColor}22; color:${ohColor};">${OHENG_MAP[p.oheng_gan]}</span>
+                        <span class="daewoon-theme-text">${p.theme}</span>
+                    </div>
+                `;
+            }).join('');
+            const currentHTML = dw.current_pillar ? `
+                <div class="daewoon-summary">
+                    <div class="daewoon-meta">📅 ${dw.direction_kr} 대운 · 첫 대운 ${dw.start_age}세 시작</div>
+                    <div class="daewoon-current">🌟 현재 ${dw.current_pillar.label} 대운 (${dw.current_pillar.age_start.toFixed(0)}~${dw.current_pillar.age_end.toFixed(0)}세)</div>
+                    <div class="daewoon-current-theme">${dw.current_pillar.theme}</div>
+                </div>` : '';
+            const daewoonHTML = `
+                ${currentHTML}
+                <div class="daewoon-timeline">${itemsHTML}</div>
+            `;
+            sections.push({
+                icon: '📜', bg: '#EDE7F6',
+                title: `인생 대운 10년 단위 흐름 (${dw.direction_kr})`,
+                desc: '대운은 10년 단위로 바뀌는 인생의 큰 흐름이에요. 절기 기준으로 정확하게 계산됐어요.',
+                extra: daewoonHTML
+            });
         }
 
         // ✨ 신살 (특수 별자리)
