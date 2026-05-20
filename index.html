@@ -1404,6 +1404,50 @@
             });
         }
 
+        // ✍️ 음향오행 (이름 분석)
+        if (r.phonetic_oheng) {
+            const ph = r.phonetic_oheng;
+            const ohColors = {'木':'#43A047','火':'#E53935','土':'#FB8C00','金':'#8E24AA','水':'#1E88E5'};
+            const syllableHTML = ph.syllables.map(s => {
+                const cOh = s.onset_oh ? `<span style="background:${ohColors[s.onset_oh]}22;color:${ohColors[s.onset_oh]};padding:1px 5px;border-radius:6px;font-size:0.65rem;font-weight:700;">${s.onset}=${OHENG_MAP[s.onset_oh]}</span>` : '';
+                const vOh = s.vowel_oh ? `<span style="background:${ohColors[s.vowel_oh]}22;color:${ohColors[s.vowel_oh]};padding:1px 5px;border-radius:6px;font-size:0.65rem;font-weight:700;">${s.vowel}=${OHENG_MAP[s.vowel_oh]}</span>` : '';
+                const jOh = s.coda_oh ? `<span style="background:${ohColors[s.coda_oh]}22;color:${ohColors[s.coda_oh]};padding:1px 5px;border-radius:6px;font-size:0.65rem;font-weight:700;">${s.coda}=${OHENG_MAP[s.coda_oh]}</span>` : '';
+                return `
+                    <div style="background:var(--bg-card); border:1px solid var(--border-soft); border-radius:10px; padding:10px;">
+                        <div style="font-size:1.4rem; font-weight:900; color:var(--primary-dark); text-align:center; margin-bottom:6px;">${s.char}</div>
+                        <div style="display:flex; gap:3px; flex-wrap:wrap; justify-content:center;">${cOh}${vOh}${jOh}</div>
+                    </div>`;
+            }).join('');
+            const distEntries = Object.entries(ph.distribution).sort((a,b) => b[1]-a[1]);
+            const distHTML = distEntries.map(([k,v]) => v > 0 ? `<span style="display:inline-block; background:${ohColors[k]}22; color:${ohColors[k]}; padding:3px 10px; border-radius:12px; font-size:0.78rem; font-weight:700; margin:2px;">${OHENG_MAP[k]}(${k}) ${v}</span>` : '').join('');
+            const compat = ph.compatibility;
+            const compatColor = compat.score >= 80 ? '#2E7D32' : compat.score >= 65 ? '#5E35B1' : '#C2185B';
+            const phHTML = `
+                <div style="background:linear-gradient(135deg,#F3E5F5,#E1BEE7); border:1.5px solid #BA68C8; border-radius:14px; padding:14px; margin-bottom:10px;">
+                    <div style="font-size:0.78rem; font-weight:700; color:#4A148C; margin-bottom:6px;">📛 ${ph.name}님의 이름 음향오행</div>
+                    <div style="display:grid; grid-template-columns:repeat(${Math.min(ph.syllables.length,4)},1fr); gap:6px;">${syllableHTML}</div>
+                </div>
+                <div style="background:var(--bg-card); border:1px solid var(--border-soft); border-radius:12px; padding:12px; margin-bottom:10px; text-align:center;">
+                    <div style="font-size:0.78rem; color:var(--text-light); font-weight:700; margin-bottom:6px;">이름의 오행 분포</div>
+                    <div>${distHTML}</div>
+                </div>
+                <div style="background:linear-gradient(135deg, ${compatColor}11, ${compatColor}22); border:1.5px solid ${compatColor}; border-radius:14px; padding:14px;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                        <span style="font-weight:800; color:${compatColor}; font-size:0.95rem;">✨ 사주와의 궁합</span>
+                        <span style="font-size:1.2rem; font-weight:900; color:${compatColor};">${compat.score}점</span>
+                    </div>
+                    <div style="font-size:0.85rem; font-weight:700; color:${compatColor}; margin-bottom:4px;">${compat.level}</div>
+                    <div style="font-size:0.78rem; color:var(--text-mid); line-height:1.6;">${compat.desc}</div>
+                </div>
+            `;
+            sections.push({
+                icon: '📛', bg: '#F3E5F5',
+                title: `${ph.name}님 이름 음향오행 분석`,
+                desc: '훈민정음 원리 기반으로 이름의 자모 발음을 오행으로 분석. 사주와 얼마나 잘 맞는지 점수로 확인하세요.',
+                extra: phHTML
+            });
+        }
+
         // ✨ 신살 (특수 별자리)
         if (r.sinsal !== undefined) {
             let sinsalHTML;

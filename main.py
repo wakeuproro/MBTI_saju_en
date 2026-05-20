@@ -70,6 +70,133 @@ _GAN_YIN_YANG = {
 _OHENG_SAENG_CYCLE = {'木':'火', '火':'土', '土':'金', '金':'水', '水':'木'}
 _OHENG_GEUK_CYCLE  = {'木':'土', '土':'水', '水':'火', '火':'金', '金':'木'}
 
+# ─────────────────────────────────────────────
+# ✍️ 음향오행 — 이름의 발음 오행 분석
+# 훈민정음 원리 기반 한글 자모 → 오행 매핑
+# ─────────────────────────────────────────────
+# 초성(자음) 오행 (훈민정음 해례 기준)
+_CHOSEONG_OHENG = {
+    'ㄱ': '木', 'ㅋ': '木', 'ㄲ': '木',                          # 아음(牙音) = 목
+    'ㄴ': '火', 'ㄷ': '火', 'ㄹ': '火', 'ㅌ': '火', 'ㄸ': '火',    # 설음(舌音) = 화
+    'ㅁ': '水', 'ㅂ': '水', 'ㅍ': '水', 'ㅃ': '水',                # 순음(脣音) = 수
+    'ㅅ': '金', 'ㅈ': '金', 'ㅊ': '金', 'ㅆ': '金', 'ㅉ': '金',    # 치음(齒音) = 금
+    'ㅇ': '土', 'ㅎ': '土',                                      # 후음(喉音) = 토
+}
+# 중성(모음) 오행 (음양 + 천지인)
+_JUNGSEONG_OHENG = {
+    'ㅏ': '木', 'ㅑ': '木',           # 양 + 천 = 목
+    'ㅓ': '木', 'ㅕ': '木',           # 음 + 천 = 목 (단순화)
+    'ㅗ': '火', 'ㅛ': '火',           # 양 + 지 = 화
+    'ㅜ': '水', 'ㅠ': '水',           # 음 + 지 = 수
+    'ㅡ': '土',                      # 인 = 토
+    'ㅣ': '金',                      # 인 + 천 = 금
+    'ㅐ': '木', 'ㅒ': '木', 'ㅔ': '木', 'ㅖ': '木',
+    'ㅘ': '火', 'ㅙ': '火', 'ㅚ': '火',
+    'ㅝ': '水', 'ㅞ': '水', 'ㅟ': '水',
+    'ㅢ': '土',
+}
+# 종성도 초성과 동일 룰
+
+_CHOSEONG_LIST = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ']
+_JUNGSEONG_LIST = ['ㅏ','ㅐ','ㅑ','ㅒ','ㅓ','ㅔ','ㅕ','ㅖ','ㅗ','ㅘ','ㅙ','ㅚ','ㅛ','ㅜ','ㅝ','ㅞ','ㅟ','ㅠ','ㅡ','ㅢ','ㅣ']
+_JONGSEONG_LIST = [None,'ㄱ','ㄲ','ㄳ','ㄴ','ㄵ','ㄶ','ㄷ','ㄹ','ㄺ','ㄻ','ㄼ','ㄽ','ㄾ','ㄿ','ㅀ','ㅁ','ㅂ','ㅄ','ㅅ','ㅆ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ']
+
+
+def _decompose_hangul(ch: str):
+    """한 글자 한글 → (초성, 중성, 종성) 튜플"""
+    code = ord(ch)
+    if not (0xAC00 <= code <= 0xD7A3):
+        return None
+    idx = code - 0xAC00
+    cho = idx // 588
+    jung = (idx % 588) // 28
+    jong = idx % 28
+    return (_CHOSEONG_LIST[cho], _JUNGSEONG_LIST[jung], _JONGSEONG_LIST[jong])
+
+
+def analyze_phonetic_oheng(name: str, sajus_oheng_pct: dict = None):
+    """
+    이름의 음향오행 분석.
+    Returns: {
+        'name': str,
+        'syllables': [{char, onset, vowel, coda, onset_oh, vowel_oh, coda_oh}],
+        'distribution': {'木':2,'火':1,...},
+        'strongest': str,
+        'compatibility': {'score':82, 'level':'보완형'|'중립'|'충돌형', 'desc':'...'}
+    }
+    """
+    if not name:
+        return None
+
+    syllables = []
+    distribution = {'木':0, '火':0, '土':0, '金':0, '水':0}
+    for ch in name:
+        d = _decompose_hangul(ch)
+        if not d:
+            continue
+        cho, jung, jong = d
+        cho_oh = _CHOSEONG_OHENG.get(cho)
+        jung_oh = _JUNGSEONG_OHENG.get(jung)
+        jong_oh = _CHOSEONG_OHENG.get(jong) if jong else None
+
+        syllables.append({
+            'char': ch,
+            'onset': cho, 'vowel': jung, 'coda': jong,
+            'onset_oh': cho_oh,
+            'vowel_oh': jung_oh,
+            'coda_oh': jong_oh,
+        })
+        if cho_oh: distribution[cho_oh] += 1.0   # 초성 가중치 1
+        if jung_oh: distribution[jung_oh] += 0.7 # 중성 가중치 0.7
+        if jong_oh: distribution[jong_oh] += 0.5 # 종성 가중치 0.5
+
+    strongest = max(distribution, key=distribution.get) if any(distribution.values()) else '土'
+
+    # 사주와의 보완 점수 계산
+    compatibility = {'score': 70, 'level': '중립', 'desc': '평이한 조합이에요.'}
+    if sajus_oheng_pct:
+        # 사주에서 부족한 오행을 이름이 채워주면 점수 ↑
+        sorted_saju = sorted(sajus_oheng_pct.items(), key=lambda x: x[1])
+        weakest_saju = sorted_saju[0][0]
+        strongest_saju = sorted_saju[-1][0]
+
+        # 이름의 주된 오행
+        name_total = sum(distribution.values()) or 1
+        name_pct = {k: round(v * 100 / name_total, 1) for k, v in distribution.items()}
+        name_top = max(name_pct, key=name_pct.get)
+
+        # 평가
+        if name_top == weakest_saju:
+            score = 90
+            level = '보완형 ✨'
+            desc = f'사주에 부족한 {weakest_saju}을(를) 이름이 채워줘요. 균형 잡힌 매우 좋은 조합!'
+        elif name_top == strongest_saju:
+            score = 50
+            level = '강조형'
+            desc = f'이미 강한 {strongest_saju}을(를) 이름이 더 강조해요. 캐릭터는 명확하지만 균형은 부족.'
+        elif _OHENG_SAENG_CYCLE.get(name_top) == weakest_saju:
+            score = 80
+            level = '간접보완형'
+            desc = f'이름의 {name_top}이(가) 부족한 {weakest_saju}을(를) 생해줘요. 좋은 흐름.'
+        elif _OHENG_GEUK_CYCLE.get(name_top) == strongest_saju:
+            score = 75
+            level = '제어형'
+            desc = f'이름이 과한 {strongest_saju}을(를) 제어해줘요. 안정감 있는 조합.'
+        else:
+            score = 65
+            level = '중립'
+            desc = '특별한 시너지는 없지만 무난한 조합이에요.'
+        compatibility = {'score': score, 'level': level, 'desc': desc, 'name_top': name_top}
+
+    return {
+        'name': name,
+        'syllables': syllables,
+        'distribution': {k: round(v, 1) for k, v in distribution.items()},
+        'strongest': strongest,
+        'compatibility': compatibility,
+    }
+
+
 def calc_sipsung(ilgan: str, target_gan: str) -> str:
     """일간 → 대상 천간의 십성 반환"""
     if ilgan == target_gan:
@@ -1038,7 +1165,8 @@ async def get_report_analysis(birth_date: str, birth_time: str, mbti: str, lang:
                               calendar_type: str = 'solar', is_leap_month: bool = False,
                               gender: str = 'F',
                               apply_dst: bool = True, apply_solar_time: bool = False,
-                              birth_city: str = 'Seoul'):
+                              birth_city: str = 'Seoul',
+                              name: str = ''):
     # 음력 입력 시 양력 변환 (응답 메타용)
     solar_date, lunar_original = resolve_birth_date(birth_date, calendar_type, is_leap_month)
     # 원본 입력 그대로 라이브러리에 넣어 계산 (음력은 음력대로)
@@ -1069,6 +1197,11 @@ async def get_report_analysis(birth_date: str, birth_time: str, mbti: str, lang:
 
     # 📜 대운 분석 (10년 단위 인생 흐름)
     daewoon = calc_daewoon(raw_y, raw_m, raw_d, hour, gender, calendar_type, is_leap_month, count=10)
+
+    # ✍️ 음향오행 분석 (이름이 있을 때만)
+    phonetic = None
+    if name and name != '당신':
+        phonetic = analyze_phonetic_oheng(name, oheng_adv.get('pct'))
 
     # ⏰ 시간 보정 정보 (응답용)
     time_correction = {
@@ -1168,6 +1301,7 @@ async def get_report_analysis(birth_date: str, birth_time: str, mbti: str, lang:
         'sinsal': sinsal,
         'zodiac': zodiac,
         'daewoon': daewoon,
+        'phonetic_oheng': phonetic,
         'time_correction': time_correction,
         'calendar_info': {
             'type': calendar_type,
@@ -1271,7 +1405,8 @@ async def get_report(input_data: ReportInput):
             calendar_type=input_data.calendar_type, is_leap_month=input_data.is_leap_month,
             gender=input_data.gender,
             apply_dst=input_data.apply_dst, apply_solar_time=input_data.apply_solar_time,
-            birth_city=input_data.birth_city
+            birth_city=input_data.birth_city,
+            name=input_data.name
         )
         return report
     except HTTPException:
