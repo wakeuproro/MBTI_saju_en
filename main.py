@@ -4,7 +4,7 @@ import uuid
 import base64
 import httpx
 from datetime import date
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,6 +14,9 @@ from korean_lunar_calendar import KoreanLunarCalendar
 import sxtwl
 
 load_dotenv()
+
+KAKAO_JAVASCRIPT_KEY = os.getenv("KAKAO_JAVASCRIPT_KEY", "").strip()
+PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "").strip().rstrip("/")
 
 # 천간/지지 한글 인덱스 (sxtwl 정수 → 한자)
 _GAN_KR = ['갑','을','병','정','무','기','경','신','임','계']
@@ -532,6 +535,15 @@ app.add_middleware(
 @app.get("/")
 async def read_index():
     return FileResponse("index.html")
+
+
+@app.get("/app-config")
+async def app_config(request: Request):
+    base_url = PUBLIC_BASE_URL or str(request.base_url).rstrip("/")
+    return {
+        "kakao_javascript_key": KAKAO_JAVASCRIPT_KEY,
+        "public_base_url": base_url,
+    }
 
 @app.get("/privacy")
 async def read_privacy():

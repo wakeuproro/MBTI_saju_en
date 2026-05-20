@@ -999,6 +999,7 @@
 <script src="https://js.tosspayments.com/v2/standard"></script>
 <script>
     const API_URL = window.location.origin;
+    let appConfigPromise = null;
     let reportData = null;
     let currentLang = 'ko';
     let tossPaymentConfig = null;
@@ -1028,6 +1029,36 @@
         const next = current === 'light' ? 'dark' : 'light';
         document.documentElement.setAttribute('data-theme', next);
         localStorage.setItem('theme', next);
+    }
+
+    async function getAppConfig() {
+        if (!appConfigPromise) {
+            appConfigPromise = fetch(`${API_URL}/app-config`)
+                .then(async (res) => {
+                    if (!res.ok) throw new Error(`app-config ${res.status}`);
+                    return res.json();
+                })
+                .catch((err) => {
+                    appConfigPromise = null;
+                    throw err;
+                });
+        }
+        return appConfigPromise;
+    }
+
+    function getCanonicalShareUrl(config) {
+        const baseUrl = (config && config.public_base_url) || window.location.origin;
+        return `${baseUrl}${window.location.pathname}`;
+    }
+
+    async function ensureKakaoInitialized() {
+        if (!window.Kakao) throw new Error('KAKAO_SDK_NOT_LOADED');
+        const config = await getAppConfig();
+        if (!config.kakao_javascript_key) throw new Error('KAKAO_KEY_MISSING');
+        if (!Kakao.isInitialized()) {
+            Kakao.init(config.kakao_javascript_key);
+        }
+        return config;
     }
     // 초기 테마 적용 (저장값 → 시스템 환경 순)
     (function initTheme() {
@@ -1784,22 +1815,38 @@
     }
 
     // Share
-    function shareKakao() {
-        if (!window.Kakao) return alert("카카오 SDK 로딩 중...");
-        if (!Kakao.isInitialized()) {
-            try { Kakao.init('9b06dc85b339014203d8ddc90db3b4cf'); } catch(e) { return; }
-        }
+    async function shareKakao() {
         if (!reportData) return;
-        Kakao.Share.sendDefault({
-            objectType: 'feed',
-            content: {
-                title: '사주 x MBTI 운명 분석',
-                description: `${reportData.ilgan.title} | ${reportData.mbti}\n당신의 운명도 확인해보세요!`,
-                imageUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=1000',
-                link: { mobileWebUrl: window.location.href, webUrl: window.location.href },
-            },
-            buttons: [{ title: '나도 분석하기', link: { mobileWebUrl: window.location.href, webUrl: window.location.href } }],
-        });
+
+        try {
+            const config = await ensureKakaoInitialized();
+            const shareUrl = getCanonicalShareUrl(config);
+
+            Kakao.Share.sendDefault({
+                objectType: 'feed',
+                content: {
+                    title: '사주 x MBTI 운명 분석',
+                    description: `${reportData.ilgan.title} | ${reportData.mbti}\n당신의 운명도 확인해보세요!`,
+                    imageUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=1000',
+                    link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
+                },
+                buttons: [{ title: '나도 분석하기', link: { mobileWebUrl: shareUrl, webUrl: shareUrl } }],
+            });
+        } catch (e) {
+            console.error('Kakao share failed:', e);
+
+            if (e && e.message === 'KAKAO_KEY_MISSING') {
+                showCatError('카카오 공유 키가 설정되지 않았어요. 서버 환경변수 KAKAO_JAVASCRIPT_KEY를 확인해주세요.');
+                return;
+            }
+
+            if (e && e.message === 'KAKAO_SDK_NOT_LOADED') {
+                showCatError('카카오 SDK를 불러오지 못했어요. 잠시 후 다시 시도해주세요.');
+                return;
+            }
+
+            showCatError('카카오 공유 인증에 실패했어요. 카카오 디벨로퍼스의 사이트 도메인과 현재 배포 주소가 일치하는지 확인해주세요.');
+        }
     }
 
     async function copyLink() {
