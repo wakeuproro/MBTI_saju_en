@@ -116,8 +116,9 @@
         .toto-anim .toto-tail { animation: toto-tail 3s ease-in-out infinite; transform-box: fill-box; transform-origin: 90% 100%; }
 
         /* Screens */
-        .screen { display: none; padding: 24px 20px; width: 100%; max-width: 100%; overflow-x: hidden; box-sizing: border-box; }
+        .screen { display: none; padding: 24px 20px; width: 100%; max-width: 100%; overflow-x: hidden; box-sizing: border-box; flex-shrink: 0; }
         .screen.active { display: block; }
+        .screen * { max-width: 100%; box-sizing: border-box; }
 
         /* Intro */
         .intro-hero { text-align: center; padding: 40px 0 30px; }
@@ -1822,47 +1823,60 @@
         }
 
         try {
-            const config = await ensureKakaoInitialized();
+            const config = await getAppConfig();
             const shareUrl = getCanonicalShareUrl(config);
 
-            // 카카오톡 공유 시도 (3초 타임아웃 — 토스 웹뷰에서 멈힘 방지)
-            const kakaoPromise = Kakao.Share.sendDefault({
-                objectType: 'feed',
-                content: {
-                    title: '사주 x MBTI 운명 분석',
-                    description: `${reportData.ilgan.title} | ${reportData.mbti}\n당신의 운명도 확인해보세요!`,
-                    imageUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=1000',
-                    link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
-                },
-                buttons: [{ title: '나도 분석하기', link: { mobileWebUrl: shareUrl, webUrl: shareUrl } }],
-            });
-            const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('KAKAO_TIMEOUT')), 3000));
-            await Promise.race([kakaoPromise, timeout]);
-        } catch (e) {
-            console.error('Kakao share failed:', e);
-
-            // 토스 웹뷰 등에서 카카오 SDK 팝업 차단 시 → 카카오톡 URL 스킴으로 대체
-            try {
-                const config = await getAppConfig();
-                const shareUrl = getCanonicalShareUrl(config);
-                const shareText = `✨ 사주 x MBTI 운명 분석 ✨\n${reportData.ilgan.title} | ${reportData.mbti}\n당신의 운명도 확인해보세요!\n${shareUrl}`;
-
-                // 클립보드에 복사 후 카카오톡 열기 시도
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    await navigator.clipboard.writeText(shareText);
-                } else {
-                    const ta = document.createElement('textarea');
-                    ta.value = shareText;
-                    ta.style.cssText = 'position:fixed;opacity:0';
-                    document.body.appendChild(ta);
-                    ta.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(ta);
+            // 일반 브라우저에서 카카오 SDK 시도
+            if (window.Kakao && !isInAppWebView()) {
+                try {
+                    if (!Kakao.isInitialized() && config.kakao_javascript_key) {
+                        Kakao.init(config.kakao_javascript_key);
+                    }
+                    if (Kakao.isInitialized()) {
+                        Kakao.Share.sendDefault({
+                            objectType: 'feed',
+                            content: {
+                                title: '사주 x MBTI 운명 분석',
+                                description: `${reportData.ilgan.title} | ${reportData.mbti}\n당신의 운명도 확인해보세요!`,
+                                imageUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=1000',
+                                link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
+                            },
+                            buttons: [{ title: '나도 분석하기', link: { mobileWebUrl: shareUrl, webUrl: shareUrl } }],
+                        });
+                        return;
+                    }
+                } catch(sdkErr) {
+                    console.warn('Kakao SDK failed, falling back to copy:', sdkErr);
                 }
-                showToast('✨ 공유 메시지가 복사됐어요! 카카오톡에 붙여넣기 해주세요.', 'success');
-            } catch (e2) {
-                showCatError('카카오 공유에 실패했어요. 링크 복사 버튼을 이용해주세요.');
             }
+
+            // 토스 웹뷰 / 인앱 브라우저 → 클립보드 복사
+            const shareText = `✨ 사주 x MBTI 운명 분석 ✨\n${reportData.ilgan.title} | ${reportData.mbti}\n당신의 운명도 확인해보세요!\n${shareUrl}`;
+            await copyToClipboard(shareText);
+            showToast('✨ 공유 메시지가 복사됐어요! 카카오톡에 붙여넣기 해주세요.', 'success');
+        } catch (e) {
+            console.error('Share failed:', e);
+            showCatError('공유에 실패했어요. 링크 복사 버튼을 이용해주세요.');
+        }
+    }
+
+    function isInAppWebView() {
+        const ua = navigator.userAgent || '';
+        return /TOSS|KAKAOTALK|NAVER|LINE|Instagram|FBAN|FBAV/i.test(ua) ||
+               window.self !== window.top;
+    }
+
+    async function copyToClipboard(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(text);
+        } else {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.cssText = 'position:fixed;left:-9999px;opacity:0';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
         }
     }
 
