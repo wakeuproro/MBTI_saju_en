@@ -2035,9 +2035,16 @@ async def use_referral(data: dict):
 # 🔐 토스 로그인 연결 끊기 콜백
 # ═══════════════════════════════════════════════
 
+TOSS_CALLBACK_AUTH = os.getenv("TOSS_CALLBACK_AUTH", "c2FqdS1tYnRpOmM4YzgwOGQ4ZWRhZWZjNWE4YmFjMWM3OTM4NGU1NTcz")
+
 @app.get("/toss/disconnect-callback")
 async def toss_disconnect_callback(request: Request):
     """토스 회원 탈퇴/연결 끊기 시 호출되는 콜백"""
+    # Basic Auth 검증
+    auth_header = request.headers.get("authorization", "")
+    expected = f"Basic {TOSS_CALLBACK_AUTH}"
+    if auth_header != expected:
+        raise HTTPException(status_code=401, detail="Unauthorized")
     params = dict(request.query_params)
     print(f"[TOSS] 연결 끊기 콜백 수신: {params}")
     # 필요 시 사용자 데이터 정리 로직 추가
