@@ -2031,6 +2031,19 @@ async def use_referral(data: dict):
         "message": "추천 코드가 적용되었습니다! 무료 분석 1회가 제공됩니다."
     }
 
+# ═══════════════════════════════════════════════
+# 🔐 토스 로그인 연결 끊기 콜백
+# ═══════════════════════════════════════════════
+
+@app.get("/toss/disconnect-callback")
+async def toss_disconnect_callback(request: Request):
+    """토스 회원 탈퇴/연결 끊기 시 호출되는 콜백"""
+    params = dict(request.query_params)
+    print(f"[TOSS] 연결 끊기 콜백 수신: {params}")
+    # 필요 시 사용자 데이터 정리 로직 추가
+    return {"status": "ok", "message": "disconnect callback received"}
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
