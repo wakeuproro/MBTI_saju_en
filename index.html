@@ -1825,8 +1825,8 @@
             const config = await ensureKakaoInitialized();
             const shareUrl = getCanonicalShareUrl(config);
 
-            // 카카오톡 공유 시도
-            await Kakao.Share.sendDefault({
+            // 카카오톡 공유 시도 (3초 타임아웃 — 토스 웹뷰에서 멈힘 방지)
+            const kakaoPromise = Kakao.Share.sendDefault({
                 objectType: 'feed',
                 content: {
                     title: '사주 x MBTI 운명 분석',
@@ -1836,6 +1836,8 @@
                 },
                 buttons: [{ title: '나도 분석하기', link: { mobileWebUrl: shareUrl, webUrl: shareUrl } }],
             });
+            const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('KAKAO_TIMEOUT')), 3000));
+            await Promise.race([kakaoPromise, timeout]);
         } catch (e) {
             console.error('Kakao share failed:', e);
 
