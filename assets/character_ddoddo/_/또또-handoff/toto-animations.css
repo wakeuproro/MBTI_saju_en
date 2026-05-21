@@ -1,0 +1,31 @@
+/* toto-animations.css — v4 (단일 포즈) */
+
+/* 숨쉬기 — 미세하게 위아래 */
+@keyframes toto-breathe {
+  0%, 100% { transform: scaleY(1) translateY(0); }
+  50%      { transform: scaleY(1.02) translateY(-0.5px); }
+}
+.toto-anim .toto-body {
+  animation: toto-breathe 3.4s ease-in-out infinite;
+  transform-origin: 50% 100%;
+}
+
+/* 눈 깜빡임 */
+@keyframes toto-blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  94%, 97%      { transform: scaleY(0.08); }
+}
+.toto-anim .toto-eye-left,
+.toto-anim .toto-eye-right {
+  animation: toto-blink 5s ease-in-out infinite;
+}
+.toto-anim .toto-eye-right { animation-delay: 0.05s; }
+
+/* 꼬리 살랑 — 천천히 */
+@keyframes toto-tail {
+  0%, 100% { transform: rotate(-3deg); }
+  50%      { transform: rotate(5deg); }
+}
+.toto-anim .toto-tail {
+  animation: toto-tail 3s ease-in-out infinite;
+}
