@@ -2180,12 +2180,21 @@
         const unknown = document.getElementById('partner_time_unknown').checked;
         document.getElementById('partner_time_inputs').style.display = unknown ? 'none' : 'flex';
     }
+    let screenHistory = ['intro-screen'];
+
     function showScreen(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
         document.getElementById('floating-cta').style.display = 'none';
         window.scrollTo(0,0);
+
+        // 히스토리에 화면 전환 기록 (뒤로가기 지원)
+        if (screenHistory[screenHistory.length - 1] !== id) {
+            screenHistory.push(id);
+            history.pushState({ screen: id }, '', '');
+        }
     }
+
     function backToReport() {
         if (reportData) {
             showScreen('report-screen');
@@ -2194,6 +2203,20 @@
             showScreen('intro-screen');
         }
     }
+
+    // 브라우저/토스 뒤로가기 버튼 → 이전 화면으로 이동 (초기화면 X)
+    window.addEventListener('popstate', function(e) {
+        // 히스토리 스택에서 현재 화면 제거
+        if (screenHistory.length > 1) {
+            screenHistory.pop();
+            const prevScreen = screenHistory[screenHistory.length - 1];
+
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(prevScreen).classList.add('active');
+            document.getElementById('floating-cta').style.display = (prevScreen === 'report-screen') ? 'block' : 'none';
+            window.scrollTo(0, 0);
+        }
+    });
     // 📜 대운 상세 화면
     function openDaewoonScreen() {
         if (!reportData || !reportData.daewoon) {
