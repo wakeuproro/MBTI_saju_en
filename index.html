@@ -556,9 +556,12 @@
                 </div>
                 <input type="hidden" id="calendar_type" value="solar">
             </div>
-            <input type="date" class="form-input" id="birth_date" value="1995-05-15"
-                   min="1900-01-01" max="2099-12-31"
-                   oninput="enforceBirthDate(this)">
+            <div style="display:flex; gap:6px;">
+                <select class="form-select" id="birth_year" style="flex:1.2;"></select>
+                <select class="form-select" id="birth_month" style="flex:1;"></select>
+                <select class="form-select" id="birth_day" style="flex:1;"></select>
+            </div>
+            <input type="hidden" id="birth_date" value="1995-05-15">
             <label id="leap_month_wrap" style="display:none; align-items:center; gap:6px; margin-top:8px; font-size:0.78rem; color:var(--text-light); cursor:pointer;">
                 <input type="checkbox" id="is_leap_month" style="width:14px; height:14px; accent-color:var(--primary);">
                 <span>윤달 입니다 (음력 윤달일 때만 체크)</span>
@@ -793,7 +796,12 @@
             </div>
             <div class="form-section">
                 <label class="form-label">생년월일 (양력)</label>
-                <input type="date" class="form-input" id="partner_birth_date" value="1995-01-15" min="1900-01-01" max="2099-12-31" oninput="enforceBirthDate(this)">
+                <div style="display:flex; gap:6px;">
+                    <select class="form-select" id="partner_birth_year" style="flex:1.2;"></select>
+                    <select class="form-select" id="partner_birth_month" style="flex:1;"></select>
+                    <select class="form-select" id="partner_birth_day" style="flex:1;"></select>
+                </div>
+                <input type="hidden" id="partner_birth_date" value="1995-01-15">
             </div>
             <div class="form-section">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -1131,22 +1139,61 @@
         document.getElementById('time_unknown_notice').style.display = unknown ? 'block' : 'none';
     }
 
-    // 생년월일 입력 검증 — 자릿수 초과만 silent 보정 (알림 없음)
-    // 연도 범위(1900~2099)는 onchange/제출 시점에서만 체크
-    function enforceBirthDate(input) {
-        const v = input.value;
-        if (!v) return;
-        const parts = v.split('-');
-        if (parts.length !== 3) return;
-        let [year, mm, dd] = parts;
+    // ── 생년월일 셀렉트 박스 초기화 ──
+    function initBirthDateSelects(prefix, defaultYear, defaultMonth, defaultDay) {
+        const yearEl = document.getElementById(prefix + '_year');
+        const monthEl = document.getElementById(prefix + '_month');
+        const dayEl = document.getElementById(prefix + '_day');
+        const hiddenEl = document.getElementById(prefix.replace('birth','birth_date').replace('_year',''));
 
-        // 자릿수 초과분만 잘라냄 (입력 중에는 알림 X)
-        let changed = false;
-        if (year.length > 4) { year = year.slice(0, 4); changed = true; }
-        if (mm.length > 2)   { mm   = mm.slice(0, 2);   changed = true; }
-        if (dd.length > 2)   { dd   = dd.slice(0, 2);   changed = true; }
-        if (changed) input.value = `${year}-${mm}-${dd}`;
+        // 년도 (1920 ~ 2025)
+        for (let y = 2025; y >= 1920; y--) {
+            const opt = document.createElement('option');
+            opt.value = y; opt.textContent = y + '년';
+            if (y === defaultYear) opt.selected = true;
+            yearEl.appendChild(opt);
+        }
+        // 월 (1~12)
+        for (let m = 1; m <= 12; m++) {
+            const opt = document.createElement('option');
+            opt.value = m; opt.textContent = m + '월';
+            if (m === defaultMonth) opt.selected = true;
+            monthEl.appendChild(opt);
+        }
+        // 일 업데이트 함수
+        function updateDays() {
+            const y = parseInt(yearEl.value);
+            const m = parseInt(monthEl.value);
+            const maxDay = new Date(y, m, 0).getDate();
+            const curDay = parseInt(dayEl.value) || defaultDay;
+            dayEl.innerHTML = '';
+            for (let d = 1; d <= maxDay; d++) {
+                const opt = document.createElement('option');
+                opt.value = d; opt.textContent = d + '일';
+                if (d === Math.min(curDay, maxDay)) opt.selected = true;
+                dayEl.appendChild(opt);
+            }
+            syncHiddenDate();
+        }
+        // hidden input 동기화
+        function syncHiddenDate() {
+            const y = yearEl.value;
+            const m = monthEl.value.padStart(2, '0');
+            const d = dayEl.value.padStart(2, '0');
+            document.getElementById(prefix === 'birth' ? 'birth_date' : 'partner_birth_date').value = `${y}-${m}-${d}`;
+        }
+        yearEl.addEventListener('change', updateDays);
+        monthEl.addEventListener('change', updateDays);
+        dayEl.addEventListener('change', syncHiddenDate);
+        updateDays();
     }
+
+    // 메인 생년월일
+    initBirthDateSelects('birth', 1995, 5, 15);
+    // 궁합 상대방 생년월일
+    initBirthDateSelects('partner_birth', 1995, 1, 15);
+
+    function enforceBirthDate(input) {} // 더 이상 사용 안 함
 
     // 연도 범위 검증 (선택을 마쳤을 때만)
     function validateBirthDateRange(input) {
