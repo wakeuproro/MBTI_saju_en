@@ -879,10 +879,10 @@
         <div class="payment-title">더 많은 운명을 탐색해보세요</div>
         <div class="payment-sub">짧은 광고 시청으로 모든 분석을 무료로!</div>
 
-        <div class="payment-option" onclick="closePaymentModal(); freeUsed=false; document.getElementById('analyze-btn').click();">
+        <div class="payment-option" onclick="closePaymentModal(); watchAdForBasicAnalysis();">
             <div class="payment-option-row">
-                <span class="payment-option-label">🔮 기본 무료 분석</span>
-                <span class="payment-option-price" style="color:#7B1FA2;">무료</span>
+                <span class="payment-option-label">🔮 기본 사주 분석</span>
+                <span class="payment-option-price" style="color:#43A047;">🎬 광고 보기</span>
             </div>
             <div class="payment-option-desc">사주 x MBTI 기본 분석을 다시 확인해보세요</div>
         </div>
@@ -1079,6 +1079,23 @@
             showToast('광고를 불러올 수 없어서 무료로 열어드려요!', 'success');
         }
     });
+
+    // 광고 보고 기본 분석 다시하기
+    function watchAdForBasicAnalysis() {
+        if (!isInTossWebview) {
+            showToast('토스 앱에서만 광고 보기가 가능해요. 무료로 열어드릴게요!', 'success');
+            freeUsed = false; document.getElementById('analyze-btn').click();
+            return;
+        }
+        showToast('광고를 불러오는 중...', 'info');
+        adRewardCallback = function() {
+            freeUsed = false; document.getElementById('analyze-btn').click();
+        };
+        requestAdFromParent('rewarded');
+        setTimeout(function() {
+            if (adRewardCallback) { adRewardCallback(); adRewardCallback = null; }
+        }, 10000);
+    }
 
     // 광고 보고 프리미엄 열기
     function watchAdForPremium() {
