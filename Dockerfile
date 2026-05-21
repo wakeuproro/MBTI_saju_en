@@ -18,5 +18,5 @@ COPY . .
 # 포트
 EXPOSE 7860
 
-# 실행 — shell form으로 $PORT 환경변수 해석
-CMD ["/bin/sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-7860}"]
+# 실행
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
