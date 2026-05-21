@@ -1790,6 +1790,14 @@ async def get_compatibility_preview(data: CompatibilityInput):
     }
 
 
+@app.post("/get-compatibility-full")
+async def get_compatibility_full(data: CompatibilityInput):
+    """광고 시청 후 궁합 상세 반환 (결제 검증 없음)"""
+    result = calc_compatibility(data.person_a.dict(), data.person_b.dict())
+    result['unlocked'] = True
+    return result
+
+
 @app.post("/confirm-and-get-compatibility")
 async def confirm_and_get_compatibility(data: CompatibilityInput):
     """토스 결제 검증 → 통과 시 궁합 상세 반환"""
@@ -1962,6 +1970,15 @@ async def yearly_preview(data: YearlyFortuneInput):
         'locked': True,
         'unlock_price': PRODUCT_PRICES['yearly'],
     }
+
+
+@app.post("/get-yearly-fortune-full")
+async def get_yearly_full(data: YearlyFortuneInput):
+    """광고 시청 후 12개월 전체 응답 (결제 검증 없음)"""
+    result = build_yearly_fortune(data.birth_date, data.birth_time, data.mbti, data.target_year,
+                                   calendar_type=data.calendar_type, is_leap_month=data.is_leap_month)
+    result['unlocked'] = True
+    return result
 
 
 @app.post("/confirm-and-get-yearly-fortune")

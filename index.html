@@ -345,8 +345,9 @@
         .travel-tip { background: #E8F5E9; border: 1px solid #C8E6C9; border-radius: 10px; padding: 10px 12px; margin-top: 8px; font-size: 0.82rem; color: #2E7D32; }
 
         /* Dev mode button */
-        .dev-badge { position: fixed; top: 60px; right: 8px; z-index: 999; background: #7B1FA2; color: #fff; border: none; padding: 4px 10px; border-radius: 8px; font-size: 0.65rem; font-weight: 700; cursor: pointer; opacity: 0.7; }
-        .dev-badge:hover { opacity: 1; }
+        /* DEV 배지 — 출시 시 비활성화 */
+        /* .dev-badge { position: fixed; top: 60px; right: 8px; z-index: 999; background: #7B1FA2; color: #fff; border: none; padding: 4px 10px; border-radius: 8px; font-size: 0.65rem; font-weight: 700; cursor: pointer; opacity: 0.7; }
+        .dev-badge:hover { opacity: 1; } */
 
         /* Premium locked teaser */
         .premium-teaser { background: var(--bg-card); border: 1.5px solid #E0E0E0; border-radius: 16px; margin-bottom: 10px; overflow: hidden; position: relative; }
@@ -453,8 +454,6 @@
     </style>
 </head>
 <body>
-
-<button class="dev-badge" onclick="devReset()">DEV: 초기화</button>
 
 <div id="app">
     <header>
@@ -736,10 +735,10 @@
         </div>
         <div style="display: flex; gap: 8px; margin-bottom: 12px;">
             <button onclick="openCompatibilityScreen()" style="flex:1; padding:14px; background:#FCE4EC; border:1.5px solid #F8BBD0; color:#C2185B; border-radius:14px; font-size:0.85rem; font-weight:800; cursor:pointer;">
-                💕 궁합 분석<br><span style="font-size:0.7rem; font-weight:600;">1,900원</span>
+                💕 궁합 분석<br><span style="font-size:0.7rem; font-weight:600;">🎬 광고 보고 무료</span>
             </button>
             <button onclick="openYearlyScreen()" style="flex:1; padding:14px; background:#EDE7F6; border:1.5px solid #D1C4E9; color:#5E35B1; border-radius:14px; font-size:0.85rem; font-weight:800; cursor:pointer;">
-                📅 2026 월별 운세<br><span style="font-size:0.7rem; font-weight:600;">2,900원</span>
+                📅 2026 월별 운세<br><span style="font-size:0.7rem; font-weight:600;">🎬 광고 보고 무료</span>
             </button>
         </div>
 
@@ -864,7 +863,7 @@
 <!-- Floating CTA -->
 <div class="floating-cta" id="floating-cta">
     <button class="floating-cta-btn" onclick="showPaymentModal()">
-        <span id="cta-text">🔮 친구 사주도 궁금하다면? 990원에 확인하기</span>
+        <span id="cta-text">🔮 궁합 · 월별 운세 · 심층 분석 무료로 보기</span>
         <span>→</span>
     </button>
 </div>
@@ -874,28 +873,28 @@
     <div class="payment-sheet" onclick="event.stopPropagation()">
         <div class="payment-handle"></div>
         <div class="payment-title">더 많은 운명을 탐색해보세요</div>
-        <div class="payment-sub">첫 분석은 무료! 추가 분석은 합리적인 가격에.</div>
+        <div class="payment-sub">짧은 광고 시청으로 모든 분석을 무료로!</div>
 
-        <div class="payment-option" onclick="handlePayment('additional')">
+        <div class="payment-option" onclick="closePaymentModal(); watchAdForPremium();">
             <div class="payment-option-row">
-                <span class="payment-option-label">🔮 추가 사주 분석 1회</span>
-                <span class="payment-option-price">990원</span>
+                <span class="payment-option-label">💎 프리미엄 심층 분석</span>
+                <span class="payment-option-price" style="color:#43A047;">🎬 광고 보기</span>
             </div>
-            <div class="payment-option-desc">다른 사람의 사주 x MBTI 분석을 확인해보세요</div>
+            <div class="payment-option-desc">풍수인테리어 · 행운 악세사리 · AI 심층 분석</div>
         </div>
 
-        <div class="payment-option" onclick="handlePayment('compatibility')">
+        <div class="payment-option" onclick="closePaymentModal(); openCompatibilityScreen();">
             <div class="payment-option-row">
                 <span class="payment-option-label">💕 두 사람 궁합 분석</span>
-                <span class="payment-option-price">1,900원</span>
+                <span class="payment-option-price" style="color:#43A047;">🎬 광고 보기</span>
             </div>
             <div class="payment-option-desc">두 사람의 사주 x MBTI 궁합을 심층 분석합니다</div>
         </div>
 
-        <div class="payment-option" onclick="handlePayment('yearly')">
+        <div class="payment-option" onclick="closePaymentModal(); openYearlyScreen();">
             <div class="payment-option-row">
                 <span class="payment-option-label">📅 2026년 상세 운세</span>
-                <span class="payment-option-price">2,900원</span>
+                <span class="payment-option-price" style="color:#43A047;">🎬 광고 보기</span>
             </div>
             <div class="payment-option-desc">월별 상세 운세와 맞춤 조언을 받아보세요</div>
         </div>
@@ -1069,6 +1068,82 @@
                 adRewardCallback = null;
             }
         }, 10000);
+    }
+
+    // 광고 보고 궁합 상세 열기
+    function watchAdForCompatibility(personA, personB) {
+        if (!isInTossWebview) {
+            showToast('토스 앱에서만 광고 보기가 가능해요. 무료로 열어드릴게요!', 'success');
+            loadCompatibilityFull(personA, personB);
+            return;
+        }
+        showToast('광고를 불러오는 중...', 'info');
+        adRewardCallback = function() {
+            loadCompatibilityFull(personA, personB);
+        };
+        requestAdFromParent('rewarded');
+        setTimeout(function() {
+            if (adRewardCallback) { adRewardCallback(); adRewardCallback = null; }
+        }, 10000);
+    }
+
+    async function loadCompatibilityFull(personA, personB) {
+        document.getElementById("loading").classList.add("active");
+        document.querySelector(".loading-text").textContent = "궁합 분석 중...";
+        try {
+            const res = await fetch(`${API_URL}/get-compatibility-full`, {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ person_a: personA, person_b: personB })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || '분석 실패');
+            showScreen('compat-screen');
+            renderCompatibilityFull(data);
+        } catch(e) {
+            showCatError('궁합 분석에 실패했어요: ' + (e.message || ''));
+        } finally {
+            document.getElementById("loading").classList.remove("active");
+            document.querySelector(".loading-text").textContent = "운명을 해석하고 있습니다...";
+        }
+    }
+
+    // 광고 보고 월별 운세 열기
+    function watchAdForYearly(meInput) {
+        if (!isInTossWebview) {
+            showToast('토스 앱에서만 광고 보기가 가능해요. 무료로 열어드릴게요!', 'success');
+            loadYearlyFull(meInput);
+            return;
+        }
+        showToast('광고를 불러오는 중...', 'info');
+        adRewardCallback = function() {
+            loadYearlyFull(meInput);
+        };
+        requestAdFromParent('rewarded');
+        setTimeout(function() {
+            if (adRewardCallback) { adRewardCallback(); adRewardCallback = null; }
+        }, 10000);
+    }
+
+    async function loadYearlyFull(meInput) {
+        document.getElementById("loading").classList.add("active");
+        document.querySelector(".loading-text").textContent = "월별 운세 생성 중...";
+        try {
+            const res = await fetch(`${API_URL}/get-yearly-fortune-full`, {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ ...meInput, target_year: 2026 })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || '분석 실패');
+            showScreen('yearly-screen');
+            renderYearlyFull(data);
+        } catch(e) {
+            showCatError('월별 운세를 받지 못했어요: ' + (e.message || ''));
+        } finally {
+            document.getElementById("loading").classList.remove("active");
+            document.querySelector(".loading-text").textContent = "운명을 해석하고 있습니다...";
+        }
     }
 
     async function loadPremiumReport() {
@@ -2031,14 +2106,14 @@
         else showToast('복사에 실패했어요. 주소창에서 직접 복사해주세요.', 'warn');
     }
 
-    // DEV: 무료 사용 초기화 (개발 중에만 사용)
-    function devReset() {
-        localStorage.removeItem('freeUsed');
-        localStorage.removeItem('referralBonus');
-        freeUsed = false;
-        alert('DEV: 초기화 완료!');
-        location.reload();
-    }
+    // DEV: 무료 사용 초기화 (개발 중에만 사용, 출시 시 비활성화)
+    // function devReset() {
+    //     localStorage.removeItem('freeUsed');
+    //     localStorage.removeItem('referralBonus');
+    //     freeUsed = false;
+    //     alert('DEV: 초기화 완료!');
+    //     location.reload();
+    // }
 
     // ═══════════════════════════════════════════════
     // 💎 프리미엄 티저 (절제된 잠금 콘텐츠)
@@ -2519,11 +2594,11 @@
                     </div>
                 </div>
             </div>
-            <div style="background:#F3E5F5; border:1.5px solid #CE93D8; border-radius:16px; padding:20px; margin-top:16px; text-align:center;">
-                <div style="font-size:0.95rem; font-weight:800; color:#6A1B9A; margin-bottom:6px;">🔓 상세 궁합 분석 잠금 해제</div>
-                <div style="font-size:0.82rem; color:#7B1FA2; margin-bottom:14px;">오행/띠/MBTI 3종 상세 분석 + 맞춤 조언</div>
-                <button onclick='purchaseCompatibility(${JSON.stringify(personA)}, ${JSON.stringify(personB)})' style="padding:14px 30px; background:linear-gradient(135deg,#7B1FA2,#9C27B0); color:#fff; border:none; border-radius:14px; font-size:0.95rem; font-weight:800; cursor:pointer;">
-                    💎 1,900원 결제하고 상세 보기
+            <div style="background:#E8F5E9; border:1.5px solid #A5D6A7; border-radius:16px; padding:20px; margin-top:16px; text-align:center;">
+                <div style="font-size:0.95rem; font-weight:800; color:#2E7D32; margin-bottom:6px;">🔓 상세 궁합 분석 잠금 해제</div>
+                <div style="font-size:0.82rem; color:#388E3C; margin-bottom:14px;">오행/띠/MBTI 3종 상세 분석 + 맞춤 조언</div>
+                <button onclick='watchAdForCompatibility(${JSON.stringify(personA)}, ${JSON.stringify(personB)})' style="padding:14px 30px; background:linear-gradient(135deg,#43A047,#66BB6A); color:#fff; border:none; border-radius:14px; font-size:0.95rem; font-weight:800; cursor:pointer;">
+                    🎬 광고 보고 무료로 상세 보기
                 </button>
             </div>`;
         area.scrollIntoView({behavior:'smooth', block:'start'});
@@ -2632,11 +2707,11 @@
                     </div>
                 </div>
             </div>
-            <div style="background:#F3E5F5; border:1.5px solid #CE93D8; border-radius:16px; padding:20px; margin-top:16px; text-align:center;">
-                <div style="font-size:0.95rem; font-weight:800; color:#6A1B9A; margin-bottom:6px;">🔓 12개월 전체 상세 운세 잠금 해제</div>
-                <div style="font-size:0.82rem; color:#7B1FA2; margin-bottom:14px;">월별 테마·조언·운 흐름까지 한눈에</div>
-                <button onclick='purchaseYearly(${JSON.stringify(meInput)})' style="padding:14px 30px; background:linear-gradient(135deg,#7B1FA2,#9C27B0); color:#fff; border:none; border-radius:14px; font-size:0.95rem; font-weight:800; cursor:pointer;">
-                    💎 2,900원 결제하고 12개월 다 보기
+            <div style="background:#E8F5E9; border:1.5px solid #A5D6A7; border-radius:16px; padding:20px; margin-top:16px; text-align:center;">
+                <div style="font-size:0.95rem; font-weight:800; color:#2E7D32; margin-bottom:6px;">🔓 12개월 전체 상세 운세 잠금 해제</div>
+                <div style="font-size:0.82rem; color:#388E3C; margin-bottom:14px;">월별 테마·조언·운 흐름까지 한눈에</div>
+                <button onclick='watchAdForYearly(${JSON.stringify(meInput)})' style="padding:14px 30px; background:linear-gradient(135deg,#43A047,#66BB6A); color:#fff; border:none; border-radius:14px; font-size:0.95rem; font-weight:800; cursor:pointer;">
+                    🎬 광고 보고 무료로 12개월 다 보기
                 </button>
             </div>
             <button onclick="backToReport()" style="width:100%; margin-top:14px; padding:14px; background:var(--bg-card); border:2px solid #E1BEE7; color:#8D6E63; border-radius:14px; font-weight:700; cursor:pointer;">← 분석 결과로 돌아가기</button>`;
