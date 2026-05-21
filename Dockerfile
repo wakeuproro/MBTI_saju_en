@@ -15,8 +15,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # 앱 코드 복사
 COPY . .
 
-# 포트 (Railway: $PORT 환경변수, HF Spaces: 7860)
-EXPOSE ${PORT:-7860}
+# 포트
+EXPOSE 7860
 
-# 실행 — Railway는 $PORT를 동적 할당하므로 shell form 사용
-CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-7860}
+# 실행 — shell form으로 $PORT 환경변수 해석
+CMD ["/bin/sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-7860}"]
