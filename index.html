@@ -116,7 +116,7 @@
         .toto-anim .toto-tail { animation: toto-tail 3s ease-in-out infinite; transform-box: fill-box; transform-origin: 90% 100%; }
 
         /* Screens */
-        .screen { display: none; padding: 24px 20px; }
+        .screen { display: none; padding: 24px 20px; max-width: 100%; overflow-x: hidden; box-sizing: border-box; }
         .screen.active { display: block; }
 
         /* Intro */
@@ -717,7 +717,7 @@
 
         <!-- Share -->
         <div class="share-container">
-            <button class="share-btn kakao" onclick="try{shareKakao()}catch(e){alert('공유오류:'+e.message)}">카카오톡 공유</button>
+            <button class="share-btn kakao" onclick="shareKakao()">카카오톡 공유</button>
             <button class="share-btn copy" onclick="copyLink()">링크 복사</button>
         </div>
 
@@ -752,12 +752,12 @@
 </div>
 
     <!-- 📜 대운 상세 화면 -->
-    <div id="daewoon-screen" class="screen">
+    <div id="daewoon-screen" class="screen" style="max-width:100%; overflow-x:hidden;">
         <div style="display:flex; align-items:center; gap:8px; margin-bottom:16px;">
             <button onclick="backToReport()" style="background:none; border:none; font-size:1.4rem; cursor:pointer; color:var(--text-light);">←</button>
             <h2 style="font-size:1.2rem; color:var(--primary-dark); font-weight:900;">📜 내 인생 대운 흐름</h2>
         </div>
-        <div id="daewoon-detail-area"></div>
+        <div id="daewoon-detail-area" style="max-width:100%; overflow-x:hidden; word-break:break-word;"></div>
     </div>
 
     <!-- COMPATIBILITY SCREEN -->
@@ -1816,7 +1816,6 @@
 
     // Share
     async function shareKakao() {
-        alert('DEBUG: shareKakao 호출됨, reportData=' + (reportData ? 'O' : 'X') + ', Kakao=' + (window.Kakao ? 'O' : 'X'));
         if (!reportData) {
             showToast('분석 결과가 없어요. 먼저 사주 분석을 해주세요.', 'warn');
             return;
@@ -1825,9 +1824,9 @@
         try {
             const config = await ensureKakaoInitialized();
             const shareUrl = getCanonicalShareUrl(config);
-            console.log('[KAKAO] shareUrl:', shareUrl, 'key:', config.kakao_javascript_key);
 
-            Kakao.Share.sendDefault({
+            // 카카오톡 공유 시도
+            await Kakao.Share.sendDefault({
                 objectType: 'feed',
                 content: {
                     title: '사주 x MBTI 운명 분석',
@@ -1839,19 +1838,29 @@
             });
         } catch (e) {
             console.error('Kakao share failed:', e);
-            alert('카카오 공유 오류: ' + (e && e.message ? e.message : JSON.stringify(e)));
 
-            if (e && e.message === 'KAKAO_KEY_MISSING') {
-                showCatError('카카오 공유 키가 설정되지 않았어요. 서버 환경변수 KAKAO_JAVASCRIPT_KEY를 확인해주세요.');
-                return;
+            // 토스 웹뷰 등에서 카카오 SDK 팝업 차단 시 → 카카오톡 URL 스킴으로 대체
+            try {
+                const config = await getAppConfig();
+                const shareUrl = getCanonicalShareUrl(config);
+                const shareText = `✨ 사주 x MBTI 운명 분석 ✨\n${reportData.ilgan.title} | ${reportData.mbti}\n당신의 운명도 확인해보세요!\n${shareUrl}`;
+
+                // 클립보드에 복사 후 카카오톡 열기 시도
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(shareText);
+                } else {
+                    const ta = document.createElement('textarea');
+                    ta.value = shareText;
+                    ta.style.cssText = 'position:fixed;opacity:0';
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
+                }
+                showToast('✨ 공유 메시지가 복사됐어요! 카카오톡에 붙여넣기 해주세요.', 'success');
+            } catch (e2) {
+                showCatError('카카오 공유에 실패했어요. 링크 복사 버튼을 이용해주세요.');
             }
-
-            if (e && e.message === 'KAKAO_SDK_NOT_LOADED') {
-                showCatError('카카오 SDK를 불러오지 못했어요. 잠시 후 다시 시도해주세요.');
-                return;
-            }
-
-            showCatError('카카오 공유 인증에 실패했어요. 카카오 디벨로퍼스의 사이트 도메인과 현재 배포 주소가 일치하는지 확인해주세요.');
         }
     }
 
