@@ -116,7 +116,7 @@
         .toto-anim .toto-tail { animation: toto-tail 3s ease-in-out infinite; transform-box: fill-box; transform-origin: 90% 100%; }
 
         /* Screens */
-        .screen { display: none; padding: 24px 20px; max-width: 100%; overflow-x: hidden; box-sizing: border-box; }
+        .screen { display: none; padding: 24px 20px; width: 100%; max-width: 100%; overflow-x: hidden; box-sizing: border-box; }
         .screen.active { display: block; }
 
         /* Intro */
@@ -2197,7 +2197,7 @@
         // 1) 상단 요약
         const currentP = dw.current_pillar;
         const summaryHTML = `
-            <div style="background:linear-gradient(135deg,#EDE7F6,#D1C4E9); border:2px solid #B39DDB; border-radius:18px; padding:20px; margin-bottom:14px;">
+            <div style="background:linear-gradient(135deg,#EDE7F6,#D1C4E9); border:2px solid #B39DDB; border-radius:18px; padding:20px; margin-bottom:14px; box-sizing:border-box; width:100%;">
                 <div style="font-size:0.78rem; color:#5E35B1; font-weight:700; margin-bottom:4px;">📅 ${dw.direction_kr} 대운 · 첫 시작 ${dw.start_age}세</div>
                 ${currentP ? `
                 <div style="font-size:0.82rem; color:#7B1FA2; margin-bottom:8px;">현재 ${dw.current_age}세 — <b>${currentP.label} 대운</b> (${currentP.age_start.toFixed(0)}~${currentP.age_end.toFixed(0)}세)</div>
@@ -2226,9 +2226,9 @@
         }).join('');
         const labelsHTML = pts.map(pt => `<text x="${pt.x}" y="${H-8}" text-anchor="middle" font-size="9" fill="#666">${pt.p.age_start.toFixed(0)}</text>`).join('');
         const graphHTML = `
-            <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:14px; padding:14px; margin-bottom:14px;">
+            <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:14px; padding:14px; margin-bottom:14px; box-sizing:border-box; width:100%;">
                 <div style="font-size:0.85rem; font-weight:800; color:var(--primary-dark); margin-bottom:8px;">📊 인생 운세 그래프 (일간 기준)</div>
-                <svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;">
+                <svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block; max-width:100%;">
                     <line x1="${PAD}" y1="${H-PAD}" x2="${W-PAD}" y2="${H-PAD}" stroke="#E0E0E0" stroke-width="1"/>
                     <line x1="${PAD}" y1="${PAD}" x2="${PAD}" y2="${H-PAD}" stroke="#E0E0E0" stroke-width="1"/>
                     <text x="6" y="${PAD+4}" font-size="9" fill="#666">좋음</text>
@@ -2249,7 +2249,7 @@
             if (i === currentIdx) { bg = 'linear-gradient(135deg,#FFF9C4,#FFF59D)'; borderColor = '#FFC107'; }
             else if (i < currentIdx) opacity = '0.7';
             return `
-                <div style="background:${bg}; border:2px solid ${borderColor}; border-radius:14px; padding:14px; margin-bottom:10px; opacity:${opacity};">
+                <div style="background:${bg}; border:2px solid ${borderColor}; border-radius:14px; padding:14px; margin-bottom:10px; opacity:${opacity}; box-sizing:border-box; width:100%;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                         <div style="display:flex; align-items:center; gap:10px;">
                             <span style="font-size:1.5rem; font-weight:900; color:var(--primary-dark);">${p.label}</span>
