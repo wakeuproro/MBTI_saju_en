@@ -343,6 +343,8 @@
         .travel-tip { background: #E8F5E9; border: 1px solid #C8E6C9; border-radius: 10px; padding: 10px 12px; margin-top: 8px; font-size: 0.82rem; color: #2E7D32; }
 
         /* Dev mode button */
+        .dev-badge { position: fixed; top: 60px; right: 8px; z-index: 999; background: #7B1FA2; color: #fff; border: none; padding: 4px 10px; border-radius: 8px; font-size: 0.65rem; font-weight: 700; cursor: pointer; opacity: 0.7; }
+        .dev-badge:hover { opacity: 1; }
 
         /* Premium locked teaser */
         .premium-teaser { background: var(--bg-card); border: 1.5px solid #E0E0E0; border-radius: 16px; margin-bottom: 10px; overflow: hidden; position: relative; }
@@ -449,6 +451,8 @@
     </style>
 </head>
 <body>
+
+<button class="dev-badge" onclick="devReset()">DEV: 초기화</button>
 
 <div id="app">
     <header>
@@ -1867,6 +1871,14 @@
         else showToast('복사에 실패했어요. 주소창에서 직접 복사해주세요.', 'warn');
     }
 
+    // DEV: 무료 사용 초기화 (개발 중에만 사용)
+    function devReset() {
+        localStorage.removeItem('freeUsed');
+        localStorage.removeItem('referralBonus');
+        freeUsed = false;
+        alert('DEV: 초기화 완료!');
+        location.reload();
+    }
 
     // ═══════════════════════════════════════════════
     // 💎 프리미엄 티저 (절제된 잠금 콘텐츠)
