@@ -1816,11 +1816,15 @@
 
     // Share
     async function shareKakao() {
-        if (!reportData) return;
+        if (!reportData) {
+            showToast('분석 결과가 없어요. 먼저 사주 분석을 해주세요.', 'warn');
+            return;
+        }
 
         try {
             const config = await ensureKakaoInitialized();
             const shareUrl = getCanonicalShareUrl(config);
+            console.log('[KAKAO] shareUrl:', shareUrl, 'key:', config.kakao_javascript_key);
 
             Kakao.Share.sendDefault({
                 objectType: 'feed',
@@ -1834,6 +1838,7 @@
             });
         } catch (e) {
             console.error('Kakao share failed:', e);
+            alert('카카오 공유 오류: ' + (e && e.message ? e.message : JSON.stringify(e)));
 
             if (e && e.message === 'KAKAO_KEY_MISSING') {
                 showCatError('카카오 공유 키가 설정되지 않았어요. 서버 환경변수 KAKAO_JAVASCRIPT_KEY를 확인해주세요.');
