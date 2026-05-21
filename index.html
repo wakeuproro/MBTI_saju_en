@@ -1876,10 +1876,8 @@
             <div class="lucky-card"><div class="lucky-card-icon">🍽️</div><div class="lucky-card-label">행운의 음식</div><div class="lucky-card-value">${l.food}</div></div>
         `;
 
-        // CTA text
-        if (r.payment_config && r.payment_config.cta_messages) {
-            document.getElementById("cta-text").textContent = r.payment_config.cta_messages.after_free;
-        }
+        // CTA text (광고 모델용 고정 텍스트)
+        document.getElementById("cta-text").textContent = "🔮 친구의 사주도 궁금하다면? 지금 확인하기";
 
         // Premium teaser
         renderPremiumTeaser();
