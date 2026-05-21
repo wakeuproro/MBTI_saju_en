@@ -549,6 +549,10 @@ async def app_config(request: Request):
 async def read_privacy():
     return FileResponse("privacy.html")
 
+@app.get("/terms")
+async def read_terms():
+    return FileResponse("terms.html")
+
 @app.get("/payment-config")
 async def payment_config():
     """프론트에서 토스 결제창 띄울 때 필요한 공개 정보"""
