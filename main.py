@@ -1184,7 +1184,11 @@ async def get_report_analysis(birth_date: str, birth_time: str, mbti: str, lang:
     # 원본 입력 그대로 라이브러리에 넣어 계산 (음력은 음력대로)
     raw_y, raw_m, raw_d = map(int, birth_date.split('-'))
     year, month, day = map(int, solar_date.split('-'))
-    hour = int(birth_time.split(':')[0])
+    # birth_time 방어: 'unknown' 등 비정상 값 → 정오(12시) 처리
+    try:
+        hour = int(birth_time.split(':')[0])
+    except (ValueError, AttributeError):
+        hour = 12
 
     # 📿 정확한 사주 (24절기 + 자시 + 시간보정)
     year_p, month_p, day_p, time_p = calc_pillars_accurate(
@@ -1480,7 +1484,10 @@ def _build_premium_payload(birth_date: str, birth_time: str, mbti: str,
                            calendar_type: str = 'solar', is_leap_month: bool = False):
     """프리미엄 분석 콘텐츠 생성 (라이프스타일 + Gemini 심층)"""
     raw_y, raw_m, raw_d = map(int, birth_date.split('-'))
-    hour = int(birth_time.split(':')[0])
+    try:
+        hour = int(birth_time.split(':')[0])
+    except (ValueError, AttributeError):
+        hour = 12
 
     # 📿 정확한 사주
     year_p, month_p, day_p, time_p = calc_pillars_accurate(
@@ -1689,7 +1696,10 @@ def calc_compatibility(person_a: dict, person_b: dict) -> dict:
     """두 사람 사주 + MBTI 궁합 분석"""
     def make_profile(p):
         raw_y, raw_m, raw_d = map(int, p['birth_date'].split('-'))
-        h = int(p['birth_time'].split(':')[0])
+        try:
+            h = int(p['birth_time'].split(':')[0])
+        except (ValueError, AttributeError):
+            h = 12
         cal_type = p.get('calendar_type', 'solar')
         leap = p.get('is_leap_month', False)
         # 📿 정확한 사주
@@ -1871,7 +1881,10 @@ def build_yearly_fortune(birth_date: str, birth_time: str, mbti: str, year: int,
                           calendar_type: str = 'solar', is_leap_month: bool = False):
     """년주의 오행 흐름과 사용자 일간을 비교한 월별 운세"""
     raw_y, raw_m, raw_d = map(int, birth_date.split('-'))
-    h = int(birth_time.split(':')[0])
+    try:
+        h = int(birth_time.split(':')[0])
+    except (ValueError, AttributeError):
+        h = 12
     # 📿 정확한 사주
     _yp, _mp, dp, _tp = calc_pillars_accurate(raw_y, raw_m, raw_d, h, calendar_type, is_leap_month)
     ilgan = dp[0]
