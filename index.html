@@ -329,11 +329,15 @@
         .bar-water { background: linear-gradient(180deg, #42A5F5, #1565C0); }
 
         /* Loading */
-        .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(250,247,255,0.9); z-index: 200; justify-content: center; align-items: center; flex-direction: column; }
+        .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(250,247,255,0.95); z-index: 200; justify-content: center; align-items: center; flex-direction: column; }
         .loading-overlay.active { display: flex; }
         .loading-spinner { width: 50px; height: 50px; border: 4px solid #E1BEE7; border-top: 4px solid #7B1FA2; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .loading-text { font-size: 0.95rem; color: #8D6E63; font-weight: 600; }
+        .loading-text { font-size: 0.95rem; color: #8D6E63; font-weight: 600; animation: pulse-text 2s ease-in-out infinite; }
+        @keyframes pulse-text { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .loading-dots::after { content: ''; animation: dots 1.5s steps(4, end) infinite; }
+        @keyframes dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
+        .loading-sub { font-size: 0.78rem; color: #A1887F; margin-top: 8px; animation: fadeInUp 0.5s ease; }
 
         /* Travel place cards */
         .travel-places { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
@@ -1002,7 +1006,8 @@
             </g>
         </svg>
     </div>
-    <div class="loading-text">또또가 운명을 해석하고 있어요...</div>
+    <div class="loading-text">또또가 운명을 해석하고 있어요<span class="loading-dots"></span></div>
+    <div class="loading-sub" id="loading-sub"></div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -1012,6 +1017,29 @@
     const API_URL = window.location.origin;
     let appConfigPromise = null;
     let reportData = null;
+    let loadingMsgTimer = null;
+
+    // 로딩 중 단계별 메시지 표시
+    function startLoadingMessages(messages) {
+        const sub = document.getElementById('loading-sub');
+        let idx = 0;
+        if (sub) sub.textContent = messages[0] || '';
+        clearInterval(loadingMsgTimer);
+        loadingMsgTimer = setInterval(function() {
+            idx++;
+            if (idx < messages.length && sub) {
+                sub.style.animation = 'none';
+                sub.offsetHeight; // reflow
+                sub.style.animation = 'fadeInUp 0.5s ease';
+                sub.textContent = messages[idx];
+            }
+        }, 3000);
+    }
+    function stopLoadingMessages() {
+        clearInterval(loadingMsgTimer);
+        const sub = document.getElementById('loading-sub');
+        if (sub) sub.textContent = '';
+    }
 
     // ── 앱인토스 인앱광고 (postMessage 통신) ──
     let adRewardCallback = null;
@@ -1089,7 +1117,12 @@
 
     async function loadCompatibilityFull(personA, personB) {
         document.getElementById("loading").classList.add("active");
-        document.querySelector(".loading-text").textContent = "궁합 분석 중...";
+        document.querySelector(".loading-text").textContent = "궁합 분석 중";
+        startLoadingMessages([
+            '두 사람의 사주를 비교하고 있어요',
+            '오행 궁합을 계산 중이에요',
+            '맞춤 조언을 준비하고 있어요'
+        ]);
         try {
             const res = await fetch(`${API_URL}/get-compatibility-full`, {
                 method: 'POST',
@@ -1097,14 +1130,15 @@
                 body: JSON.stringify({ person_a: personA, person_b: personB })
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.detail || '분석 실패');
+            if (!res.ok) throw new Error(data.detail || '서버 응답 오류');
             showScreen('compat-screen');
             renderCompatibilityFull(data);
         } catch(e) {
-            showCatError('궁합 분석에 실패했어요: ' + (e.message || ''));
+            console.error('Compatibility error:', e);
+            showCatError('궁합 분석에 실패했어요.<br>잠시 후 다시 시도해주세요.');
         } finally {
+            stopLoadingMessages();
             document.getElementById("loading").classList.remove("active");
-            document.querySelector(".loading-text").textContent = "운명을 해석하고 있습니다...";
         }
     }
 
@@ -1127,7 +1161,12 @@
 
     async function loadYearlyFull(meInput) {
         document.getElementById("loading").classList.add("active");
-        document.querySelector(".loading-text").textContent = "월별 운세 생성 중...";
+        document.querySelector(".loading-text").textContent = "월별 운세 생성 중";
+        startLoadingMessages([
+            '2026년 운세를 계산하고 있어요',
+            '월별 테마를 분석 중이에요',
+            '맞춤 조언을 정리하고 있어요'
+        ]);
         try {
             const res = await fetch(`${API_URL}/get-yearly-fortune-full`, {
                 method: 'POST',
@@ -1135,20 +1174,27 @@
                 body: JSON.stringify({ ...meInput, target_year: 2026 })
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.detail || '분석 실패');
+            if (!res.ok) throw new Error(data.detail || '서버 응답 오류');
             showScreen('yearly-screen');
             renderYearlyFull(data);
         } catch(e) {
-            showCatError('월별 운세를 받지 못했어요: ' + (e.message || ''));
+            console.error('Yearly fortune error:', e);
+            showCatError('월별 운세를 받지 못했어요.<br>잠시 후 다시 시도해주세요.');
         } finally {
+            stopLoadingMessages();
             document.getElementById("loading").classList.remove("active");
-            document.querySelector(".loading-text").textContent = "운명을 해석하고 있습니다...";
         }
     }
 
     async function loadPremiumReport() {
         document.getElementById("loading").classList.add("active");
-        document.querySelector(".loading-text").textContent = "AI가 심층 분석 중...";
+        document.querySelector(".loading-text").textContent = "AI가 심층 분석 중";
+        startLoadingMessages([
+            '사주 원국을 분석하고 있어요',
+            '오행 밸런스를 계산 중이에요',
+            '맞춤 라이프스타일을 찾고 있어요',
+            '거의 다 됐어요! 조금만 기다려주세요'
+        ]);
         try {
             const input = collectAnalysisInput();
             const res = await fetch(`${API_URL}/get-premium-report`, {
@@ -1157,13 +1203,15 @@
                 body: JSON.stringify(input)
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.detail || '분석 실패');
+            if (!res.ok) throw new Error(data.detail || '서버 응답 오류');
             renderPremiumResult(data.premium, data.lifestyle, data.ai_error);
             document.getElementById('premium-unlock-banner').style.display = 'none';
             document.getElementById('premium-result-area').style.display = 'block';
         } catch(e) {
-            showCatError('AI 분석에 실패했어요: ' + (e.message || ''));
+            console.error('Premium report error:', e);
+            showCatError('AI 분석에 실패했어요.<br>잠시 후 다시 시도해주세요.');
         } finally {
+            stopLoadingMessages();
             document.getElementById("loading").classList.remove("active");
         }
     }
@@ -1415,6 +1463,13 @@
         }
 
         document.getElementById("loading").classList.add("active");
+        startLoadingMessages([
+            '사주 원국을 세우고 있어요',
+            '천간과 지지를 분석 중이에요',
+            '오행 밸런스를 계산하고 있어요',
+            'MBTI와 사주를 융합 중이에요',
+            '거의 완성됐어요!'
+        ]);
 
         try {
             const res = await fetch(`${API_URL}/get-report`, {
@@ -1435,6 +1490,7 @@
         } catch(e) {
             showCatError("서버랑 연결이 안 됐어요. 잠시 후 다시 시도해주세요!");
         } finally {
+            stopLoadingMessages();
             document.getElementById("loading").classList.remove("active");
         }
     }
