@@ -700,9 +700,10 @@
         <div class="premium-unlock-banner" id="premium-unlock-banner">
             <div class="premium-unlock-title">💎 더 깊은 사주 해석이 준비되어 있습니다</div>
             <div class="premium-unlock-desc">내 오행에 맞는 풍수인테리어 · 행운 악세사리 · 시그니처 향기<br>+ 사주 원국 심층 분석까지 한 번에 확인하세요</div>
-            <button class="premium-unlock-btn" onclick="watchAdForPremium()" style="background:linear-gradient(135deg,#43A047,#66BB6A); margin-bottom:8px;">🎬 광고 보고 무료로 열기</button>
-            <button class="premium-unlock-btn" onclick="requestPremium()" style="font-size:0.85rem; padding:10px 24px; background:linear-gradient(135deg,#7B1FA2,#9C27B0);">💳 990원 결제하고 바로 열기</button>
-            <div class="premium-unlock-price">광고 시청 시 무료 · 또는 토스 결제</div>
+            <button class="premium-unlock-btn" onclick="watchAdForPremium()" style="background:linear-gradient(135deg,#43A047,#66BB6A);">🎬 광고 보고 무료로 열기</button>
+            <!-- 결제 버튼: 토스페이먼츠 가입 후 복원 -->
+            <!-- <button class="premium-unlock-btn" onclick="requestPremium()" style="font-size:0.85rem; padding:10px 24px; background:linear-gradient(135deg,#7B1FA2,#9C27B0);">💳 990원 결제하고 바로 열기</button> -->
+            <div class="premium-unlock-price">짧은 광고 시청 후 무료로 확인할 수 있어요</div>
         </div>
 
         <!-- Premium Result (hidden, shown after unlock) -->
@@ -1650,7 +1651,7 @@
             const lcExtra = `
                 <div class="lifecycle-periods">${periodsHTML}</div>
                 <div class="lifecycle-keyyear">🔑 ${lc.key_year}</div>
-                <div class="lifecycle-premium-hint" onclick="requestPremium()">
+                <div class="lifecycle-premium-hint" onclick="watchAdForPremium()">
                     🔮 <span>이 시기의 <strong>숨겨진 대운 흐름과 전환점</strong>을 더 자세히 보려면 →</span>
                 </div>
             `;
