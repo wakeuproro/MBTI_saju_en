@@ -6,6 +6,7 @@ import httpx
 from datetime import date
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 import google.generativeai as genai
@@ -531,6 +532,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.mount("/assets", StaticFiles(directory="assets"), name="assets")
 
 @app.get("/")
 async def read_index():
