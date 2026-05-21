@@ -717,7 +717,7 @@
 
         <!-- Share -->
         <div class="share-container">
-            <button class="share-btn kakao" onclick="shareKakao()">카카오톡 공유</button>
+            <button class="share-btn kakao" onclick="try{shareKakao()}catch(e){alert('공유오류:'+e.message)}">카카오톡 공유</button>
             <button class="share-btn copy" onclick="copyLink()">링크 복사</button>
         </div>
 
@@ -995,7 +995,7 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.0/kakao.min.js"></script>
+<script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.0/kakao.min.js" onerror="console.warn('Kakao SDK load failed')" async></script>
 <script src="https://js.tosspayments.com/v2/standard"></script>
 <script>
     const API_URL = window.location.origin;
@@ -1816,6 +1816,7 @@
 
     // Share
     async function shareKakao() {
+        alert('DEBUG: shareKakao 호출됨, reportData=' + (reportData ? 'O' : 'X') + ', Kakao=' + (window.Kakao ? 'O' : 'X'));
         if (!reportData) {
             showToast('분석 결과가 없어요. 먼저 사주 분석을 해주세요.', 'warn');
             return;
