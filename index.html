@@ -700,8 +700,9 @@
         <div class="premium-unlock-banner" id="premium-unlock-banner">
             <div class="premium-unlock-title">💎 더 깊은 사주 해석이 준비되어 있습니다</div>
             <div class="premium-unlock-desc">내 오행에 맞는 풍수인테리어 · 행운 악세사리 · 시그니처 향기<br>+ 사주 원국 심층 분석까지 한 번에 확인하세요</div>
-            <button class="premium-unlock-btn" onclick="requestPremium()">💳 990원 결제하고 열기</button>
-            <div class="premium-unlock-price">토스 결제 · 카드/카카오페이 등</div>
+            <button class="premium-unlock-btn" onclick="watchAdForPremium()" style="background:linear-gradient(135deg,#43A047,#66BB6A); margin-bottom:8px;">🎬 광고 보고 무료로 열기</button>
+            <button class="premium-unlock-btn" onclick="requestPremium()" style="font-size:0.85rem; padding:10px 24px; background:linear-gradient(135deg,#7B1FA2,#9C27B0);">💳 990원 결제하고 바로 열기</button>
+            <div class="premium-unlock-price">광고 시청 시 무료 · 또는 토스 결제</div>
         </div>
 
         <!-- Premium Result (hidden, shown after unlock) -->
@@ -1011,6 +1012,85 @@
     const API_URL = window.location.origin;
     let appConfigPromise = null;
     let reportData = null;
+
+    // ── 앱인토스 인앱광고 (postMessage 통신) ──
+    let adRewardCallback = null;
+    const isInTossWebview = window.self !== window.top;
+
+    // 토스 .ait 부모에게 광고 요청
+    function requestAdFromParent(adType) {
+        if (isInTossWebview) {
+            window.parent.postMessage({ type: 'SHOW_AD', adType: adType }, '*');
+        }
+    }
+
+    // 부모로부터 광고 결과 수신
+    window.addEventListener('message', function(e) {
+        if (!e.data || typeof e.data !== 'object') return;
+        if (e.data.type === 'AD_REWARD') {
+            // 광고 시청 완료 → 보상 지급
+            if (adRewardCallback) {
+                adRewardCallback();
+                adRewardCallback = null;
+            }
+        }
+        if (e.data.type === 'AD_ERROR' || e.data.type === 'AD_NOT_SUPPORTED') {
+            // 광고 불가 → 그냥 무료로 열어줌 (사용자 경험 우선)
+            if (adRewardCallback) {
+                adRewardCallback();
+                adRewardCallback = null;
+            }
+            showToast('광고를 불러올 수 없어서 무료로 열어드려요!', 'success');
+        }
+    });
+
+    // 광고 보고 프리미엄 열기
+    function watchAdForPremium() {
+        if (!reportData) { showCatError('먼저 무료 분석을 진행해주세요.'); return; }
+
+        if (!isInTossWebview) {
+            // 토스 밖에서는 광고 불가 → 그냥 무료 체험
+            showToast('토스 앱에서만 광고 보기가 가능해요. 무료로 열어드릴게요!', 'success');
+            loadPremiumReport();
+            return;
+        }
+
+        showToast('광고를 불러오는 중...', 'info');
+        adRewardCallback = function() {
+            loadPremiumReport();
+        };
+        requestAdFromParent('rewarded');
+
+        // 10초 타임아웃 — 광고 안 오면 그냥 열어줌
+        setTimeout(function() {
+            if (adRewardCallback) {
+                adRewardCallback();
+                adRewardCallback = null;
+            }
+        }, 10000);
+    }
+
+    async function loadPremiumReport() {
+        document.getElementById("loading").classList.add("active");
+        document.querySelector(".loading-text").textContent = "AI가 심층 분석 중...";
+        try {
+            const input = collectAnalysisInput();
+            const res = await fetch(`${API_URL}/get-premium-report`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(input)
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || '분석 실패');
+            renderPremiumResult(data.premium, data.lifestyle, data.ai_error);
+            document.getElementById('premium-unlock-banner').style.display = 'none';
+            document.getElementById('premium-result-area').style.display = 'block';
+        } catch(e) {
+            showCatError('AI 분석에 실패했어요: ' + (e.message || ''));
+        } finally {
+            document.getElementById("loading").classList.remove("active");
+        }
+    }
     let currentLang = 'ko';
     let tossPaymentConfig = null;
     let freeUsed = localStorage.getItem('freeUsed') === 'true';
