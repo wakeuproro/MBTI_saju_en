@@ -2693,6 +2693,11 @@
             if (!data.code) throw new Error('코드 응답 없음');
             link = `${window.location.origin}?ref=${data.code}`;
             localStorage.setItem('myReferralCode', data.code);
+
+            // 공유 링크 만든 즉시 → 본인에게 무료 1회 보너스 지급
+            localStorage.removeItem('freeUsed');
+            freeUsed = false;
+            showToast('🎁 공유 보너스! 무료 분석 1회가 추가됐어요!', 'success');
         } catch(e) {
             console.error('Referral create failed:', e);
             showCatError('링크 생성에 실패했어요. 잠시 후 다시 시도해주세요.');
