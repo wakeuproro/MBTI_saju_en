@@ -465,6 +465,8 @@
         .fade-in { animation: fadeInUp 0.5s ease forwards; }
         @keyframes slideUpReview { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes slideDownReview { from { transform: translateY(0); opacity: 1; } to { transform: translateY(100%); opacity: 0; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
     </style>
 </head>
 <body>
@@ -2170,16 +2172,64 @@
     }
 
     function requestTossReview() {
+        // 팝업 닫기
+        const popup = document.getElementById('review-popup');
+        if (popup) {
+            popup.style.animation = 'slideDownReview 0.3s ease-in forwards';
+            setTimeout(() => popup.remove(), 300);
+        }
+        // 다시 안 뜨게
+        localStorage.setItem('reviewPopupShown', 'true');
+
         if (window.self !== window.top) {
+            // .ait SDK 방식 시도 (향후 빌드에서 작동)
             window.parent.postMessage({ type: "REQUEST_REVIEW" }, "*");
+            // 동시에 안내 모달 표시 (SDK 실패 대비)
+            setTimeout(() => showReviewGuideModal(), 300);
         } else {
             showToast('📱 토스 앱에서 "사주xMBTI" 검색 후 후기를 남겨주세요!', 'success');
         }
-        // 팝업 닫기
-        const popup = document.getElementById('review-popup');
-        if (popup) popup.remove();
-        // 다시 안 뜨게
-        localStorage.setItem('reviewPopupShown', 'true');
+    }
+
+    function showReviewGuideModal() {
+        if (document.getElementById('review-guide-modal')) return;
+        const modal = document.createElement('div');
+        modal.id = 'review-guide-modal';
+        modal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:0; z-index:10000; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.5); animation:fadeIn 0.3s ease;';
+        modal.innerHTML = `
+            <div style="background:#fff; border-radius:20px; padding:28px 24px; margin:20px; max-width:320px; width:100%; text-align:center; box-shadow:0 8px 30px rgba(0,0,0,0.2);">
+                <div style="font-size:2.5rem; margin-bottom:12px;">🐱⭐</div>
+                <div style="font-size:1.1rem; font-weight:900; color:#4A148C; margin-bottom:16px;">후기 남기는 방법</div>
+                <div style="text-align:left; background:#FFF8E1; border-radius:14px; padding:18px 16px; margin-bottom:18px;">
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+                        <span style="background:#FF8F00; color:#fff; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.8rem; font-weight:900; flex-shrink:0;">1</span>
+                        <span style="font-size:0.88rem; color:#5D4037; font-weight:600;">화면 오른쪽 상단 <b style="color:#E65100;">⋯ 메뉴</b> 터치</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+                        <span style="background:#FF8F00; color:#fff; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.8rem; font-weight:900; flex-shrink:0;">2</span>
+                        <span style="font-size:0.88rem; color:#5D4037; font-weight:600;"><b style="color:#E65100;">"후기 남기기"</b> 선택</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="background:#FF8F00; color:#fff; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.8rem; font-weight:900; flex-shrink:0;">3</span>
+                        <span style="font-size:0.88rem; color:#5D4037; font-weight:600;">한줄 후기 작성 완료! 🎉</span>
+                    </div>
+                </div>
+                <div style="font-size:0.75rem; color:#8D6E63; margin-bottom:16px;">짧은 후기 하나가 또또에게 큰 힘이 돼요 🐾</div>
+                <button onclick="closeReviewGuideModal()" style="width:100%; padding:14px; background:linear-gradient(135deg,#FF8F00,#FFB300); border:none; color:#fff; border-radius:14px; font-size:0.95rem; font-weight:800; cursor:pointer; box-shadow:0 2px 8px rgba(255,143,0,0.3);">알겠어요!</button>
+            </div>
+        `;
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeReviewGuideModal();
+        });
+        document.body.appendChild(modal);
+    }
+
+    function closeReviewGuideModal() {
+        const modal = document.getElementById('review-guide-modal');
+        if (modal) {
+            modal.style.animation = 'fadeOut 0.2s ease forwards';
+            setTimeout(() => modal.remove(), 200);
+        }
     }
 
     let reviewPopupTimer = null;
