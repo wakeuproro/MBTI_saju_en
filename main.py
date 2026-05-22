@@ -1699,6 +1699,70 @@ def mbti_relation(a_mbti, b_mbti):
     return 65, "다른 색깔이 만나 서로를 배우는 관계"
 
 
+def _get_chemi_type(total_score, oh_rel, mbti_a, mbti_b):
+    """케미 유형 이름 + 한줄 명대사 반환"""
+    # 오행 관계 기반
+    if oh_rel == 'saeng':  # 상생
+        if total_score >= 85:
+            return ('🔥 운명의 소울메이트', '"만나자마자 느꼈어, 이 사람이다"')
+        return ('🌿 키워주는 힐러 케미', '"네 옆에 있으면 왜 이렇게 편하지?"')
+    elif oh_rel == 'geuk':  # 상극
+        if total_score >= 70:
+            return ('⚡ 밀당 스파크 케미', '"싸우면서 더 가까워지는 우리"')
+        return ('🌊 도전적 성장 케미', '"너 때문에 매일 성장하는 기분이야"')
+    elif oh_rel == 'same':  # 동일 오행
+        return ('🪞 거울 소울 케미', '"너랑 나, 왜 이렇게 닮았어?"')
+    else:  # 조화
+        if total_score >= 80:
+            return ('🌈 자연스러운 하모니 케미', '"우리 사이엔 말이 필요 없어"')
+        return ('🎵 리듬이 맞는 듀엣 케미', '"같이 있으면 어색하지 않은 사이"')
+
+
+def _get_oheng_relation_type(a_oheng, b_oheng):
+    """오행 관계 타입 반환 (saeng/geuk/same/harmony)"""
+    if a_oheng == b_oheng:
+        return 'same'
+    if OHENG_SAENG.get(a_oheng) == b_oheng or OHENG_SAENG.get(b_oheng) == a_oheng:
+        return 'saeng'
+    if OHENG_GEUK.get(a_oheng) == b_oheng or OHENG_GEUK.get(b_oheng) == a_oheng:
+        return 'geuk'
+    return 'harmony'
+
+
+def _get_ddoddo_comment(total_score):
+    """또또의 궁합 코멘트 (점수별 표정 + 대사)"""
+    if total_score >= 90:
+        return {
+            'expression': '😻',
+            'comment': '이 조합은 또또도 감동이야! 우주가 점찍어준 사이라냥~✨',
+            'sub': '둘이 만난 건 우연이 아니라 운명이다냥!'
+        }
+    elif total_score >= 80:
+        return {
+            'expression': '😸',
+            'comment': '오오~ 꽤 좋은 궁합이다냥! 서로 빛나게 해주는 사이~⭐',
+            'sub': '약간의 노력이면 천생연분이 될 수 있다냥!'
+        }
+    elif total_score >= 70:
+        return {
+            'expression': '🐱',
+            'comment': '나쁘지 않은 궁합이다냥~ 대화가 핵심이다냥!',
+            'sub': '서로의 다름을 즐기면 더 깊어질 수 있다냥~'
+        }
+    elif total_score >= 60:
+        return {
+            'expression': '😿',
+            'comment': '음... 좀 노력이 필요한 사이다냥~',
+            'sub': '하지만 노력하는 사랑이 더 단단하다냥! 포기하지 마라냥!'
+        }
+    else:
+        return {
+            'expression': '🙀',
+            'comment': '으악... 도전적인 조합이다냥!',
+            'sub': '그래도 정반대가 끌리는 법이라냥~ 서로 배우면 최강이다냥!'
+        }
+
+
 def calc_compatibility(person_a: dict, person_b: dict) -> dict:
     """두 사람 사주 + MBTI 궁합 분석"""
     def make_profile(p):
@@ -1714,6 +1778,8 @@ def calc_compatibility(person_a: dict, person_b: dict) -> dict:
         # 양력 변환 (메타용)
         y, m, dd = map(int, resolve_birth_date(p['birth_date'], cal_type, leap)[0].split('-'))
         ilgan = dp[0]
+        pillars_list = [yp, mp, dp, tp]
+        oheng_data = analyze_oheng_advanced(pillars_list)
         return {
             'name': p.get('name') or '익명',
             'gender': p.get('gender','F'),
@@ -1723,6 +1789,9 @@ def calc_compatibility(person_a: dict, person_b: dict) -> dict:
             'year_jiji': yp[1],
             'pillars': {'year':yp,'month':mp,'day':dp,'time':tp},
             'mbti': p['mbti'],
+            'oheng_pct': oheng_data['pct'],
+            'oheng_strongest': oheng_data['strongest'],
+            'oheng_weakest': oheng_data['weakest'],
         }
 
     a = make_profile(person_a)
@@ -1744,6 +1813,13 @@ def calc_compatibility(person_a: dict, person_b: dict) -> dict:
     elif total >= 60: grade, grade_emoji, grade_desc = 'C', '✨', '평범 — 노력과 이해가 필요한 관계'
     else: grade, grade_emoji, grade_desc = 'D', '⚡', '도전적 — 차이를 인정하고 배워가는 사이'
 
+    # 케미 유형
+    oh_rel_type = _get_oheng_relation_type(a['ilgan_oheng'], b['ilgan_oheng'])
+    chemi_name, chemi_quote = _get_chemi_type(total, oh_rel_type, a['mbti'], b['mbti'])
+
+    # 또또 코멘트
+    ddoddo = _get_ddoddo_comment(total)
+
     return {
         'person_a': a,
         'person_b': b,
@@ -1751,6 +1827,9 @@ def calc_compatibility(person_a: dict, person_b: dict) -> dict:
         'grade': grade,
         'grade_emoji': grade_emoji,
         'grade_desc': grade_desc,
+        'chemi_name': chemi_name,
+        'chemi_quote': chemi_quote,
+        'ddoddo': ddoddo,
         'details': [
             {'label': '오행 궁합 (일간 기준)', 'score': oh_score, 'desc': oh_desc, 'weight': '40%'},
             {'label': '띠 궁합 (년지 기준)', 'score': z_score, 'desc': z_desc, 'weight': '30%'},
@@ -1916,18 +1995,59 @@ def build_yearly_fortune(birth_date: str, birth_time: str, mbti: str, year: int,
             if mon in ms: return s
         return ''
 
+    # 월별 럭키 아이템/컬러 (오행별)
+    LUCKY_BY_OHENG = {
+        '木': {'color': '초록색/연두색', 'item': '식물 화분, 나무 소품', 'food': '녹색 채소, 샐러드'},
+        '火': {'color': '빨간색/주황색', 'item': '캔들, 따뜻한 조명', 'food': '매운 음식, 홍삼'},
+        '土': {'color': '노란색/베이지', 'item': '도자기, 흙냄새 향초', 'food': '곡물, 고구마'},
+        '金': {'color': '흰색/골드', 'item': '금속 악세사리, 시계', 'food': '흰쌀밥, 배'},
+        '水': {'color': '파란색/검정', 'item': '수정, 물 관련 소품', 'food': '해산물, 수프'},
+    }
+
+    # 월별 한줄 행동 팁 (오행 관계별)
+    ACTION_TIPS = {
+        'same': '자신만의 루틴을 지키세요. 안정이 곧 힘!',
+        'saeng_me': '적극적으로 행동할 때! 기회를 잡으세요.',
+        'me_saeng': '배움과 성장에 투자하기 좋은 시기예요.',
+        'geuk_me': '무리하지 마세요. 휴식이 전략입니다.',
+        'me_geuk': '도전정신이 빛나는 달! 단, 인간관계 조심.',
+        'neutral': '흐름에 맡기되, 작은 변화를 시도해보세요.',
+    }
+
     months = []
     for mon in range(1, 13):
         title, desc = base_themes[mon]
         target_p = calc_month_pillar(year, mon)
+        mo_oheng = CHEONGAN_OHENG[target_p[0]]
+
+        # 오행 관계 판단
+        if ilgan_oheng == mo_oheng:
+            rel = 'same'
+        elif OHENG_SAENG.get(mo_oheng) == ilgan_oheng:
+            rel = 'saeng_me'
+        elif OHENG_SAENG.get(ilgan_oheng) == mo_oheng:
+            rel = 'me_saeng'
+        elif OHENG_GEUK.get(mo_oheng) == ilgan_oheng:
+            rel = 'geuk_me'
+        elif OHENG_GEUK.get(ilgan_oheng) == mo_oheng:
+            rel = 'me_geuk'
+        else:
+            rel = 'neutral'
+
+        lucky = LUCKY_BY_OHENG.get(mo_oheng, LUCKY_BY_OHENG['木'])
+
         months.append({
             'month': mon,
             'label': MONTH_LABELS[mon-1],
             'season': season_of(mon),
             'pillar': f'{target_p[0]}{target_p[1]}',
-            'pillar_oheng': CHEONGAN_OHENG[target_p[0]],
+            'pillar_oheng': mo_oheng,
             'title': title,
             'desc': desc,
+            'lucky_color': lucky['color'],
+            'lucky_item': lucky['item'],
+            'lucky_food': lucky['food'],
+            'action_tip': ACTION_TIPS[rel],
         })
 
     # 베스트/주의 월 표시

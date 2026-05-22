@@ -2716,33 +2716,165 @@
 
     function renderCompatibilityFull(data) {
         const area = document.getElementById('compat-result-area');
-        const detailsHTML = data.details.map(d => `
+        const detailsHTML = data.details.map(d => {
+            const barWidth = Math.max(10, d.score);
+            const barColor = d.score >= 80 ? '#E91E63' : d.score >= 60 ? '#FF9800' : '#9E9E9E';
+            return `
             <div style="background:var(--bg-card); border:1px solid #F8BBD0; border-radius:12px; padding:14px; margin-bottom:10px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                     <strong style="color:#C2185B; font-size:0.9rem;">${d.label}</strong>
                     <span style="font-size:0.7rem; color:#8D6E63;">가중치 ${d.weight}</span>
                 </div>
-                <div style="font-size:1.4rem; font-weight:900; color:#C2185B;">${d.score}점</div>
-                <div style="font-size:0.85rem; color:#5D4037; margin-top:6px;">${d.desc}</div>
-            </div>`).join('');
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                    <div style="flex:1; height:8px; background:#FCE4EC; border-radius:4px; overflow:hidden;">
+                        <div style="width:${barWidth}%; height:100%; background:${barColor}; border-radius:4px; transition:width 1s ease;"></div>
+                    </div>
+                    <span style="font-size:1.1rem; font-weight:900; color:#C2185B; min-width:40px;">${d.score}점</span>
+                </div>
+                <div style="font-size:0.85rem; color:#5D4037;">${d.desc}</div>
+            </div>`;
+        }).join('');
+
+        // 오행 분포 비교 시각화
+        const ohengNames = {'木':'🌳목', '火':'🔥화', '土':'⛰️토', '金':'⚔️금', '水':'💧수'};
+        const ohengColors = {'木':'#4CAF50', '火':'#F44336', '土':'#FF9800', '金':'#FFD700', '水':'#2196F3'};
+        const ohengKeys = ['木','火','土','金','水'];
+        const pA = data.person_a;
+        const pB = data.person_b;
+        const ohengBarsHTML = ohengKeys.map(k => {
+            const aPct = (pA.oheng_pct && pA.oheng_pct[k]) || 0;
+            const bPct = (pB.oheng_pct && pB.oheng_pct[k]) || 0;
+            return `
+            <div style="margin-bottom:8px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.75rem; margin-bottom:3px;">
+                    <span style="color:#5D4037; font-weight:700; width:42px;">${ohengNames[k]}</span>
+                    <span style="color:#C2185B; font-size:0.7rem;">${pA.name} ${aPct}%</span>
+                    <span style="color:#5E35B1; font-size:0.7rem;">${pB.name} ${bPct}%</span>
+                </div>
+                <div style="display:flex; gap:4px;">
+                    <div style="flex:1; height:10px; background:#FCE4EC; border-radius:5px; overflow:hidden;">
+                        <div style="width:${Math.min(aPct * 2, 100)}%; height:100%; background:${ohengColors[k]}; border-radius:5px; opacity:0.8;"></div>
+                    </div>
+                    <div style="flex:1; height:10px; background:#EDE7F6; border-radius:5px; overflow:hidden;">
+                        <div style="width:${Math.min(bPct * 2, 100)}%; height:100%; background:${ohengColors[k]}; border-radius:5px; opacity:0.8;"></div>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+
+        // 또또 코멘트
+        const dd = data.ddoddo || {expression:'🐱', comment:'흥미로운 궁합이다냥~', sub:''};
+
+        // 케미 유형
+        const chemiName = data.chemi_name || '';
+        const chemiQuote = data.chemi_quote || '';
 
         area.innerHTML = `
-            <div style="background:linear-gradient(135deg,#FCE4EC,#F8BBD0); border:2px solid #F48FB1; border-radius:20px; padding:24px; text-align:center;">
-                <div style="font-size:4rem; margin-bottom:8px;">${data.grade_emoji}</div>
+            <!-- 🎯 케미 유형 + 점수 카드 -->
+            <div id="compat-share-card" style="background:linear-gradient(135deg,#FCE4EC,#F8BBD0); border:2px solid #F48FB1; border-radius:20px; padding:24px; text-align:center;">
+                <div style="font-size:1.3rem; font-weight:900; color:#C2185B; margin-bottom:4px;">${chemiName}</div>
+                <div style="font-size:0.85rem; color:#6D4C41; font-style:italic; margin-bottom:16px;">${chemiQuote}</div>
+                <div style="display:flex; justify-content:center; align-items:center; gap:14px; margin-bottom:12px;">
+                    <div style="text-align:center;">
+                        <div style="font-size:0.75rem; color:#8D6E63; font-weight:600;">${pA.name}</div>
+                        <div style="font-size:0.7rem; color:#C2185B;">${pA.ilgan_name} · ${pA.mbti}</div>
+                    </div>
+                    <div style="font-size:3rem;">${data.grade_emoji}</div>
+                    <div style="text-align:center;">
+                        <div style="font-size:0.75rem; color:#8D6E63; font-weight:600;">${pB.name}</div>
+                        <div style="font-size:0.7rem; color:#5E35B1;">${pB.ilgan_name} · ${pB.mbti}</div>
+                    </div>
+                </div>
                 <div style="font-size:2.4rem; font-weight:900; color:#C2185B; line-height:1;">${data.total_score}<span style="font-size:1rem;">점</span></div>
-                <div style="font-size:1.1rem; font-weight:800; color:#C2185B; margin-top:6px;">등급: ${data.grade}</div>
-                <div style="font-size:0.85rem; color:#6D4C41; margin-top:12px; padding:10px; background:rgba(255,255,255,0.6); border-radius:10px;">${data.grade_desc}</div>
+                <div style="font-size:1rem; font-weight:800; color:#C2185B; margin-top:4px;">등급: ${data.grade}</div>
+                <div style="font-size:0.82rem; color:#6D4C41; margin-top:10px; padding:10px; background:rgba(255,255,255,0.6); border-radius:10px;">${data.grade_desc}</div>
             </div>
+
+            <!-- 🐱 또또의 궁합 코멘트 -->
+            <div style="background:linear-gradient(135deg,#FFF8E1,#FFF3E0); border:2px solid #FFE0B2; border-radius:16px; padding:16px; margin-top:14px; display:flex; gap:12px; align-items:flex-start;">
+                <div style="font-size:2.5rem; flex-shrink:0; margin-top:2px;">${dd.expression}</div>
+                <div>
+                    <div style="font-size:0.75rem; font-weight:800; color:#E65100; margin-bottom:4px;">🐾 또또의 궁합 한마디</div>
+                    <div style="font-size:0.88rem; font-weight:700; color:#BF360C; line-height:1.5;">${dd.comment}</div>
+                    <div style="font-size:0.78rem; color:#8D6E63; margin-top:4px; font-style:italic;">${dd.sub}</div>
+                </div>
+            </div>
+
+            <!-- 📊 상세 점수 -->
             <div style="margin-top:16px;">
-                <h3 style="font-size:0.95rem; font-weight:800; color:#C2185B; margin-bottom:10px;">📊 상세 점수 (잠금 해제)</h3>
+                <h3 style="font-size:0.95rem; font-weight:800; color:#C2185B; margin-bottom:10px;">📊 상세 점수</h3>
                 ${detailsHTML}
             </div>
+
+            <!-- 🔮 오행 밸런스 비교 -->
+            <div style="background:var(--bg-card); border:1.5px solid #E1BEE7; border-radius:16px; padding:16px; margin-top:14px;">
+                <h3 style="font-size:0.95rem; font-weight:800; color:#7B1FA2; margin-bottom:4px;">🔮 두 사람의 오행 밸런스</h3>
+                <div style="display:flex; gap:12px; margin-bottom:12px; font-size:0.72rem;">
+                    <span style="color:#C2185B;">● ${pA.name} (${pA.oheng_strongest ? ohengNames[pA.oheng_strongest] : ''} 강세)</span>
+                    <span style="color:#5E35B1;">● ${pB.name} (${pB.oheng_strongest ? ohengNames[pB.oheng_strongest] : ''} 강세)</span>
+                </div>
+                ${ohengBarsHTML}
+                <div style="font-size:0.75rem; color:#8D6E63; margin-top:8px; padding:8px; background:rgba(206,147,216,0.1); border-radius:8px; line-height:1.5;">
+                    💡 ${pA.oheng_weakest && pB.oheng_strongest && pA.oheng_weakest === pB.oheng_strongest
+                        ? pA.name + '님에게 부족한 ' + ohengNames[pA.oheng_weakest] + ' 기운을 ' + pB.name + '님이 채워주는 보완 관계!'
+                        : pB.oheng_weakest && pA.oheng_strongest && pB.oheng_weakest === pA.oheng_strongest
+                        ? pB.name + '님에게 부족한 ' + ohengNames[pB.oheng_weakest] + ' 기운을 ' + pA.name + '님이 채워주는 보완 관계!'
+                        : '서로 다른 오행 분포가 만나 다양한 에너지의 조화를 이룹니다.'}
+                </div>
+            </div>
+
+            <!-- 💡 관계 조언 -->
             <div style="background:#E8F5E9; border:1.5px solid #C8E6C9; border-radius:14px; padding:16px; margin-top:14px;">
                 <div style="font-size:0.85rem; font-weight:800; color:#2E7D32; margin-bottom:6px;">💡 관계 조언</div>
                 <div style="font-size:0.85rem; color:#1B5E20; line-height:1.7;">${data.advice}</div>
             </div>
-            <button onclick="backToReport()" style="width:100%; margin-top:14px; padding:14px; background:var(--bg-card); border:2px solid #E1BEE7; color:#8D6E63; border-radius:14px; font-weight:700; cursor:pointer;">← 분석 결과로 돌아가기</button>`;
+
+            <!-- 📤 공유 카드 버튼 -->
+            <button onclick="shareCompatibilityCard()" style="width:100%; margin-top:14px; padding:14px; background:linear-gradient(135deg,#FFD54F,#FFB300); border:none; color:#4E342E; border-radius:14px; font-weight:800; font-size:0.95rem; cursor:pointer; box-shadow:0 2px 8px rgba(255,179,0,0.3);">📤 궁합 카드 공유하기</button>
+            <button onclick="backToReport()" style="width:100%; margin-top:8px; padding:14px; background:var(--bg-card); border:2px solid #E1BEE7; color:#8D6E63; border-radius:14px; font-weight:700; cursor:pointer;">← 분석 결과로 돌아가기</button>`;
         area.scrollIntoView({behavior:'smooth', block:'start'});
+    }
+
+    async function shareCompatibilityCard() {
+        const card = document.getElementById('compat-share-card');
+        if (!card) return;
+        try {
+            // html2canvas 동적 로드
+            if (typeof html2canvas === 'undefined') {
+                await new Promise((resolve, reject) => {
+                    const s = document.createElement('script');
+                    s.src = 'https://html2canvas.hertzen.com/dist/html2canvas.min.js';
+                    s.onload = resolve;
+                    s.onerror = reject;
+                    document.head.appendChild(s);
+                });
+            }
+            const canvas = await html2canvas(card, { scale: 2, backgroundColor: '#FCE4EC', useCORS: true });
+            canvas.toBlob(async (blob) => {
+                if (navigator.share && navigator.canShare) {
+                    const file = new File([blob], 'saju-mbti-compatibility.png', { type: 'image/png' });
+                    if (navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            title: '사주 × MBTI 궁합 결과',
+                            text: '우리의 궁합을 확인해봐! 🔮',
+                            files: [file],
+                        });
+                        return;
+                    }
+                }
+                // fallback: 이미지 다운로드
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'saju-mbti-compatibility.png';
+                a.click();
+                URL.revokeObjectURL(url);
+                alert('궁합 카드가 저장되었습니다! 친구에게 공유해보세요 💕');
+            }, 'image/png');
+        } catch (e) {
+            console.error('Share card error:', e);
+            alert('카드 생성 중 오류가 발생했어요. 스크린샷을 이용해주세요!');
+        }
     }
 
     // ═══════════════════════════════════════════════
@@ -2832,25 +2964,60 @@
         const monthCards = data.months.map(m => {
             const luckColor = m.luck >= 85 ? '#2E7D32' : m.luck >= 70 ? '#5E35B1' : m.luck >= 60 ? '#F57C00' : '#4A148C';
             const luckBg = m.luck >= 85 ? '#E8F5E9' : m.luck >= 70 ? '#EDE7F6' : m.luck >= 60 ? '#FFF8E1' : '#FBE9E7';
+            const luckEmoji = m.luck >= 85 ? '🌟' : m.luck >= 70 ? '✨' : m.luck >= 60 ? '☀️' : '🌙';
+            const barWidth = Math.max(10, m.luck);
             return `
-                <div style="background:${luckBg}; border-radius:12px; padding:14px; margin-bottom:8px; border-left:4px solid ${luckColor};">
+                <div style="background:${luckBg}; border-radius:14px; padding:16px; margin-bottom:10px; border-left:4px solid ${luckColor};">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <div>
-                            <span style="font-size:0.95rem; font-weight:900; color:${luckColor};">${m.label}</span>
+                            <span style="font-size:1rem; font-weight:900; color:${luckColor};">${luckEmoji} ${m.label}</span>
                             <span style="font-size:0.7rem; color:#8D6E63; margin-left:6px;">${m.season} · ${m.pillar}</span>
                         </div>
-                        <div style="font-size:0.8rem; font-weight:700; color:${luckColor};">${m.luck}점</div>
+                        <div style="font-size:0.85rem; font-weight:800; color:${luckColor};">${m.luck}점</div>
                     </div>
-                    <div style="font-size:0.88rem; font-weight:800; color:#3D3D3D; margin-top:6px;">${m.title}</div>
-                    <div style="font-size:0.8rem; color:#5D4037; margin-top:4px; line-height:1.6;">${m.desc}</div>
+                    <div style="height:6px; background:rgba(0,0,0,0.08); border-radius:3px; margin:8px 0; overflow:hidden;">
+                        <div style="width:${barWidth}%; height:100%; background:${luckColor}; border-radius:3px;"></div>
+                    </div>
+                    <div style="font-size:0.9rem; font-weight:800; color:#3D3D3D; margin-top:4px;">${m.title}</div>
+                    <div style="font-size:0.82rem; color:#5D4037; margin-top:4px; line-height:1.6;">${m.desc}</div>
+                    ${m.action_tip ? `<div style="font-size:0.78rem; color:#1565C0; margin-top:8px; padding:8px 10px; background:rgba(255,255,255,0.7); border-radius:8px; font-weight:600;">💡 ${m.action_tip}</div>` : ''}
+                    ${m.lucky_color ? `
+                    <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
+                        <span style="font-size:0.68rem; padding:3px 8px; background:rgba(255,255,255,0.8); border-radius:10px; color:#5D4037;">🎨 ${m.lucky_color}</span>
+                        <span style="font-size:0.68rem; padding:3px 8px; background:rgba(255,255,255,0.8); border-radius:10px; color:#5D4037;">🍀 ${m.lucky_item}</span>
+                        <span style="font-size:0.68rem; padding:3px 8px; background:rgba(255,255,255,0.8); border-radius:10px; color:#5D4037;">🍽️ ${m.lucky_food}</span>
+                    </div>` : ''}
                 </div>`;
+        }).join('');
+
+        // 연간 운세 흐름 미니 차트
+        const luckValues = data.months.map(m => m.luck || 70);
+        const maxLuck = Math.max(...luckValues);
+        const minLuck = Math.min(...luckValues);
+        const chartBars = data.months.map(m => {
+            const h = Math.max(15, ((m.luck - 40) / 60) * 80);
+            const color = m.luck >= 85 ? '#4CAF50' : m.luck >= 70 ? '#7E57C2' : m.luck >= 60 ? '#FF9800' : '#EF5350';
+            return `<div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:2px;">
+                <span style="font-size:0.55rem; color:#8D6E63; font-weight:700;">${m.luck}</span>
+                <div style="width:100%; height:${h}px; background:${color}; border-radius:4px 4px 0 0;"></div>
+                <span style="font-size:0.55rem; color:#8D6E63;">${m.label.replace('월','')}</span>
+            </div>`;
         }).join('');
 
         area.innerHTML = `
             <div style="background:linear-gradient(135deg,#EDE7F6,#D1C4E9); border:2px solid #B39DDB; border-radius:20px; padding:24px; text-align:center; margin-bottom:16px;">
-                <div style="font-size:1.1rem; font-weight:900; color:#4527A0;">2026년 ${data.ilgan}의 12개월</div>
+                <div style="font-size:1.1rem; font-weight:900; color:#4527A0;">📅 2026년 ${data.ilgan}의 12개월</div>
                 <div style="font-size:0.85rem; color:#5E35B1; margin-top:8px;">${data.summary}</div>
             </div>
+
+            <!-- 운세 흐름 미니 차트 -->
+            <div style="background:var(--bg-card); border:1.5px solid #E1BEE7; border-radius:14px; padding:16px; margin-bottom:16px;">
+                <div style="font-size:0.85rem; font-weight:800; color:#4527A0; margin-bottom:10px;">📊 연간 운세 흐름</div>
+                <div style="display:flex; gap:3px; align-items:flex-end; height:100px; padding:0 4px;">
+                    ${chartBars}
+                </div>
+            </div>
+
             ${monthCards}
             <button onclick="backToReport()" style="width:100%; margin-top:14px; padding:14px; background:var(--bg-card); border:2px solid #E1BEE7; color:#8D6E63; border-radius:14px; font-weight:700; cursor:pointer;">← 분석 결과로 돌아가기</button>`;
         area.scrollIntoView({behavior:'smooth', block:'start'});
