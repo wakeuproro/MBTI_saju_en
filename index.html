@@ -739,6 +739,16 @@
             <button class="share-btn copy" onclick="copyLink()">링크 복사</button>
         </div>
 
+        <!-- ⭐ 후기 쓰기 -->
+        <div style="margin: 16px 0 8px; text-align:center;">
+            <div style="background:linear-gradient(135deg,#FFF8E1,#FFF3E0); border:2px solid #FFE0B2; border-radius:16px; padding:16px;">
+                <div style="font-size:1.5rem; margin-bottom:6px;">🐱</div>
+                <div style="font-size:0.88rem; font-weight:800; color:#E65100;">또또가 도움이 됐다면, 후기 한줄 부탁해요!</div>
+                <div style="font-size:0.75rem; color:#8D6E63; margin:6px 0 12px;">여러분의 후기가 또또에게 큰 힘이 됩니다 🐾</div>
+                <button onclick="requestTossReview()" style="padding:12px 32px; background:linear-gradient(135deg,#FF8F00,#FFB300); border:none; color:#fff; border-radius:12px; font-size:0.9rem; font-weight:800; cursor:pointer; box-shadow:0 2px 8px rgba(255,143,0,0.3);">⭐ 후기 쓰러 가기</button>
+            </div>
+        </div>
+
         <!-- 추가 서비스 CTA -->
         <div style="display: flex; gap: 8px; margin: 12px 0 8px;">
             <button onclick="openDaewoonScreen()" style="flex:1; padding:14px; background:linear-gradient(135deg,#EDE7F6,#D1C4E9); border:1.5px solid #B39DDB; color:#4527A0; border-radius:14px; font-size:0.9rem; font-weight:800; cursor:pointer;">
@@ -2163,6 +2173,17 @@
             ta.select();
             document.execCommand('copy');
             document.body.removeChild(ta);
+        }
+    }
+
+    function requestTossReview() {
+        // 토스 인앱이면 → 부모(.ait)에 postMessage → SDK requestReview 호출
+        if (window.self !== window.top) {
+            window.parent.postMessage({ type: "REQUEST_REVIEW" }, "*");
+            showToast('⭐ 후기 작성 화면을 열고 있어요!', 'success');
+        } else {
+            // 일반 브라우저 → 토스 앱 안내
+            showToast('📱 토스 앱에서 "사주xMBTI" 검색 후 후기를 남겨주세요!', 'success');
         }
     }
 
