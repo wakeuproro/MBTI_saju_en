@@ -2850,8 +2850,13 @@
                 });
             }
             const canvas = await html2canvas(card, { scale: 2, backgroundColor: '#FCE4EC', useCORS: true });
-            canvas.toBlob(async (blob) => {
+            const dataUrl = canvas.toDataURL('image/png');
+
+            // 1) Web Share API 시도 (모바일 브라우저)
+            try {
                 if (navigator.share && navigator.canShare) {
+                    const res = await fetch(dataUrl);
+                    const blob = await res.blob();
                     const file = new File([blob], 'saju-mbti-compatibility.png', { type: 'image/png' });
                     if (navigator.canShare({ files: [file] })) {
                         await navigator.share({
@@ -2862,19 +2867,40 @@
                         return;
                     }
                 }
-                // fallback: 이미지 다운로드
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'saju-mbti-compatibility.png';
-                a.click();
-                URL.revokeObjectURL(url);
-                alert('궁합 카드가 저장되었습니다! 친구에게 공유해보세요 💕');
-            }, 'image/png');
+            } catch (shareErr) {
+                console.warn('Web Share failed, using modal fallback:', shareErr);
+            }
+
+            // 2) Fallback: 이미지 모달로 보여주기 (길게 눌러 저장)
+            showShareImageModal(dataUrl);
         } catch (e) {
             console.error('Share card error:', e);
             alert('카드 생성 중 오류가 발생했어요. 스크린샷을 이용해주세요!');
         }
+    }
+
+    function showShareImageModal(dataUrl) {
+        // 기존 모달 제거
+        const old = document.getElementById('share-image-modal');
+        if (old) old.remove();
+
+        const modal = document.createElement('div');
+        modal.id = 'share-image-modal';
+        modal.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); z-index:99999; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px;';
+        modal.innerHTML = `
+            <div style="color:#fff; font-size:0.9rem; font-weight:700; margin-bottom:12px; text-align:center;">
+                📲 이미지를 길게 눌러 저장하세요!
+            </div>
+            <img src="${dataUrl}" style="max-width:90%; max-height:65vh; border-radius:16px; box-shadow:0 8px 30px rgba(0,0,0,0.5);" />
+            <div style="color:#ccc; font-size:0.75rem; margin-top:10px; text-align:center;">
+                길게 누르면 → "이미지 저장" 또는 "사진에 추가"
+            </div>
+            <button onclick="document.getElementById('share-image-modal').remove()" style="margin-top:16px; padding:12px 40px; background:#fff; color:#333; border:none; border-radius:12px; font-weight:800; font-size:0.95rem; cursor:pointer;">닫기</button>
+        `;
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.remove();
+        });
+        document.body.appendChild(modal);
     }
 
     // ═══════════════════════════════════════════════
