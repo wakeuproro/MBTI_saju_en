@@ -2238,10 +2238,10 @@
         if (localStorage.getItem('reviewPopupShown') === 'true') return;
         // 기존 타이머 제거
         if (reviewPopupTimer) clearTimeout(reviewPopupTimer);
-        // 5초 후 팝업
+        // 30초 후 팝업 (분석 결과 충분히 읽은 뒤)
         reviewPopupTimer = setTimeout(() => {
             showReviewPopup();
-        }, 5000);
+        }, 30000);
     }
 
     function showReviewPopup() {
