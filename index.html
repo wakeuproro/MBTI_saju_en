@@ -463,6 +463,8 @@
         /* Animations */
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         .fade-in { animation: fadeInUp 0.5s ease forwards; }
+        @keyframes slideUpReview { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes slideDownReview { from { transform: translateY(0); opacity: 1; } to { transform: translateY(100%); opacity: 0; } }
     </style>
 </head>
 <body>
@@ -737,16 +739,6 @@
         <div class="share-container">
             <button class="share-btn kakao" onclick="shareKakao()">카카오톡 공유</button>
             <button class="share-btn copy" onclick="copyLink()">링크 복사</button>
-        </div>
-
-        <!-- ⭐ 후기 쓰기 -->
-        <div style="margin: 16px 0 8px; text-align:center;">
-            <div style="background:linear-gradient(135deg,#FFF8E1,#FFF3E0); border:2px solid #FFE0B2; border-radius:16px; padding:16px;">
-                <div style="font-size:1.5rem; margin-bottom:6px;">🐱</div>
-                <div style="font-size:0.88rem; font-weight:800; color:#E65100;">또또가 도움이 됐다면, 후기 한줄 부탁해요!</div>
-                <div style="font-size:0.75rem; color:#8D6E63; margin:6px 0 12px;">여러분의 후기가 또또에게 큰 힘이 됩니다 🐾</div>
-                <button onclick="requestTossReview()" style="padding:12px 32px; background:linear-gradient(135deg,#FF8F00,#FFB300); border:none; color:#fff; border-radius:12px; font-size:0.9rem; font-weight:800; cursor:pointer; box-shadow:0 2px 8px rgba(255,143,0,0.3);">⭐ 후기 쓰러 가기</button>
-            </div>
         </div>
 
         <!-- 추가 서비스 CTA -->
@@ -1525,6 +1517,7 @@
             document.getElementById("report-screen").classList.add("active");
             document.getElementById("floating-cta").style.display = "block";
             window.scrollTo(0, 0);
+            scheduleReviewPopup();
 
             // 무료 사용 기록
             localStorage.setItem('freeUsed', 'true');
@@ -2177,14 +2170,58 @@
     }
 
     function requestTossReview() {
-        // 토스 인앱이면 → 부모(.ait)에 postMessage → SDK requestReview 호출
         if (window.self !== window.top) {
             window.parent.postMessage({ type: "REQUEST_REVIEW" }, "*");
-            showToast('⭐ 후기 작성 화면을 열고 있어요!', 'success');
         } else {
-            // 일반 브라우저 → 토스 앱 안내
             showToast('📱 토스 앱에서 "사주xMBTI" 검색 후 후기를 남겨주세요!', 'success');
         }
+        // 팝업 닫기
+        const popup = document.getElementById('review-popup');
+        if (popup) popup.remove();
+        // 다시 안 뜨게
+        localStorage.setItem('reviewPopupShown', 'true');
+    }
+
+    let reviewPopupTimer = null;
+    function scheduleReviewPopup() {
+        // 이미 후기 남긴 사용자 or 이미 팝업 본 사용자 → 스킵
+        if (localStorage.getItem('reviewPopupShown') === 'true') return;
+        // 기존 타이머 제거
+        if (reviewPopupTimer) clearTimeout(reviewPopupTimer);
+        // 5초 후 팝업
+        reviewPopupTimer = setTimeout(() => {
+            showReviewPopup();
+        }, 5000);
+    }
+
+    function showReviewPopup() {
+        if (document.getElementById('review-popup')) return;
+
+        const popup = document.createElement('div');
+        popup.id = 'review-popup';
+        popup.style.cssText = 'position:fixed; bottom:0; left:0; right:0; z-index:9999; animation:slideUpReview 0.4s ease-out;';
+        popup.innerHTML = `
+            <div style="background:#fff; border-top:3px solid #FFB300; border-radius:20px 20px 0 0; padding:24px 20px 28px; box-shadow:0 -4px 20px rgba(0,0,0,0.15); text-align:center;">
+                <button onclick="dismissReviewPopup()" style="position:absolute; top:12px; right:16px; background:none; border:none; font-size:1.2rem; color:#999; cursor:pointer;">✕</button>
+                <div style="font-size:2rem; margin-bottom:8px;">🐱</div>
+                <div style="font-size:1rem; font-weight:900; color:#E65100;">또또의 분석, 어떠셨나요?</div>
+                <div style="font-size:0.8rem; color:#8D6E63; margin:6px 0 16px;">별점 한 개가 또또에게 큰 힘이 됩니다! 🐾</div>
+                <div style="display:flex; gap:10px; justify-content:center;">
+                    <button onclick="requestTossReview()" style="flex:1; max-width:180px; padding:14px; background:linear-gradient(135deg,#FF8F00,#FFB300); border:none; color:#fff; border-radius:14px; font-size:0.95rem; font-weight:800; cursor:pointer; box-shadow:0 2px 8px rgba(255,143,0,0.3);">⭐ 후기 남기기</button>
+                    <button onclick="dismissReviewPopup()" style="flex:1; max-width:120px; padding:14px; background:#F5F5F5; border:none; color:#999; border-radius:14px; font-size:0.85rem; font-weight:600; cursor:pointer;">다음에</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(popup);
+    }
+
+    function dismissReviewPopup() {
+        const popup = document.getElementById('review-popup');
+        if (popup) {
+            popup.style.animation = 'slideDownReview 0.3s ease-in forwards';
+            setTimeout(() => popup.remove(), 300);
+        }
+        localStorage.setItem('reviewPopupShown', 'true');
     }
 
     async function copyLink() {
