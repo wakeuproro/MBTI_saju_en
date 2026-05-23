@@ -2950,58 +2950,23 @@
 
         const guide = document.createElement('div');
         guide.style.cssText = 'color:#fff; font-size:0.9rem; font-weight:700; margin-bottom:12px; text-align:center;';
-        guide.textContent = '📲 아래 저장 버튼을 눌러주세요!';
+        guide.textContent = '📲 이미지를 꾹 눌러서 저장하세요!';
 
         const img = document.createElement('img');
         img.src = dataUrl;
-        img.style.cssText = 'max-width:90%; max-height:55vh; border-radius:16px; box-shadow:0 8px 30px rgba(0,0,0,0.5);';
-
-        const btnRow = document.createElement('div');
-        btnRow.style.cssText = 'display:flex; gap:12px; margin-top:16px;';
-
-        const saveBtn = document.createElement('button');
-        saveBtn.textContent = '💾 이미지 저장';
-        saveBtn.style.cssText = 'padding:14px 32px; background:linear-gradient(135deg,#7B1FA2,#E65100); color:#fff; border:none; border-radius:12px; font-weight:800; font-size:0.95rem; cursor:pointer;';
-        saveBtn.addEventListener('click', async (e) => {
-            e.stopPropagation();
-            try {
-                const res = await fetch(dataUrl);
-                const blob = await res.blob();
-                const file = new File([blob], 'saju-card.png', { type: 'image/png' });
-                if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                    await navigator.share({ files: [file], title: '사주×MBTI 결과카드' });
-                } else {
-                    const a = document.createElement('a');
-                    a.href = URL.createObjectURL(blob);
-                    a.download = 'saju-card.png';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(a.href);
-                }
-            } catch (err) {
-                const a = document.createElement('a');
-                a.href = dataUrl;
-                a.download = 'saju-card.png';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-            }
-        });
+        img.style.cssText = 'max-width:90%; max-height:60vh; border-radius:16px; box-shadow:0 8px 30px rgba(0,0,0,0.5);';
 
         const closeBtn = document.createElement('button');
         closeBtn.textContent = '닫기';
-        closeBtn.style.cssText = 'padding:14px 32px; background:#fff; color:#333; border:none; border-radius:12px; font-weight:800; font-size:0.95rem; cursor:pointer;';
+        closeBtn.style.cssText = 'margin-top:16px; padding:14px 48px; background:#fff; color:#333; border:none; border-radius:12px; font-weight:800; font-size:0.95rem; cursor:pointer;';
         closeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             modal.remove();
         });
 
-        btnRow.appendChild(saveBtn);
-        btnRow.appendChild(closeBtn);
         modal.appendChild(guide);
         modal.appendChild(img);
-        modal.appendChild(btnRow);
+        modal.appendChild(closeBtn);
 
         modal.addEventListener('click', (e) => {
             if (e.target === modal) modal.remove();
