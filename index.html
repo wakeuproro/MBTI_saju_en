@@ -11,11 +11,11 @@
     <!-- OG 메타 (카카오톡/SNS 공유 썸네일) -->
     <meta property="og:title" content="사주 × MBTI — AI가 풀어주는 나만의 운명카드">
     <meta property="og:description" content="동양 명리학 + 서양 성격유형의 완벽한 결합. 광고 보면 전부 무료!">
-    <meta property="og:image" content="https://web-production-705a3.up.railway.app/assets/001.png">
+    <meta property="og:image" content="https://web-production-705a3.up.railway.app/assets/메인.png">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://web-production-705a3.up.railway.app">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:image" content="https://web-production-705a3.up.railway.app/assets/001.png">
+    <meta name="twitter:image" content="https://web-production-705a3.up.railway.app/assets/메인.png">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800;900&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -475,18 +475,7 @@
     <header>
         <div style="display:flex;align-items:center;gap:8px;">
             <span class="header-logo">
-                <!-- 미니 또또 (헤더) -->
-                <svg width="30" height="30" viewBox="0 0 50 60" class="toto">
-                    <!-- 머리 + 귀 -->
-                    <path d="M 11 18 Q 6 20 5 26 Q 6 36 18 37 Q 25 38 32 37 Q 44 36 45 26 Q 44 20 39 18 L 34 3 L 30 17 Q 25 16 20 17 L 16 3 L 11 18 Z" class="toto-fur"/>
-                    <!-- 몸통 -->
-                    <ellipse cx="25" cy="50" rx="14" ry="10" class="toto-fur"/>
-                    <!-- 눈 -->
-                    <ellipse cx="19" cy="26" rx="3.4" ry="4.5" class="toto-eye-w"/>
-                    <ellipse cx="31" cy="26" rx="3.4" ry="4.5" class="toto-eye-w"/>
-                    <ellipse cx="19" cy="26" rx="0.7" ry="1.8" class="toto-pupil"/>
-                    <ellipse cx="31" cy="26" rx="0.7" ry="1.8" class="toto-pupil"/>
-                </svg>
+                <img src="/assets/메인.png" alt="또또" width="30" height="30" style="object-fit:contain;">
             </span>
             <span class="header-title">사주 x MBTI</span>
         </div>
@@ -500,50 +489,7 @@
     <div id="intro-screen" class="screen active">
         <div class="intro-hero">
             <div class="cat-mascot" id="cat-intro" style="margin-bottom:8px;">
-                <!-- 🐱 또또 (사주 보는 검은 고양이) + 수정구슬 -->
-                <svg width="220" height="320" viewBox="0 0 260 380" xmlns="http://www.w3.org/2000/svg" class="toto toto-anim">
-                    <defs>
-                        <radialGradient id="crystalGrad" cx="40%" cy="35%">
-                            <stop offset="0%" stop-color="#F3E5F5"/>
-                            <stop offset="70%" stop-color="#CE93D8"/>
-                            <stop offset="100%" stop-color="#7B1FA2"/>
-                        </radialGradient>
-                    </defs>
-                    <!-- 반짝 -->
-                    <text x="20" y="50" font-size="22" fill="#FFC107" opacity="0.9">✦</text>
-                    <text x="225" y="70" font-size="18" fill="#BA68C8" opacity="0.9">✧</text>
-                    <text x="230" y="180" font-size="16" fill="#FFC107" opacity="0.9">✦</text>
-                    <text x="15" y="170" font-size="14" fill="#CE93D8" opacity="0.7">·</text>
-
-                    <!-- 또또 (오프셋: viewBox 가운데로) -->
-                    <g transform="translate(20, 0)">
-                        <!-- 바닥 그림자 -->
-                        <ellipse cx="110" cy="346" rx="66" ry="6" class="toto-fur" opacity="0.18"/>
-                        <!-- 꼬리 -->
-                        <g class="toto-tail">
-                            <path d="M 90 318 Q 160 352 202 335 Q 224 308 220 254 Q 214 226 192 232 Q 184 244 192 258 Q 205 280 188 306 Q 145 326 110 322 Z" class="toto-fur"/>
-                        </g>
-                        <!-- 몸통 -->
-                        <g class="toto-body">
-                            <path d="M 90 165 Q 70 220 62 280 Q 60 332 90 340 Q 110 346 130 340 Q 160 332 158 280 Q 150 220 130 165 Z" class="toto-fur"/>
-                        </g>
-                        <!-- 머리 -->
-                        <g class="toto-head">
-                            <path d="M 50 80 Q 26 88 22 115 Q 26 158 80 162 Q 110 165 140 162 Q 194 158 198 115 Q 194 88 170 80 L 150 12 L 132 78 Q 110 70 88 78 L 70 12 L 50 80 Z" class="toto-fur"/>
-                        </g>
-                        <!-- 눈 -->
-                        <g class="toto-eye toto-eye-left">
-                            <ellipse cx="85" cy="115" rx="15" ry="20" class="toto-eye-w"/>
-                            <ellipse cx="85" cy="115" rx="3.2" ry="8" class="toto-pupil"/>
-                            <circle cx="83.4" cy="110.2" r="1.4" class="toto-shine"/>
-                        </g>
-                        <g class="toto-eye toto-eye-right">
-                            <ellipse cx="135" cy="115" rx="15" ry="20" class="toto-eye-w"/>
-                            <ellipse cx="135" cy="115" rx="3.2" ry="8" class="toto-pupil"/>
-                            <circle cx="133.4" cy="110.2" r="1.4" class="toto-shine"/>
-                        </g>
-                    </g>
-                </svg>
+                <img src="/assets/메인.png" alt="또또" width="220" height="220" style="object-fit:contain;">
             </div>
             <div class="intro-title" id="t-intro-title">사주와 MBTI가 만나면<br>운명이 보입니다</div>
             <p class="intro-sub" id="t-intro-sub">🐱 사주 보는 검은 고양이 <b>또또</b>가 도와드려요</p>
@@ -637,38 +583,8 @@
     <div id="report-screen" class="screen">
         <!-- Header Card -->
         <div class="report-header-card fade-in" id="report-header">
-            <!-- 🐱 또또 (결과 헤더) + 두루마리 -->
             <div class="cat-mascot" style="margin-bottom:4px;">
-                <svg width="100" height="140" viewBox="0 0 260 360" class="toto toto-anim">
-                    <g transform="translate(20, 0)">
-                        <ellipse cx="110" cy="346" rx="66" ry="6" class="toto-fur" opacity="0.18"/>
-                        <g class="toto-tail">
-                            <path d="M 90 318 Q 160 352 202 335 Q 224 308 220 254 Q 214 226 192 232 Q 184 244 192 258 Q 205 280 188 306 Q 145 326 110 322 Z" class="toto-fur"/>
-                        </g>
-                        <g class="toto-body">
-                            <path d="M 90 165 Q 70 220 62 280 Q 60 332 90 340 Q 110 346 130 340 Q 160 332 158 280 Q 150 220 130 165 Z" class="toto-fur"/>
-                        </g>
-                        <g class="toto-head">
-                            <path d="M 50 80 Q 26 88 22 115 Q 26 158 80 162 Q 110 165 140 162 Q 194 158 198 115 Q 194 88 170 80 L 150 12 L 132 78 Q 110 70 88 78 L 70 12 L 50 80 Z" class="toto-fur"/>
-                        </g>
-                        <g class="toto-eye toto-eye-left">
-                            <ellipse cx="85" cy="115" rx="15" ry="20" class="toto-eye-w"/>
-                            <ellipse cx="85" cy="115" rx="3.2" ry="8" class="toto-pupil"/>
-                            <circle cx="83.4" cy="110.2" r="1.4" class="toto-shine"/>
-                        </g>
-                        <g class="toto-eye toto-eye-right">
-                            <ellipse cx="135" cy="115" rx="15" ry="20" class="toto-eye-w"/>
-                            <ellipse cx="135" cy="115" rx="3.2" ry="8" class="toto-pupil"/>
-                            <circle cx="133.4" cy="110.2" r="1.4" class="toto-shine"/>
-                        </g>
-                        <!-- 두루마리 (앞발 위) -->
-                        <rect x="50" y="240" width="60" height="40" rx="6" fill="#FFF8E1" stroke="#FFC107" stroke-width="2"/>
-                        <line x1="58" y1="250" x2="102" y2="250" stroke="#7B1FA2" stroke-width="1.5"/>
-                        <line x1="58" y1="258" x2="95" y2="258" stroke="#7B1FA2" stroke-width="1.5"/>
-                        <line x1="58" y1="266" x2="100" y2="266" stroke="#7B1FA2" stroke-width="1.5"/>
-                        <line x1="58" y1="274" x2="90" y2="274" stroke="#7B1FA2" stroke-width="1.5"/>
-                    </g>
-                </svg>
+                <img src="/assets/사주결과용.png" alt="또또" width="100" height="100" style="object-fit:contain;">
             </div>
             <div class="report-name" id="report-name-display"></div>
             <div class="report-birth-info" id="report-birth-info"></div>
@@ -965,33 +881,7 @@
 <div id="cat-error-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(74,20,140,0.55); z-index:200; justify-content:center; align-items:center; padding:20px; backdrop-filter:blur(4px);" onclick="closeCatError()">
     <div onclick="event.stopPropagation()" style="background:var(--bg-card); border-radius:24px; padding:32px 24px; max-width:340px; width:100%; text-align:center; box-shadow:0 10px 40px rgba(74,20,140,0.3);">
         <div class="cat-mascot" style="margin-bottom:8px;">
-            <!-- 😿 당황한 또또 (실타래 + 식은땀) -->
-            <svg width="160" height="200" viewBox="0 0 260 360">
-                <!-- 꼬인 실타래 -->
-                <path d="M 30 20 Q 50 35 35 55 Q 20 70 45 85 Q 65 100 40 115" stroke="#CE93D8" stroke-width="2.5" fill="none" opacity="0.7"/>
-                <path d="M 230 20 Q 210 35 225 55 Q 240 70 215 85 Q 195 100 220 115" stroke="#CE93D8" stroke-width="2.5" fill="none" opacity="0.7"/>
-                <!-- 식은땀 -->
-                <ellipse cx="50" cy="95" rx="4" ry="7" fill="#42A5F5" opacity="0.85"/>
-                <ellipse cx="210" cy="95" rx="4" ry="7" fill="#42A5F5" opacity="0.85"/>
-                <!-- 또또 -->
-                <g transform="translate(20, 0)">
-                    <ellipse cx="110" cy="346" rx="66" ry="6" class="toto-fur" opacity="0.18"/>
-                    <g class="toto-tail">
-                        <path d="M 90 318 Q 160 352 202 335 Q 224 308 220 254 Q 214 226 192 232 Q 184 244 192 258 Q 205 280 188 306 Q 145 326 110 322 Z" class="toto-fur"/>
-                    </g>
-                    <g class="toto-body">
-                        <path d="M 90 165 Q 70 220 62 280 Q 60 332 90 340 Q 110 346 130 340 Q 160 332 158 280 Q 150 220 130 165 Z" class="toto-fur"/>
-                    </g>
-                    <g class="toto-head">
-                        <path d="M 50 80 Q 26 88 22 115 Q 26 158 80 162 Q 110 165 140 162 Q 194 158 198 115 Q 194 88 170 80 L 150 12 L 132 78 Q 110 70 88 78 L 70 12 L 50 80 Z" class="toto-fur"/>
-                    </g>
-                    <!-- 당황한 눈 (작아지고 위쪽 흰자 ↑) -->
-                    <ellipse cx="85" cy="115" rx="13" ry="17" class="toto-eye-w"/>
-                    <ellipse cx="135" cy="115" rx="13" ry="17" class="toto-eye-w"/>
-                    <ellipse cx="85" cy="120" rx="2.2" ry="5" class="toto-pupil"/>
-                    <ellipse cx="135" cy="120" rx="2.2" ry="5" class="toto-pupil"/>
-                </g>
-            </svg>
+            <img src="/assets/에러.png" alt="당황한 또또" width="160" height="160" style="object-fit:contain;">
         </div>
         <div style="font-size:1.1rem; font-weight:800; color:var(--primary-dark); margin-bottom:6px;">앗, 또또가 운명의 실을 꼬았어요!</div>
         <div id="cat-error-msg" style="font-size:0.88rem; color:var(--text-mid); margin-bottom:18px; line-height:1.6;">잠시 후 다시 시도해주세요 🐾</div>
@@ -1002,29 +892,7 @@
 <!-- Loading -->
 <div class="loading-overlay" id="loading">
     <div class="cat-mascot" style="margin-bottom: 14px;">
-        <!-- 🐱 또또 (로딩) + 노트북 + 타닥 -->
-        <svg width="180" height="220" viewBox="0 0 260 360" class="toto toto-anim">
-            <!-- 타닥타닥 -->
-            <text x="20" y="50" font-size="16" fill="#9C27B0" opacity="0.7" font-weight="bold">타닥</text>
-            <text x="210" y="60" font-size="16" fill="#9C27B0" opacity="0.7" font-weight="bold">타닥</text>
-            <text x="225" y="200" font-size="14" fill="#BA68C8" opacity="0.7" font-weight="bold">타닥</text>
-            <!-- 또또 -->
-            <g transform="translate(20, 0)">
-                <ellipse cx="110" cy="346" rx="66" ry="6" class="toto-fur" opacity="0.18"/>
-                <g class="toto-tail">
-                    <path d="M 90 318 Q 160 352 202 335 Q 224 308 220 254 Q 214 226 192 232 Q 184 244 192 258 Q 205 280 188 306 Q 145 326 110 322 Z" class="toto-fur"/>
-                </g>
-                <g class="toto-body">
-                    <path d="M 90 165 Q 70 220 62 280 Q 60 332 90 340 Q 110 346 130 340 Q 160 332 158 280 Q 150 220 130 165 Z" class="toto-fur"/>
-                </g>
-                <g class="toto-head">
-                    <path d="M 50 80 Q 26 88 22 115 Q 26 158 80 162 Q 110 165 140 162 Q 194 158 198 115 Q 194 88 170 80 L 150 12 L 132 78 Q 110 70 88 78 L 70 12 L 50 80 Z" class="toto-fur"/>
-                </g>
-                <!-- 집중한 눈 (선) -->
-                <path d="M 70 115 Q 85 108 100 115" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" fill="none"/>
-                <path d="M 120 115 Q 135 108 150 115" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" fill="none"/>
-            </g>
-        </svg>
+        <img src="/assets/사주보는중.png" alt="사주 보는 또또" width="180" height="180" style="object-fit:contain;">
     </div>
     <div class="loading-text">또또가 운명을 해석하고 있어요<span class="loading-dots"></span></div>
     <div class="loading-sub" id="loading-sub"></div>
@@ -2119,7 +1987,7 @@
                             content: {
                                 title: '사주 x MBTI 운명 분석',
                                 description: `${reportData.ilgan.title} | ${reportData.mbti}\n당신의 운명도 확인해보세요!`,
-                                imageUrl: `${API_URL}/assets/001.png`,
+                                imageUrl: `${API_URL}/assets/메인.png`,
                                 link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
                             },
                             buttons: [{ title: '나도 분석하기', link: { mobileWebUrl: shareUrl, webUrl: shareUrl } }],
