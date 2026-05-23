@@ -93,6 +93,11 @@
         [data-theme="dark"] .lucky-card,
         [data-theme="dark"] .pillar-item,
         [data-theme="dark"] .report-header-card { background: var(--bg-card-soft) !important; }
+        [data-theme="dark"] .report-header-card::after { background: var(--bg-card-soft); }
+        [data-theme="dark"] .accordion-section { border-color: #6A3A7D; }
+        [data-theme="dark"] .accordion-section::before { border-color: rgba(186,104,200,0.15); }
+        [data-theme="dark"] .report-header-card { border-color: #7B4F8A; }
+        [data-theme="dark"] .report-header-card::before { border-color: rgba(186,104,200,0.2); }
         [data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); }
         [data-theme="dark"] .form-select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23CE93D8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); }
         [data-theme="dark"] .premium-teaser-blur { color: var(--text-light); }
@@ -147,8 +152,36 @@
         .start-btn:active { transform: scale(0.98); }
         .free-badge { display: inline-block; background: #E8F5E9; color: #2E7D32; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; margin-bottom: 16px; }
 
-        /* Report - Header Card */
-        .report-header-card { background: linear-gradient(135deg, #F3E5F5, #E1BEE7); border-radius: 20px; padding: 24px; margin-bottom: 20px; text-align: center; border: 2px solid #CE93D8; }
+        /* Report - Header Card (tarot style) */
+        .report-header-card {
+            background: linear-gradient(135deg, #F3E5F5, #E1BEE7);
+            border-radius: 18px;
+            padding: 28px 24px 24px;
+            margin-bottom: 20px;
+            text-align: center;
+            border: 2.5px solid #B388C9;
+            position: relative;
+            box-shadow: 0 2px 12px rgba(123,31,162,0.08);
+        }
+        .report-header-card::before {
+            content: '';
+            position: absolute;
+            top: 6px; left: 6px; right: 6px; bottom: 6px;
+            border: 1.5px solid rgba(186,104,200,0.45);
+            border-radius: 13px;
+            pointer-events: none;
+        }
+        .report-header-card::after {
+            content: '✦ · ✦';
+            position: absolute;
+            top: -1px; left: 50%;
+            transform: translateX(-50%) translateY(-50%);
+            background: linear-gradient(135deg, #F3E5F5, #E1BEE7);
+            padding: 0 12px;
+            font-size: 0.6rem;
+            color: #BA68C8;
+            letter-spacing: 4px;
+        }
         .report-name { font-size: 1.1rem; font-weight: 700; color: #7B1FA2; margin-bottom: 8px; }
         .report-birth-info { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 12px; }
         .info-chip { background: var(--bg-card); padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; color: #6D4C41; font-weight: 600; border: 1px solid #CE93D8; }
@@ -176,7 +209,25 @@
 
         /* Accordion Sections */
         .section-guide { text-align: center; color: #8D6E63; font-size: 0.8rem; margin: 16px 0 12px; }
-        .accordion-section { background: var(--bg-card); border: 1.5px solid #E1BEE7; border-radius: 16px; margin-bottom: 10px; overflow: hidden; transition: all 0.3s; }
+        .accordion-section {
+            background: var(--bg-card);
+            border: 2px solid #D1A8E0;
+            border-radius: 16px;
+            margin-bottom: 10px;
+            overflow: visible;
+            transition: all 0.3s;
+            position: relative;
+        }
+        .accordion-section::before {
+            content: '';
+            position: absolute;
+            top: 5px; left: 5px; right: 5px; bottom: 5px;
+            border: 1px solid rgba(186,104,200,0.25);
+            border-radius: 12px;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .accordion-section > * { position: relative; z-index: 1; }
         .accordion-section:hover { border-color: #BA68C8; }
         .accordion-header { display: flex; align-items: center; gap: 12px; padding: 16px 18px; cursor: pointer; user-select: none; }
         .accordion-icon { font-size: 1.3rem; flex-shrink: 0; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 10px; }
@@ -195,7 +246,22 @@
 
         /* Lucky Items Grid */
         .lucky-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
-        .lucky-card { background: linear-gradient(135deg, #FFF8E1, #F3E5F5); border: 1.5px solid #E1BEE7; border-radius: 14px; padding: 14px; text-align: center; }
+        .lucky-card {
+            background: linear-gradient(135deg, #FFF8E1, #F3E5F5);
+            border: 1.5px solid #D1A8E0;
+            border-radius: 14px;
+            padding: 14px;
+            text-align: center;
+            position: relative;
+        }
+        .lucky-card::before {
+            content: '';
+            position: absolute;
+            top: 4px; left: 4px; right: 4px; bottom: 4px;
+            border: 1px solid rgba(186,104,200,0.2);
+            border-radius: 10px;
+            pointer-events: none;
+        }
         .lucky-card-icon { font-size: 1.5rem; margin-bottom: 4px; }
         .lucky-card-label { font-size: 0.7rem; color: #8D6E63; font-weight: 600; }
         .lucky-card-value { font-size: 0.85rem; font-weight: 700; color: #7B1FA2; margin-top: 2px; }
@@ -244,6 +310,15 @@
             padding: 26px 22px 22px;
             color: #fff;
             font-family: 'Noto Sans KR', sans-serif;
+            border: 2.5px solid rgba(255,215,0,0.5);
+        }
+        #result-card > .tarot-inner-border {
+            position: absolute;
+            top: 8px; left: 8px; right: 8px; bottom: 8px;
+            border: 1.5px solid rgba(255,215,0,0.25);
+            border-radius: 18px;
+            pointer-events: none;
+            z-index: 1;
         }
         /* 별 반짝 (배경 패턴) */
         #result-card::before {
@@ -847,6 +922,7 @@
 <div id="result-modal" onclick="closeModal()">
     <div onclick="event.stopPropagation()" style="width:100%;max-width:360px;">
         <div id="result-card">
+            <div class="tarot-inner-border"></div>
             <!-- 브랜드 헤더 -->
             <div class="rc-brand"><span class="rc-brand-emoji">🐈‍⬛</span>또또의 운명 카드</div>
 
@@ -2776,7 +2852,9 @@
 
         area.innerHTML = `
             <!-- 🎯 케미 유형 + 점수 카드 -->
-            <div id="compat-share-card" style="background:linear-gradient(135deg,#FCE4EC,#F8BBD0); border:2px solid #F48FB1; border-radius:20px; padding:24px; text-align:center;">
+            <div id="compat-share-card" style="background:linear-gradient(135deg,#FCE4EC,#F8BBD0); border:2.5px solid #E91E63; border-radius:20px; padding:28px 24px 24px; text-align:center; position:relative; box-shadow:0 2px 12px rgba(233,30,99,0.1);">
+                <div style="position:absolute; top:6px; left:6px; right:6px; bottom:6px; border:1.5px solid rgba(233,30,99,0.2); border-radius:15px; pointer-events:none;"></div>
+                <div style="position:absolute; top:-1px; left:50%; transform:translateX(-50%) translateY(-50%); background:linear-gradient(135deg,#FCE4EC,#F8BBD0); padding:0 12px; font-size:0.6rem; color:#E91E63; letter-spacing:4px;">&#10022; &middot; &#10022;</div>
                 <div style="font-size:1.3rem; font-weight:900; color:#C2185B; margin-bottom:4px;">${chemiName}</div>
                 <div style="font-size:0.85rem; color:#6D4C41; font-style:italic; margin-bottom:16px;">${chemiQuote}</div>
                 <div style="display:flex; justify-content:center; align-items:center; gap:14px; margin-bottom:12px;">
