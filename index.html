@@ -2042,27 +2042,17 @@
         try {
             const canvas = await _renderCardCanvas();
             const dataUrl = canvas.toDataURL('image/png');
+            const blob = await (await fetch(dataUrl)).blob();
+            const file = new File([blob], `또또운명카드_${(userInfo?.name || 'me')}.png`, { type: 'image/png' });
 
-            // Web Share API 시도
-            try {
-                if (navigator.share && navigator.canShare) {
-                    const res = await fetch(dataUrl);
-                    const blob = await res.blob();
-                    const file = new File([blob], `또또운명카드_${(userInfo?.name || 'me')}.png`, { type: 'image/png' });
-                    if (navigator.canShare({ files: [file] })) {
-                        await navigator.share({
-                            title: '또또의 운명 카드',
-                            text: '🐈‍⬛ 또또가 풀어준 내 사주 × MBTI 카드! 너도 받아봐',
-                            files: [file],
-                        });
-                        return;
-                    }
+            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({ title: '또또의 운명 카드', text: '🐈‍⬛ 또또가 풀어준 내 사주 × MBTI 카드! 너도 받아봐', files: [file] });
+                    return;
+                } catch (shareErr) {
+                    if (shareErr.name === 'AbortError') return;
                 }
-            } catch (shareErr) {
-                console.warn('Web Share failed, using modal:', shareErr);
             }
-
-            // Fallback: 이미지 모달
             showShareImageModal(dataUrl);
         } catch(e) {
             console.error(e);
@@ -2943,7 +2933,6 @@
         const card = document.getElementById('compat-share-card');
         if (!card) return;
         try {
-            // html2canvas 동적 로드
             if (typeof html2canvas === 'undefined') {
                 await new Promise((resolve, reject) => {
                     const s = document.createElement('script');
@@ -2955,31 +2944,21 @@
             }
             const canvas = await html2canvas(card, { scale: 2, backgroundColor: '#FCE4EC', useCORS: true });
             const dataUrl = canvas.toDataURL('image/png');
+            const blob = await (await fetch(dataUrl)).blob();
+            const file = new File([blob], 'saju-mbti-compatibility.png', { type: 'image/png' });
 
-            // 1) Web Share API 시도 (모바일 브라우저)
-            try {
-                if (navigator.share && navigator.canShare) {
-                    const res = await fetch(dataUrl);
-                    const blob = await res.blob();
-                    const file = new File([blob], 'saju-mbti-compatibility.png', { type: 'image/png' });
-                    if (navigator.canShare({ files: [file] })) {
-                        await navigator.share({
-                            title: '사주 × MBTI 궁합 결과',
-                            text: '우리의 궁합을 확인해봐! 🔮',
-                            files: [file],
-                        });
-                        return;
-                    }
+            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({ title: '사주 × MBTI 궁합 결과', text: '우리의 궁합을 확인해봐! 🔮', files: [file] });
+                    return;
+                } catch (shareErr) {
+                    if (shareErr.name === 'AbortError') return;
                 }
-            } catch (shareErr) {
-                console.warn('Web Share failed, using modal fallback:', shareErr);
             }
-
-            // 2) Fallback: 이미지 모달로 보여주기 (길게 눌러 저장)
             showShareImageModal(dataUrl);
         } catch (e) {
             console.error('Share card error:', e);
-            alert('카드 생성 중 오류가 발생했어요. 스크린샷을 이용해주세요!');
+            showCatError('카드 생성 중 오류가 발생했어요. 스크린샷을 이용해주세요!');
         }
     }
 
