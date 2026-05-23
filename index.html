@@ -2168,8 +2168,9 @@
             popup.style.animation = 'slideDownReview 0.3s ease-in forwards';
             setTimeout(() => popup.remove(), 300);
         }
-        // 다시 안 뜨게
-        localStorage.setItem('reviewPopupShown', 'true');
+        // 후기 버튼 누른 사용자 → 영구 스킵
+        reviewPopupShownThisSession = true;
+        localStorage.setItem('reviewSubmitted', 'true');
 
         if (window.self !== window.top) {
             // .ait SDK 방식 시도 (향후 빌드에서 작동)
@@ -2186,28 +2187,37 @@
         const modal = document.createElement('div');
         modal.id = 'review-guide-modal';
         modal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:0; z-index:10000; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.5); animation:fadeIn 0.3s ease;';
-        modal.innerHTML = `
-            <div style="background:#fff; border-radius:20px; padding:28px 24px; margin:20px; max-width:320px; width:100%; text-align:center; box-shadow:0 8px 30px rgba(0,0,0,0.2);">
-                <div style="font-size:2.5rem; margin-bottom:12px;">🐱⭐</div>
-                <div style="font-size:1.1rem; font-weight:900; color:#4A148C; margin-bottom:16px;">후기 남기는 방법</div>
-                <div style="text-align:left; background:#FFF8E1; border-radius:14px; padding:18px 16px; margin-bottom:18px;">
-                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
-                        <span style="background:#FF8F00; color:#fff; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.8rem; font-weight:900; flex-shrink:0;">1</span>
-                        <span style="font-size:0.88rem; color:#5D4037; font-weight:600;">화면 오른쪽 상단 <b style="color:#E65100;">⋯ 메뉴</b> 터치</span>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
-                        <span style="background:#FF8F00; color:#fff; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.8rem; font-weight:900; flex-shrink:0;">2</span>
-                        <span style="font-size:0.88rem; color:#5D4037; font-weight:600;"><b style="color:#E65100;">"후기 남기기"</b> 선택</span>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <span style="background:#FF8F00; color:#fff; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.8rem; font-weight:900; flex-shrink:0;">3</span>
-                        <span style="font-size:0.88rem; color:#5D4037; font-weight:600;">한줄 후기 작성 완료! 🎉</span>
-                    </div>
+
+        const box = document.createElement('div');
+        box.style.cssText = 'background:#fff; border-radius:20px; padding:28px 24px; margin:20px; max-width:320px; width:100%; text-align:center; box-shadow:0 8px 30px rgba(0,0,0,0.2);';
+
+        box.innerHTML = `
+            <div style="font-size:2.5rem; margin-bottom:12px;">🐱⭐</div>
+            <div style="font-size:1.1rem; font-weight:900; color:#4A148C; margin-bottom:16px;">후기 남기는 방법</div>
+            <div style="text-align:left; background:#FFF8E1; border-radius:14px; padding:18px 16px; margin-bottom:18px;">
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+                    <span style="background:#FF8F00; color:#fff; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.8rem; font-weight:900; flex-shrink:0;">1</span>
+                    <span style="font-size:0.88rem; color:#5D4037; font-weight:600;">화면 오른쪽 상단 <b style="color:#E65100;">⋯ 메뉴</b> 터치</span>
                 </div>
-                <div style="font-size:0.75rem; color:#8D6E63; margin-bottom:16px;">짧은 후기 하나가 또또에게 큰 힘이 돼요 🐾</div>
-                <button onclick="closeReviewGuideModal()" style="width:100%; padding:14px; background:linear-gradient(135deg,#FF8F00,#FFB300); border:none; color:#fff; border-radius:14px; font-size:0.95rem; font-weight:800; cursor:pointer; box-shadow:0 2px 8px rgba(255,143,0,0.3);">알겠어요!</button>
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+                    <span style="background:#FF8F00; color:#fff; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.8rem; font-weight:900; flex-shrink:0;">2</span>
+                    <span style="font-size:0.88rem; color:#5D4037; font-weight:600;"><b style="color:#E65100;">"후기 남기기"</b> 선택</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="background:#FF8F00; color:#fff; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.8rem; font-weight:900; flex-shrink:0;">3</span>
+                    <span style="font-size:0.88rem; color:#5D4037; font-weight:600;">한줄 후기 작성 완료! 🎉</span>
+                </div>
             </div>
+            <div style="font-size:0.75rem; color:#8D6E63; margin-bottom:16px;">짧은 후기 하나가 또또에게 큰 힘이 돼요 🐾</div>
         `;
+
+        const okBtn = document.createElement('button');
+        okBtn.textContent = '알겠어요!';
+        okBtn.style.cssText = 'width:100%; padding:14px; background:linear-gradient(135deg,#FF8F00,#FFB300); border:none; color:#fff; border-radius:14px; font-size:0.95rem; font-weight:800; cursor:pointer; box-shadow:0 2px 8px rgba(255,143,0,0.3);';
+        okBtn.addEventListener('click', () => closeReviewGuideModal());
+        box.appendChild(okBtn);
+
+        modal.appendChild(box);
         modal.addEventListener('click', (e) => {
             if (e.target === modal) closeReviewGuideModal();
         });
@@ -2223,9 +2233,12 @@
     }
 
     let reviewPopupTimer = null;
+    let reviewPopupShownThisSession = false;
     function scheduleReviewPopup() {
-        // 이미 후기 남긴 사용자 or 이미 팝업 본 사용자 → 스킵
-        if (localStorage.getItem('reviewPopupShown') === 'true') return;
+        // 이 세션에서 이미 팝업을 봤으면 스킵
+        if (reviewPopupShownThisSession) return;
+        // 후기를 실제로 남긴 사용자는 영구 스킵
+        if (localStorage.getItem('reviewSubmitted') === 'true') return;
         // 기존 타이머 제거
         if (reviewPopupTimer) clearTimeout(reviewPopupTimer);
         // 30초 후 팝업 (분석 결과 충분히 읽은 뒤)
@@ -2240,18 +2253,48 @@
         const popup = document.createElement('div');
         popup.id = 'review-popup';
         popup.style.cssText = 'position:fixed; bottom:0; left:0; right:0; z-index:9999; animation:slideUpReview 0.4s ease-out;';
-        popup.innerHTML = `
-            <div style="background:#fff; border-top:3px solid #FFB300; border-radius:20px 20px 0 0; padding:24px 20px 28px; box-shadow:0 -4px 20px rgba(0,0,0,0.15); text-align:center;">
-                <button onclick="dismissReviewPopup()" style="position:absolute; top:12px; right:16px; background:none; border:none; font-size:1.2rem; color:#999; cursor:pointer;">✕</button>
-                <div style="font-size:2rem; margin-bottom:8px;">🐱</div>
-                <div style="font-size:1rem; font-weight:900; color:#E65100;">또또의 분석, 어떠셨나요?</div>
-                <div style="font-size:0.8rem; color:#8D6E63; margin:6px 0 16px;">짧은 한줄 후기가 또또에게 큰 힘이 됩니다! 🐾</div>
-                <div style="display:flex; gap:10px; justify-content:center;">
-                    <button onclick="requestTossReview()" style="flex:1; max-width:180px; padding:14px; background:linear-gradient(135deg,#FF8F00,#FFB300); border:none; color:#fff; border-radius:14px; font-size:0.95rem; font-weight:800; cursor:pointer; box-shadow:0 2px 8px rgba(255,143,0,0.3);">⭐ 후기 남기기</button>
-                    <button onclick="dismissReviewPopup()" style="flex:1; max-width:120px; padding:14px; background:#F5F5F5; border:none; color:#999; border-radius:14px; font-size:0.85rem; font-weight:600; cursor:pointer;">다음에</button>
-                </div>
-            </div>
-        `;
+
+        const inner = document.createElement('div');
+        inner.style.cssText = 'background:#fff; border-top:3px solid #FFB300; border-radius:20px 20px 0 0; padding:24px 20px 28px; box-shadow:0 -4px 20px rgba(0,0,0,0.15); text-align:center; position:relative;';
+
+        const closeX = document.createElement('button');
+        closeX.textContent = '✕';
+        closeX.style.cssText = 'position:absolute; top:12px; right:16px; background:none; border:none; font-size:1.2rem; color:#999; cursor:pointer;';
+        closeX.addEventListener('click', () => dismissReviewPopup());
+
+        const emoji = document.createElement('div');
+        emoji.style.cssText = 'font-size:2rem; margin-bottom:8px;';
+        emoji.textContent = '🐱';
+
+        const title = document.createElement('div');
+        title.style.cssText = 'font-size:1rem; font-weight:900; color:#E65100;';
+        title.textContent = '또또의 분석, 어떠셨나요?';
+
+        const desc = document.createElement('div');
+        desc.style.cssText = 'font-size:0.8rem; color:#8D6E63; margin:6px 0 16px;';
+        desc.textContent = '짧은 한줄 후기가 또또에게 큰 힘이 됩니다! 🐾';
+
+        const btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display:flex; gap:10px; justify-content:center;';
+
+        const reviewBtn = document.createElement('button');
+        reviewBtn.textContent = '⭐ 후기 남기기';
+        reviewBtn.style.cssText = 'flex:1; max-width:180px; padding:14px; background:linear-gradient(135deg,#FF8F00,#FFB300); border:none; color:#fff; border-radius:14px; font-size:0.95rem; font-weight:800; cursor:pointer; box-shadow:0 2px 8px rgba(255,143,0,0.3);';
+        reviewBtn.addEventListener('click', () => requestTossReview());
+
+        const laterBtn = document.createElement('button');
+        laterBtn.textContent = '다음에';
+        laterBtn.style.cssText = 'flex:1; max-width:120px; padding:14px; background:#F5F5F5; border:none; color:#999; border-radius:14px; font-size:0.85rem; font-weight:600; cursor:pointer;';
+        laterBtn.addEventListener('click', () => dismissReviewPopup());
+
+        btnRow.appendChild(reviewBtn);
+        btnRow.appendChild(laterBtn);
+        inner.appendChild(closeX);
+        inner.appendChild(emoji);
+        inner.appendChild(title);
+        inner.appendChild(desc);
+        inner.appendChild(btnRow);
+        popup.appendChild(inner);
         document.body.appendChild(popup);
     }
 
@@ -2261,7 +2304,7 @@
             popup.style.animation = 'slideDownReview 0.3s ease-in forwards';
             setTimeout(() => popup.remove(), 300);
         }
-        localStorage.setItem('reviewPopupShown', 'true');
+        reviewPopupShownThisSession = true;
     }
 
     async function copyLink() {
