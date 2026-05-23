@@ -2984,23 +2984,68 @@
     }
 
     function showShareImageModal(dataUrl) {
-        // 기존 모달 제거
         const old = document.getElementById('share-image-modal');
         if (old) old.remove();
 
         const modal = document.createElement('div');
         modal.id = 'share-image-modal';
         modal.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); z-index:99999; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px;';
-        modal.innerHTML = `
-            <div style="color:#fff; font-size:0.9rem; font-weight:700; margin-bottom:12px; text-align:center;">
-                📲 이미지를 길게 눌러 저장하세요!
-            </div>
-            <img src="${dataUrl}" style="max-width:90%; max-height:65vh; border-radius:16px; box-shadow:0 8px 30px rgba(0,0,0,0.5);" />
-            <div style="color:#ccc; font-size:0.75rem; margin-top:10px; text-align:center;">
-                길게 누르면 → "이미지 저장" 또는 "사진에 추가"
-            </div>
-            <button onclick="document.getElementById('share-image-modal').remove()" style="margin-top:16px; padding:12px 40px; background:#fff; color:#333; border:none; border-radius:12px; font-weight:800; font-size:0.95rem; cursor:pointer;">닫기</button>
-        `;
+
+        const guide = document.createElement('div');
+        guide.style.cssText = 'color:#fff; font-size:0.9rem; font-weight:700; margin-bottom:12px; text-align:center;';
+        guide.textContent = '📲 아래 저장 버튼을 눌러주세요!';
+
+        const img = document.createElement('img');
+        img.src = dataUrl;
+        img.style.cssText = 'max-width:90%; max-height:55vh; border-radius:16px; box-shadow:0 8px 30px rgba(0,0,0,0.5);';
+
+        const btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display:flex; gap:12px; margin-top:16px;';
+
+        const saveBtn = document.createElement('button');
+        saveBtn.textContent = '💾 이미지 저장';
+        saveBtn.style.cssText = 'padding:14px 32px; background:linear-gradient(135deg,#7B1FA2,#E65100); color:#fff; border:none; border-radius:12px; font-weight:800; font-size:0.95rem; cursor:pointer;';
+        saveBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            try {
+                const res = await fetch(dataUrl);
+                const blob = await res.blob();
+                const file = new File([blob], 'saju-card.png', { type: 'image/png' });
+                if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file], title: '사주×MBTI 결과카드' });
+                } else {
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = 'saju-card.png';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(a.href);
+                }
+            } catch (err) {
+                const a = document.createElement('a');
+                a.href = dataUrl;
+                a.download = 'saju-card.png';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
+        });
+
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = '닫기';
+        closeBtn.style.cssText = 'padding:14px 32px; background:#fff; color:#333; border:none; border-radius:12px; font-weight:800; font-size:0.95rem; cursor:pointer;';
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            modal.remove();
+        });
+
+        btnRow.appendChild(saveBtn);
+        btnRow.appendChild(closeBtn);
+        modal.appendChild(guide);
+        modal.appendChild(img);
+        modal.appendChild(btnRow);
+
         modal.addEventListener('click', (e) => {
             if (e.target === modal) modal.remove();
         });
