@@ -2302,9 +2302,20 @@
             // SDK 응답 리스너 (성공 시 안내 모달 스킵)
             let reviewHandled = false;
             const reviewListener = function(e) {
-                if (e.data && (e.data.type === 'REVIEW_SUCCESS' || e.data.type === 'REVIEW_COMPLETE')) {
+                // 응답이 문자열(JSON)이거나 객체일 수 있음
+                let msg = e.data;
+                if (typeof msg === 'string') {
+                    try { msg = JSON.parse(msg); } catch(_) { return; }
+                }
+                if (!msg || !msg.type) return;
+                if (msg.type === 'REVIEW_SUCCESS') {
                     reviewHandled = true;
                     window.removeEventListener('message', reviewListener);
+                    showToast('⭐ 후기 감사합니다!', 'success');
+                } else if (msg.type === 'REVIEW_FAILED') {
+                    reviewHandled = true;
+                    window.removeEventListener('message', reviewListener);
+                    showReviewGuideModal();
                 }
             };
             window.addEventListener('message', reviewListener);
