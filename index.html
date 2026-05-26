@@ -428,6 +428,20 @@
         /* .dev-badge { position: fixed; top: 60px; right: 8px; z-index: 999; background: #7B1FA2; color: #fff; border: none; padding: 4px 10px; border-radius: 8px; font-size: 0.65rem; font-weight: 700; cursor: pointer; opacity: 0.7; }
         .dev-badge:hover { opacity: 1; } */
 
+        /* Constellation locked teaser */
+        .constellation-locked { background: var(--bg-card); border: 1.5px solid #C5CAE9; border-radius: 16px; margin-bottom: 10px; overflow: hidden; position: relative; }
+        .constellation-locked-header { display: flex; align-items: center; gap: 12px; padding: 16px 18px; }
+        .constellation-locked-icon { font-size: 1.3rem; flex-shrink: 0; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: #E8EAF6; }
+        .constellation-locked-title { flex: 1; font-size: 0.9rem; font-weight: 700; color: #5C6BC0; line-height: 1.4; }
+        .constellation-locked-lock { font-size: 0.75rem; color: #9FA8DA; }
+        .constellation-locked-blur { padding: 0 18px 16px; filter: blur(6px); user-select: none; pointer-events: none; font-size: 0.85rem; color: #BDBDBD; line-height: 1.6; }
+        .constellation-unlock-banner { background: linear-gradient(135deg, #E8EAF6, #C5CAE9); border: 1.5px solid #7986CB; border-radius: 14px; padding: 16px; text-align: center; margin: 0 18px 16px; }
+        .constellation-unlock-btn { padding: 12px 24px; background: linear-gradient(135deg, #43A047, #66BB6A); color: #fff; border: none; border-radius: 12px; font-size: 0.9rem; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(67,160,71,0.25); }
+        .constellation-unlock-hint { font-size: 0.7rem; color: #9E9E9E; margin-top: 8px; }
+        [data-theme="dark"] .constellation-locked { border-color: #3F51B5; background: var(--bg-card); }
+        [data-theme="dark"] .constellation-locked-title { color: #9FA8DA; }
+        [data-theme="dark"] .constellation-unlock-banner { background: linear-gradient(135deg, #283593, #1A237E); border-color: #5C6BC0; }
+
         /* Premium locked teaser */
         .premium-teaser { background: var(--bg-card); border: 1.5px solid #E0E0E0; border-radius: 16px; margin-bottom: 10px; overflow: hidden; position: relative; }
         .premium-teaser-header { display: flex; align-items: center; gap: 12px; padding: 16px 18px; }
@@ -1070,6 +1084,45 @@
         }, 10000);
     }
 
+    // 광고 보고 별자리 열기
+    function watchAdForConstellation() {
+        if (!isInTossWebview) {
+            showToast('토스 앱에서만 광고 보기가 가능해요. 무료로 열어드릴게요!', 'success');
+            unlockConstellation();
+            return;
+        }
+        showToast('광고를 불러오는 중...', 'info');
+        adRewardCallback = function() {
+            unlockConstellation();
+        };
+        requestAdFromParent('rewarded');
+        setTimeout(function() {
+            if (adRewardCallback) { adRewardCallback(); adRewardCallback = null; }
+        }, 10000);
+    }
+
+    function unlockConstellation() {
+        const lockedSection = document.getElementById('constellation-locked-section');
+        if (!lockedSection || !window._constellationData) return;
+        const c = window._constellationData;
+        const newDiv = document.createElement('div');
+        newDiv.className = 'accordion-section open fade-in';
+        newDiv.innerHTML = `
+            <div class="accordion-header" onclick="toggleAccordion(this)">
+                <div class="accordion-icon" style="background:#E8EAF6;">${c.icon}</div>
+                <div class="accordion-title">${c.name} — ${c.desc.split('.')[0]}</div>
+                <div class="accordion-arrow">▼</div>
+            </div>
+            <div class="accordion-body">
+                <div class="accordion-content">
+                    <div class="accordion-desc"></div>
+                    ${window._constellationHTML}
+                </div>
+            </div>`;
+        lockedSection.replaceWith(newDiv);
+        showToast('⭐ 별자리 분석이 열렸어요!', 'success');
+    }
+
     // 광고 보고 궁합 상세 열기
     function watchAdForCompatibility(personA, personB) {
         if (!isInTossWebview) {
@@ -1631,11 +1684,13 @@
             sections.push({ icon: z.icon, bg: '#FFF8E1', title: `${z.name} — ${z.tagline}`, desc: '', extra: zHTML });
         }
 
-        // ⭐ 별자리 분석
+        // ⭐ 별자리 분석 (광고 잠금)
         if (r.constellation) {
             const c = r.constellation;
             const cTraits = c.traits.map(t => `<span class="zodiac-chip">${t}</span>`).join('');
-            const cHTML = `
+            // 잠금 해제용 전체 HTML 저장
+            window._constellationData = c;
+            window._constellationHTML = `
                 <div class="zodiac-hero">
                     <div class="zodiac-emoji">${c.icon}</div>
                     <div class="zodiac-name">${c.name}</div>
@@ -1647,7 +1702,25 @@
                     <div class="zodiac-mini-label">🔮 사주 × 별자리 시너지</div>
                     <div class="zodiac-mini-value">${c.synergy}</div>
                 </div>`;
-            sections.push({ icon: c.icon, bg: '#E8EAF6', title: `${c.name} — ${c.desc.split('.')[0]}`, desc: '', extra: cHTML });
+            // 잠긴 상태로 렌더링 (sections 배열 밖에서 직접 추가)
+            const lockedDiv = document.createElement('div');
+            lockedDiv.className = 'constellation-locked fade-in';
+            lockedDiv.id = 'constellation-locked-section';
+            lockedDiv.innerHTML = `
+                <div class="constellation-locked-header">
+                    <div class="constellation-locked-icon">${c.icon}</div>
+                    <div class="constellation-locked-title">${c.name} — 나의 별자리 분석</div>
+                    <div class="constellation-locked-lock">🔒</div>
+                </div>
+                <div class="constellation-locked-blur">
+                    ${c.desc.substring(0, 60)}... 사주와 별자리가 만나면 숨겨진 성격이 보입니다.
+                </div>
+                <div class="constellation-unlock-banner">
+                    <button class="constellation-unlock-btn" id="constellation-ad-btn">🎬 광고 보고 별자리 열기</button>
+                    <div class="constellation-unlock-hint">짧은 광고 시청 후 무료로 확인할 수 있어요</div>
+                </div>`;
+            // 띠 섹션 뒤에 삽입할 위치 기억
+            window._constellationLockedDiv = lockedDiv;
         }
 
         // 📜 대운 (10년 단위 인생 흐름)
@@ -1833,6 +1906,15 @@
             `;
             container.appendChild(div);
         });
+
+        // 별자리 잠금 섹션 삽입
+        if (window._constellationLockedDiv) {
+            container.appendChild(window._constellationLockedDiv);
+            const adBtn = document.getElementById('constellation-ad-btn');
+            if (adBtn) {
+                adBtn.addEventListener('click', function() { watchAdForConstellation(); });
+            }
+        }
 
         // Lucky Grid
         const l = r.lucky;
