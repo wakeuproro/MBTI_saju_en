@@ -1084,6 +1084,41 @@
         }, 10000);
     }
 
+    // 광고 보고 프리미엄 나머지 4개 열기
+    function watchAdForPremiumExtra() {
+        if (!isInTossWebview) {
+            showToast('토스 앱에서만 광고 보기가 가능해요. 무료로 열어드릴게요!', 'success');
+            unlockPremiumExtra();
+            return;
+        }
+        showToast('광고를 불러오는 중...', 'info');
+        adRewardCallback = function() {
+            unlockPremiumExtra();
+        };
+        requestAdFromParent('rewarded');
+        setTimeout(function() {
+            if (adRewardCallback) { adRewardCallback(); adRewardCallback = null; }
+        }, 10000);
+    }
+
+    function unlockPremiumExtra() {
+        // 잠금 배너 제거
+        const banner = document.getElementById('premium-extra-lock-banner');
+        if (banner) banner.remove();
+        // 숨겨진 섹션 보이기 + 열기
+        const locked = document.querySelectorAll('.premium-extra-locked');
+        locked.forEach(s => {
+            s.style.display = '';
+            s.classList.add('open');
+            s.classList.remove('premium-extra-locked');
+        });
+        showToast('💎 심층 분석이 모두 열렸어요!', 'success');
+        // 첫 번째 열린 섹션으로 스크롤
+        if (locked.length > 0) {
+            locked[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+
     // 광고 보고 별자리 열기
     function watchAdForConstellation() {
         if (!isInTossWebview) {
@@ -3288,10 +3323,53 @@
 
         area.innerHTML = html;
 
-        // 첫 번째 섹션 자동 열기 + 스크롤
+        // 섹션 분리: 상위 5개 열기, 나머지 4개 광고 잠금
+        const allSections = area.querySelectorAll('.premium-section');
+        const FREE_COUNT = 5;
+
+        if (allSections.length > FREE_COUNT) {
+            // 상위 5개 열기
+            for (let i = 0; i < Math.min(FREE_COUNT, allSections.length); i++) {
+                allSections[i].classList.add('open');
+            }
+
+            // 잠금 배너 삽입
+            const lockBanner = document.createElement('div');
+            lockBanner.id = 'premium-extra-lock-banner';
+            lockBanner.className = 'constellation-locked fade-in';
+            lockBanner.style.cssText = 'border-color: #CE93D8; margin: 16px 0;';
+            lockBanner.innerHTML = `
+                <div class="constellation-locked-header" style="padding: 20px 18px;">
+                    <div class="constellation-locked-icon" style="background: #F3E5F5;">💎</div>
+                    <div class="constellation-locked-title" style="color: #7B1FA2;">나머지 ${allSections.length - FREE_COUNT}개 심층 분석이 더 있어요</div>
+                    <div class="constellation-locked-lock">🔒</div>
+                </div>
+                <div class="constellation-unlock-banner" style="background: linear-gradient(135deg, #F3E5F5, #EDE7F6); border-color: #CE93D8;">
+                    <button class="constellation-unlock-btn" id="premium-extra-ad-btn" style="background: linear-gradient(135deg, #43A047, #66BB6A);">🎬 광고 한 번 더 보고 전체 열기</button>
+                    <div class="constellation-unlock-hint">짧은 광고 시청 후 무료로 확인할 수 있어요</div>
+                </div>`;
+
+            // 6번째 섹션 앞에 배너 삽입
+            allSections[FREE_COUNT].parentNode.insertBefore(lockBanner, allSections[FREE_COUNT]);
+
+            // 나머지 섹션 숨기기
+            for (let i = FREE_COUNT; i < allSections.length; i++) {
+                allSections[i].style.display = 'none';
+                allSections[i].classList.add('premium-extra-locked');
+            }
+
+            // 버튼 이벤트
+            document.getElementById('premium-extra-ad-btn').addEventListener('click', function() {
+                watchAdForPremiumExtra();
+            });
+        } else {
+            // 섹션이 5개 이하면 전부 열기
+            allSections.forEach(s => s.classList.add('open'));
+        }
+
+        // 첫 번째 섹션으로 스크롤
         const first = area.querySelector('.premium-section');
         if (first) {
-            first.classList.add('open');
             first.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     }
