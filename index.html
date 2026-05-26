@@ -1749,17 +1749,45 @@
             const cTraits = c.traits.map(t => `<span class="zodiac-chip">${t}</span>`).join('');
             // 잠금 해제용 전체 HTML 저장
             window._constellationData = c;
+            const cBestMatch = (c.best_match || []).map(m => `<span class="tag" style="background:#E8F5E9;color:#2E7D32;">${m}</span>`).join('');
+            const cWorstMatch = (c.worst_match || []).map(m => `<span class="tag" style="background:#FFEBEE;color:#C62828;">${m}</span>`).join('');
             window._constellationHTML = `
                 <div class="zodiac-hero">
                     <div class="zodiac-emoji">${c.icon}</div>
                     <div class="zodiac-name">${c.name}</div>
-                    <div class="zodiac-tagline">${c.date} · ${c.element} 원소</div>
+                    <div class="zodiac-tagline">${c.date} · ${c.element} 원소 · ${c.ruling_planet || ''} · ${c.modality || ''}</div>
                     <div class="zodiac-desc">${c.desc}</div>
                     <div class="zodiac-traits">${cTraits}</div>
                 </div>
-                <div class="zodiac-mini" style="margin-top:12px;">
+                <div class="accordion-sub" style="margin-top:14px;">
+                    <div class="accordion-sub-item"><span class="accordion-sub-label">💪 강점</span><span>${c.strength || ''}</span></div>
+                    <div class="accordion-sub-item"><span class="accordion-sub-label">⚠️ 약점</span><span>${c.weakness || ''}</span></div>
+                    <div class="accordion-sub-item"><span class="accordion-sub-label">💕 연애 스타일</span><span>${c.love_style || ''}</span></div>
+                    <div class="accordion-sub-item"><span class="accordion-sub-label">💼 추천 직업</span><span>${c.career_hint || ''}</span></div>
+                </div>
+                <div style="display:flex; gap:8px; margin-top:14px; flex-wrap:wrap;">
+                    <div class="zodiac-mini" style="flex:1; min-width:120px;">
+                        <div class="zodiac-mini-label">🍀 행운의 요일</div>
+                        <div class="zodiac-mini-value">${c.lucky_day || ''}</div>
+                    </div>
+                    <div class="zodiac-mini" style="flex:1; min-width:120px;">
+                        <div class="zodiac-mini-label">🎨 행운의 컬러</div>
+                        <div class="zodiac-mini-value">${c.lucky_color || ''}</div>
+                    </div>
+                </div>
+                <div style="margin-top:14px;">
+                    <div style="font-size:0.8rem; font-weight:700; color:#2E7D32; margin-bottom:6px;">💖 최고 궁합 별자리</div>
+                    <div class="tag-row">${cBestMatch}</div>
+                    <div style="font-size:0.8rem; font-weight:700; color:#C62828; margin-top:10px; margin-bottom:6px;">⚠️ 주의 궁합 별자리</div>
+                    <div class="tag-row">${cWorstMatch}</div>
+                </div>
+                <div class="zodiac-mini" style="margin-top:14px;">
                     <div class="zodiac-mini-label">🔮 사주 × 별자리 시너지</div>
                     <div class="zodiac-mini-value">${c.synergy}</div>
+                </div>
+                <div style="margin-top:14px; background:linear-gradient(135deg,#E8EAF6,#C5CAE9); border-radius:12px; padding:14px; text-align:center;">
+                    <div style="font-size:0.8rem; font-weight:700; color:#283593; margin-bottom:6px;">✨ 별자리가 전하는 한마디</div>
+                    <div style="font-size:0.85rem; color:#3F51B5; line-height:1.6;">${c.advice || ''}</div>
                 </div>`;
             // 잠긴 상태로 렌더링 (sections 배열 밖에서 직접 추가)
             const lockedDiv = document.createElement('div');
