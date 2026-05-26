@@ -651,7 +651,7 @@
                 <option value="ESTP">ESTP - 사업가</option><option value="ESFP">ESFP - 연예인</option>
             </select>
         </div>
-        <button class="start-btn" id="t-btn-start" onclick="getReport()">무료 분석 시작하기</button>
+        <button class="start-btn" id="t-btn-start" onclick="getReport()">🎬 광고 보고 분석 시작하기</button>
 
         <p style="text-align:center; font-size:0.72rem; color:#8D6E63; margin-top:14px; line-height:1.6;">
             입력하신 정보는 분석에만 사용되고 서버에 저장되지 않아요.<br>
@@ -1520,6 +1520,30 @@
             showPaymentModal();
             return;
         }
+
+        // 분석 데이터 임시 저장
+        window._pendingReport = { bd, bt, mbti, name, gender, timeUnknown, calendarType, isLeapMonth };
+
+        // 광고 먼저 보여주기
+        if (!isInTossWebview) {
+            showToast('토스 앱에서만 광고 보기가 가능해요. 무료로 진행할게요!', 'success');
+            executeReport();
+            return;
+        }
+
+        showToast('광고를 불러오는 중...', 'info');
+        adRewardCallback = function() {
+            executeReport();
+        };
+        requestAdFromParent('rewarded');
+        // 10초 타임아웃 — 광고 안 오면 그냥 진행
+        setTimeout(function() {
+            if (adRewardCallback) { adRewardCallback(); adRewardCallback = null; }
+        }, 10000);
+    }
+
+    async function executeReport() {
+        const { bd, bt, mbti, name, gender, timeUnknown, calendarType, isLeapMonth } = window._pendingReport;
 
         document.getElementById("loading").classList.add("active");
         startLoadingMessages([
