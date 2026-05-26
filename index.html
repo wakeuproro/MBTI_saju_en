@@ -1631,6 +1631,25 @@
             sections.push({ icon: z.icon, bg: '#FFF8E1', title: `${z.name} — ${z.tagline}`, desc: '', extra: zHTML });
         }
 
+        // ⭐ 별자리 분석
+        if (r.constellation) {
+            const c = r.constellation;
+            const cTraits = c.traits.map(t => `<span class="zodiac-chip">${t}</span>`).join('');
+            const cHTML = `
+                <div class="zodiac-hero">
+                    <div class="zodiac-emoji">${c.icon}</div>
+                    <div class="zodiac-name">${c.name}</div>
+                    <div class="zodiac-tagline">${c.date} · ${c.element} 원소</div>
+                    <div class="zodiac-desc">${c.desc}</div>
+                    <div class="zodiac-traits">${cTraits}</div>
+                </div>
+                <div class="zodiac-mini" style="margin-top:12px;">
+                    <div class="zodiac-mini-label">🔮 사주 × 별자리 시너지</div>
+                    <div class="zodiac-mini-value">${c.synergy}</div>
+                </div>`;
+            sections.push({ icon: c.icon, bg: '#E8EAF6', title: `${c.name} — ${c.desc.split('.')[0]}`, desc: '', extra: cHTML });
+        }
+
         // 📜 대운 (10년 단위 인생 흐름)
         if (r.daewoon && r.daewoon.pillars && r.daewoon.pillars.length > 0) {
             const dw = r.daewoon;

@@ -959,6 +959,60 @@ def analyze_zodiac(year_jiji):
         return None
     return {'key': year_jiji, **data}
 
+# ═══════════════════════════════════════════════
+# ⭐ 별자리 (서양 점성술)
+# ═══════════════════════════════════════════════
+CONSTELLATION_DATA = {
+    'aries':       {'icon': '♈', 'name': '양자리',     'date': '3/21~4/19',   'element': '불', 'traits': ['열정적', '도전적', '솔직함'], 'desc': '불같은 에너지로 앞장서는 개척자. 누구보다 빠르게 행동하고 도전을 즐기는 타고난 리더예요.', 'synergy_fire': '사주의 화(火) 기운과 만나면 열정이 폭발! 추진력이 극대화됩니다.', 'synergy_water': '사주의 수(水) 기운이 양자리의 불을 중화시켜 감정 조절력을 줍니다.', 'synergy_default': '양자리의 리더십이 사주의 기운과 어우러져 독보적인 존재감을 만들어요.'},
+    'taurus':      {'icon': '♉', 'name': '황소자리',   'date': '4/20~5/20',   'element': '흙', 'traits': ['안정적', '감각적', '인내심'], 'desc': '흔들림 없는 안정감의 소유자. 오감이 발달해 미식, 예술, 자연을 사랑하며 한번 시작하면 끝까지 해내요.', 'synergy_earth': '사주의 토(土) 기운과 만나면 안정감이 배가! 재물운도 탄탄해집니다.', 'synergy_wood': '사주의 목(木) 기운이 황소자리에 성장 에너지를 더해줘요.', 'synergy_default': '황소자리의 끈기가 사주의 기운과 합쳐져 꾸준한 성공을 만들어냅니다.'},
+    'gemini':      {'icon': '♊', 'name': '쌍둥이자리', 'date': '5/21~6/21',   'element': '바람', 'traits': ['다재다능', '호기심', '소통력'], 'desc': '끝없는 호기심의 소통 천재. 어떤 주제든 빠르게 이해하고 재미있게 풀어내는 재능이 있어요.', 'synergy_wood': '사주의 목(木) 기운과 만나면 지적 호기심이 더 활발해져요.', 'synergy_metal': '사주의 금(金) 기운이 쌍둥이자리에 집중력과 결단력을 더해줍니다.', 'synergy_default': '쌍둥이자리의 다재다능함이 사주의 기운과 만나 여러 분야에서 빛납니다.'},
+    'cancer':      {'icon': '♋', 'name': '게자리',     'date': '6/22~7/22',   'element': '물', 'traits': ['감성적', '보호본능', '직감력'], 'desc': '따뜻한 마음의 감성 수호자. 사랑하는 사람을 위해서라면 무엇이든 하는 헌신적인 마음의 소유자예요.', 'synergy_water': '사주의 수(水) 기운과 만나면 감성과 직관력이 극대화됩니다.', 'synergy_fire': '사주의 화(火) 기운이 게자리에 자신감과 적극성을 더해줘요.', 'synergy_default': '게자리의 따뜻함이 사주의 기운과 어우러져 깊은 유대감을 만들어냅니다.'},
+    'leo':         {'icon': '♌', 'name': '사자자리',   'date': '7/23~8/22',   'element': '불', 'traits': ['당당함', '창의력', '리더십'], 'desc': '무대 위의 왕, 타고난 스타. 어디서든 주목받고 사람들에게 영감을 주는 카리스마가 있어요.', 'synergy_fire': '사주의 화(火) 기운과 만나면 카리스마가 최고조! 주변을 이끄는 힘이 강해져요.', 'synergy_earth': '사주의 토(土) 기운이 사자자리에 안정감과 현실감각을 더해줍니다.', 'synergy_default': '사자자리의 당당함이 사주의 기운과 합쳐져 빛나는 존재감을 만들어요.'},
+    'virgo':       {'icon': '♍', 'name': '처녀자리',   'date': '8/23~9/22',   'element': '흙', 'traits': ['분석적', '완벽주의', '실용적'], 'desc': '디테일의 달인, 완벽을 추구하는 분석가. 꼼꼼하고 체계적이며 실용적인 해결책을 잘 찾아요.', 'synergy_earth': '사주의 토(土) 기운과 만나면 분석력과 실행력이 배가됩니다.', 'synergy_water': '사주의 수(水) 기운이 처녀자리에 유연성과 감수성을 더해줘요.', 'synergy_default': '처녀자리의 꼼꼼함이 사주의 기운과 만나 실수 없는 완벽함을 만들어냅니다.'},
+    'libra':       {'icon': '♎', 'name': '천칭자리',   'date': '9/23~10/22',  'element': '바람', 'traits': ['균형감각', '사교적', '미적감각'], 'desc': '조화와 아름다움의 외교관. 갈등을 중재하고 사람들 사이에서 균형을 잡는 데 탁월해요.', 'synergy_metal': '사주의 금(金) 기운과 만나면 미적 감각과 판단력이 극대화됩니다.', 'synergy_fire': '사주의 화(火) 기운이 천칭자리에 결단력과 추진력을 더해줘요.', 'synergy_default': '천칭자리의 균형감각이 사주의 기운과 어우러져 완벽한 하모니를 만들어요.'},
+    'scorpio':     {'icon': '♏', 'name': '전갈자리',   'date': '10/23~11/21', 'element': '물', 'traits': ['강렬함', '통찰력', '집중력'], 'desc': '깊고 강렬한 감정의 탐구자. 한번 집중하면 끝을 보는 집요함과 날카로운 통찰력의 소유자예요.', 'synergy_water': '사주의 수(水) 기운과 만나면 직관력과 통찰력이 극강해집니다.', 'synergy_earth': '사주의 토(土) 기운이 전갈자리에 안정감과 인내심을 더해줘요.', 'synergy_default': '전갈자리의 집중력이 사주의 기운과 합쳐져 어떤 것이든 꿰뚫어 보는 눈을 줍니다.'},
+    'sagittarius': {'icon': '♐', 'name': '사수자리',   'date': '11/22~12/21', 'element': '불', 'traits': ['자유로움', '낙관적', '모험심'], 'desc': '끝없는 탐험을 꿈꾸는 자유로운 영혼. 새로운 경험과 지식에 대한 갈증이 끊이지 않아요.', 'synergy_fire': '사주의 화(火) 기운과 만나면 모험심과 낙관이 극대화! 어디서든 빛나요.', 'synergy_metal': '사주의 금(金) 기운이 사수자리에 집중력과 마무리 능력을 더해줍니다.', 'synergy_default': '사수자리의 자유로움이 사주의 기운과 만나 넓은 세계를 향한 발걸음을 이끌어요.'},
+    'capricorn':   {'icon': '♑', 'name': '염소자리',   'date': '12/22~1/19',  'element': '흙', 'traits': ['책임감', '야망', '끈기'], 'desc': '정상을 향해 묵묵히 오르는 야심가. 책임감이 강하고 장기적인 목표를 위해 꾸준히 노력하는 사람이에요.', 'synergy_earth': '사주의 토(土) 기운과 만나면 현실적 성공 확률이 극대화됩니다.', 'synergy_wood': '사주의 목(木) 기운이 염소자리에 유연성과 창의성을 더해줘요.', 'synergy_default': '염소자리의 끈기가 사주의 기운과 합쳐져 시간이 갈수록 빛나는 인생을 만들어요.'},
+    'aquarius':    {'icon': '♒', 'name': '물병자리',   'date': '1/20~2/18',   'element': '바람', 'traits': ['독창적', '혁신적', '박애정신'], 'desc': '시대를 앞서가는 혁신가. 독창적인 생각과 인류애로 세상을 바꾸고 싶어하는 이상주의자예요.', 'synergy_metal': '사주의 금(金) 기운과 만나면 혁신적 사고가 현실화되는 힘이 생겨요.', 'synergy_fire': '사주의 화(火) 기운이 물병자리에 열정과 실행력을 더해줍니다.', 'synergy_default': '물병자리의 독창성이 사주의 기운과 어우러져 남들과 다른 길에서 성공해요.'},
+    'pisces':      {'icon': '♓', 'name': '물고기자리', 'date': '2/19~3/20',   'element': '물', 'traits': ['상상력', '공감능력', '예술성'], 'desc': '꿈과 현실의 경계를 넘나드는 몽상가. 풍부한 상상력과 깊은 공감 능력으로 예술적 영감이 넘쳐요.', 'synergy_water': '사주의 수(水) 기운과 만나면 예술적 감성과 영적 직관이 극대화됩니다.', 'synergy_wood': '사주의 목(木) 기운이 물고기자리에 현실적 실행력을 더해줘요.', 'synergy_default': '물고기자리의 상상력이 사주의 기운과 만나 창의적인 인생을 펼쳐냅니다.'},
+}
+
+def analyze_constellation(month: int, day: int, strongest_oheng: str = ''):
+    """생월/생일로 별자리 분석 반환"""
+    # 별자리 판별
+    signs = [
+        (1, 20, 'aquarius'), (2, 19, 'pisces'), (3, 21, 'aries'), (4, 20, 'taurus'),
+        (5, 21, 'gemini'), (6, 22, 'cancer'), (7, 23, 'leo'), (8, 23, 'virgo'),
+        (9, 23, 'libra'), (10, 23, 'scorpio'), (11, 22, 'sagittarius'), (12, 22, 'capricorn'),
+    ]
+    sign_key = 'capricorn'  # default (12/22~1/19)
+    for i, (m, d, key) in enumerate(signs):
+        if month == m and day >= d:
+            sign_key = key
+        elif month == m and day < d:
+            # 이전 별자리
+            sign_key = signs[i - 1][2] if i > 0 else 'capricorn'
+            break
+
+    data = CONSTELLATION_DATA[sign_key]
+
+    # 사주 오행과 별자리 시너지 매칭
+    oheng_to_element = {'목': 'wood', '화': 'fire', '토': 'earth', '금': 'metal', '수': 'water'}
+    element_key = oheng_to_element.get(strongest_oheng, '')
+    synergy = data.get(f'synergy_{element_key}', data['synergy_default'])
+
+    return {
+        'key': sign_key,
+        'icon': data['icon'],
+        'name': data['name'],
+        'date': data['date'],
+        'element': data['element'],
+        'traits': data['traits'],
+        'desc': data['desc'],
+        'synergy': synergy,
+    }
+
+
 SINSAL_DATA = {
     '도화살': {
         'icon': '🌸',
@@ -1218,6 +1272,13 @@ async def get_report_analysis(birth_date: str, birth_time: str, mbti: str, lang:
     # 🐉 12지신 띠 분석 (년지 기준)
     zodiac = analyze_zodiac(year_p[1])
 
+    # ⭐ 별자리 분석 (양력 생월/일 기준)
+    constellation = analyze_constellation(
+        int(solar_date.split('-')[1]),
+        int(solar_date.split('-')[2]),
+        oheng_adv.get('strongest', '')
+    )
+
     # 📜 대운 분석 (10년 단위 인생 흐름)
     daewoon = calc_daewoon(raw_y, raw_m, raw_d, hour, gender, calendar_type, is_leap_month, count=10)
 
@@ -1323,6 +1384,7 @@ async def get_report_analysis(birth_date: str, birth_time: str, mbti: str, lang:
         'lucky': lucky,
         'sinsal': sinsal,
         'zodiac': zodiac,
+        'constellation': constellation,
         'daewoon': daewoon,
         'phonetic_oheng': phonetic,
         'time_correction': time_correction,
