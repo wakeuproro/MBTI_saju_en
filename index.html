@@ -3499,13 +3499,15 @@
     async function createReferralLink() {
         // 1) 서버에서 리퍼럴 코드 받기
         let link;
+        let refCode;
         try {
             const res = await fetch(`${API_URL}/create-referral`, { method: "POST" });
             if (!res.ok) throw new Error(`서버 응답 ${res.status}`);
             const data = await res.json();
             if (!data.code) throw new Error('코드 응답 없음');
-            link = `${window.location.origin}?ref=${data.code}`;
-            localStorage.setItem('myReferralCode', data.code);
+            refCode = data.code;
+            link = `${window.location.origin}?ref=${refCode}`;
+            localStorage.setItem('myReferralCode', refCode);
 
             // 공유 링크 만든 즉시 → 본인에게 무료 1회 보너스 지급
             localStorage.removeItem('freeUsed');
@@ -3517,7 +3519,7 @@
             return;
         }
 
-        // 2) 링크 화면에 노출 (클립보드 실패해도 사용자가 직접 복사 가능)
+        // 2) 링크 화면에 노출
         const codeEl = document.getElementById('referral-code');
         codeEl.style.display = 'block';
         codeEl.textContent = link;
@@ -3526,7 +3528,17 @@
             try { window.getSelection().selectAllChildren(codeEl); } catch(_) {}
         };
 
-        // 3) Web Share API 우선 시도 (모바일 친화)
+        // 3) 토스 공유 링크 시도 (OG 썸네일 포함)
+        if (isInTossWebview) {
+            try {
+                const tossLink = await getTossShareLinkFromParent(refCode);
+                if (tossLink) {
+                    link = tossLink; // 토스 딥링크로 교체
+                }
+            } catch(_) {}
+        }
+
+        // 4) Web Share API 우선 시도 (모바일 친화)
         if (navigator.share) {
             try {
                 await navigator.share({
@@ -3536,14 +3548,12 @@
                 });
                 return;
             } catch(shareErr) {
-                // 사용자가 공유 취소한 경우는 무시
                 if (shareErr && shareErr.name === 'AbortError') return;
                 console.warn('Share API failed:', shareErr);
-                // → 클립보드로 fallback
             }
         }
 
-        // 4) Clipboard API fallback
+        // 5) Clipboard API fallback
         let copied = false;
         try {
             if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -3554,7 +3564,7 @@
             console.warn('Clipboard API failed:', clipErr);
         }
 
-        // 5) 최종 fallback: execCommand
+        // 6) 최종 fallback: execCommand
         if (!copied) {
             try {
                 const ta = document.createElement('textarea');
@@ -3568,12 +3578,43 @@
             } catch(_) {}
         }
 
-        // 6) 결과 안내 (토스트 — 부드럽게)
+        // 7) 결과 안내
         if (copied) {
             showToast('✨ 공유 링크가 복사됐어요!<br>친구에게 보내주세요 🐾', 'success');
         } else {
             showToast('아래 링크를 길게 눌러 복사해주세요 🐾', 'warn');
         }
+    }
+
+    // 토스 앱 공유 링크 (OG 썸네일) 생성 요청
+    function getTossShareLinkFromParent(refCode) {
+        return new Promise((resolve) => {
+            const ogImageUrl = `${API_URL}/assets/메인.png`;
+            const path = refCode ? `intoss://my-saju-mbti?ref=${refCode}` : 'intoss://my-saju-mbti';
+            window.parent.postMessage({ type: "GET_SHARE_LINK", path, ogImageUrl }, "*");
+
+            const listener = function(e) {
+                let msg = e.data;
+                if (typeof msg === 'string') {
+                    try { msg = JSON.parse(msg); } catch(_) { return; }
+                }
+                if (!msg || !msg.type) return;
+                if (msg.type === 'SHARE_LINK_RESULT') {
+                    window.removeEventListener('message', listener);
+                    resolve(msg.shareLink || null);
+                } else if (msg.type === 'SHARE_LINK_FAILED') {
+                    window.removeEventListener('message', listener);
+                    resolve(null);
+                }
+            };
+            window.addEventListener('message', listener);
+
+            // 3초 타임아웃
+            setTimeout(() => {
+                window.removeEventListener('message', listener);
+                resolve(null);
+            }, 3000);
+        });
     }
 </script>
 
