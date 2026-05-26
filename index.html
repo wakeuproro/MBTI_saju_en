@@ -1045,12 +1045,15 @@
     function watchAdForBasicAnalysis() {
         if (!isInTossWebview) {
             showToast('토스 앱에서만 광고 보기가 가능해요. 무료로 열어드릴게요!', 'success');
-            freeUsed = false; document.getElementById('analyze-btn').click();
+            freeUsed = false;
+            showScreen('intro-screen');
             return;
         }
         showToast('광고를 불러오는 중...', 'info');
         adRewardCallback = function() {
-            freeUsed = false; document.getElementById('analyze-btn').click();
+            freeUsed = false;
+            showScreen('intro-screen');
+            showToast('🔮 무료 분석이 충전됐어요! 정보를 입력하고 시작하세요.', 'success');
         };
         requestAdFromParent('rewarded');
         setTimeout(function() {
@@ -2887,8 +2890,9 @@
             ${graphHTML}
             <div style="font-size:0.85rem; font-weight:800; color:var(--primary-dark); margin:10px 0 8px;">10개 대운 상세</div>
             ${cardsHTML}
-            <button onclick="backToReport()" style="width:100%; margin-top:14px; padding:14px; background:var(--bg-card); border:2px solid var(--border); color:var(--text-light); border-radius:14px; font-weight:700; cursor:pointer;">← 분석 결과로 돌아가기</button>
+            <button id="daewoon-back-btn" style="width:100%; margin-top:14px; padding:14px; background:var(--bg-card); border:2px solid var(--border); color:var(--text-light); border-radius:14px; font-weight:700; cursor:pointer;">← 분석 결과로 돌아가기</button>
         `;
+        document.getElementById('daewoon-back-btn').addEventListener('click', function() { backToReport(); });
     }
 
     function openCompatibilityScreen() {
@@ -2970,10 +2974,13 @@
             <div style="background:#E8F5E9; border:1.5px solid #A5D6A7; border-radius:16px; padding:20px; margin-top:16px; text-align:center;">
                 <div style="font-size:0.95rem; font-weight:800; color:#2E7D32; margin-bottom:6px;">🔓 상세 궁합 분석 잠금 해제</div>
                 <div style="font-size:0.82rem; color:#388E3C; margin-bottom:14px;">오행/띠/MBTI 3종 상세 분석 + 맞춤 조언</div>
-                <button onclick='watchAdForCompatibility(${JSON.stringify(personA)}, ${JSON.stringify(personB)})' style="padding:14px 30px; background:linear-gradient(135deg,#43A047,#66BB6A); color:#fff; border:none; border-radius:14px; font-size:0.95rem; font-weight:800; cursor:pointer;">
+                <button id="compat-ad-btn" style="padding:14px 30px; background:linear-gradient(135deg,#43A047,#66BB6A); color:#fff; border:none; border-radius:14px; font-size:0.95rem; font-weight:800; cursor:pointer;">
                     🎬 광고 보고 무료로 상세 보기
                 </button>
             </div>`;
+        document.getElementById('compat-ad-btn').addEventListener('click', function() {
+            watchAdForCompatibility(personA, personB);
+        });
         area.scrollIntoView({behavior:'smooth', block:'start'});
     }
 
@@ -3119,8 +3126,10 @@
             </div>
 
             <!-- 📤 공유 카드 버튼 -->
-            <button onclick="shareCompatibilityCard()" style="width:100%; margin-top:14px; padding:14px; background:linear-gradient(135deg,#FFD54F,#FFB300); border:none; color:#4E342E; border-radius:14px; font-weight:800; font-size:0.95rem; cursor:pointer; box-shadow:0 2px 8px rgba(255,179,0,0.3);">📤 궁합 카드 공유하기</button>
-            <button onclick="backToReport()" style="width:100%; margin-top:8px; padding:14px; background:var(--bg-card); border:2px solid #E1BEE7; color:#8D6E63; border-radius:14px; font-weight:700; cursor:pointer;">← 분석 결과로 돌아가기</button>`;
+            <button id="compat-share-btn" style="width:100%; margin-top:14px; padding:14px; background:linear-gradient(135deg,#FFD54F,#FFB300); border:none; color:#4E342E; border-radius:14px; font-weight:800; font-size:0.95rem; cursor:pointer; box-shadow:0 2px 8px rgba(255,179,0,0.3);">📤 궁합 카드 공유하기</button>
+            <button id="compat-full-back-btn" style="width:100%; margin-top:8px; padding:14px; background:var(--bg-card); border:2px solid #E1BEE7; color:#8D6E63; border-radius:14px; font-weight:700; cursor:pointer;">← 분석 결과로 돌아가기</button>`;
+        document.getElementById('compat-share-btn').addEventListener('click', function() { shareCompatibilityCard(); });
+        document.getElementById('compat-full-back-btn').addEventListener('click', function() { backToReport(); });
         area.scrollIntoView({behavior:'smooth', block:'start'});
     }
 
@@ -3242,11 +3251,17 @@
             <div style="background:#E8F5E9; border:1.5px solid #A5D6A7; border-radius:16px; padding:20px; margin-top:16px; text-align:center;">
                 <div style="font-size:0.95rem; font-weight:800; color:#2E7D32; margin-bottom:6px;">🔓 12개월 전체 상세 운세 잠금 해제</div>
                 <div style="font-size:0.82rem; color:#388E3C; margin-bottom:14px;">월별 테마·조언·운 흐름까지 한눈에</div>
-                <button onclick='watchAdForYearly(${JSON.stringify(meInput)})' style="padding:14px 30px; background:linear-gradient(135deg,#43A047,#66BB6A); color:#fff; border:none; border-radius:14px; font-size:0.95rem; font-weight:800; cursor:pointer;">
+                <button id="yearly-ad-btn" style="padding:14px 30px; background:linear-gradient(135deg,#43A047,#66BB6A); color:#fff; border:none; border-radius:14px; font-size:0.95rem; font-weight:800; cursor:pointer;">
                     🎬 광고 보고 무료로 12개월 다 보기
                 </button>
             </div>
-            <button onclick="backToReport()" style="width:100%; margin-top:14px; padding:14px; background:var(--bg-card); border:2px solid #E1BEE7; color:#8D6E63; border-radius:14px; font-weight:700; cursor:pointer;">← 분석 결과로 돌아가기</button>`;
+            <button id="yearly-back-btn" style="width:100%; margin-top:14px; padding:14px; background:var(--bg-card); border:2px solid #E1BEE7; color:#8D6E63; border-radius:14px; font-weight:700; cursor:pointer;">← 분석 결과로 돌아가기</button>`;
+        document.getElementById('yearly-ad-btn').addEventListener('click', function() {
+            watchAdForYearly(meInput);
+        });
+        document.getElementById('yearly-back-btn').addEventListener('click', function() {
+            backToReport();
+        });
     }
 
     async function purchaseYearly(meInput) {
@@ -3333,7 +3348,8 @@
             </div>
 
             ${monthCards}
-            <button onclick="backToReport()" style="width:100%; margin-top:14px; padding:14px; background:var(--bg-card); border:2px solid #E1BEE7; color:#8D6E63; border-radius:14px; font-weight:700; cursor:pointer;">← 분석 결과로 돌아가기</button>`;
+            <button id="yearly-full-back-btn" style="width:100%; margin-top:14px; padding:14px; background:var(--bg-card); border:2px solid #E1BEE7; color:#8D6E63; border-radius:14px; font-weight:700; cursor:pointer;">← 분석 결과로 돌아가기</button>`;
+        document.getElementById('yearly-full-back-btn').addEventListener('click', function() { backToReport(); });
         area.scrollIntoView({behavior:'smooth', block:'start'});
     }
 
