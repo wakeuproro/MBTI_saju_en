@@ -2296,12 +2296,28 @@
         localStorage.setItem('reviewSubmitted', 'true');
 
         if (window.self !== window.top) {
-            // .ait SDK 방식 시도 (향후 빌드에서 작동)
+            // .ait SDK 방식 시도
             window.parent.postMessage({ type: "REQUEST_REVIEW" }, "*");
-            // 동시에 안내 모달 표시 (SDK 실패 대비)
-            setTimeout(() => showReviewGuideModal(), 300);
+
+            // SDK 응답 리스너 (성공 시 안내 모달 스킵)
+            let reviewHandled = false;
+            const reviewListener = function(e) {
+                if (e.data && (e.data.type === 'REVIEW_SUCCESS' || e.data.type === 'REVIEW_COMPLETE')) {
+                    reviewHandled = true;
+                    window.removeEventListener('message', reviewListener);
+                }
+            };
+            window.addEventListener('message', reviewListener);
+
+            // 1.5초 후 SDK 응답 없으면 안내 모달 표시
+            setTimeout(() => {
+                window.removeEventListener('message', reviewListener);
+                if (!reviewHandled) {
+                    showReviewGuideModal();
+                }
+            }, 1500);
         } else {
-            showToast('📱 토스 앱에서 "사주xMBTI" 검색 후 후기를 남겨주세요!', 'success');
+            showReviewGuideModal();
         }
     }
 
