@@ -525,6 +525,9 @@ TOSS_IS_TEST = TOSS_SECRET_KEY.startswith("test_")
 
 app = FastAPI()
 
+from starlette.middleware.gzip import GZipMiddleware
+app.add_middleware(GZipMiddleware, minimum_size=500)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -533,11 +536,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/assets", StaticFiles(directory="assets"), name="assets")
+from fastapi.responses import Response
+from starlette.staticfiles import StaticFiles as _StaticFiles
+import mimetypes
+
+class CachedStaticFiles(_StaticFiles):
+    """StaticFiles with cache headers for images"""
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+        if hasattr(response, 'headers'):
+            content_type = mimetypes.guess_type(path)[0] or ''
+            if content_type.startswith('image/'):
+                response.headers['Cache-Control'] = 'public, max-age=86400, immutable'
+        return response
+
+app.mount("/assets", CachedStaticFiles(directory="assets"), name="assets")
 
 @app.get("/")
 async def read_index():
-    return FileResponse("index.html")
+    return FileResponse("index.html", headers={"Cache-Control": "public, max-age=300"})
 
 
 @app.get("/app-config")
