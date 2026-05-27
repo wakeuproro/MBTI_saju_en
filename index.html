@@ -3548,17 +3548,43 @@
             try { window.getSelection().selectAllChildren(codeEl); } catch(_) {}
         };
 
-        // 3) 토스 공유 링크 시도 (OG 썸네일 포함)
+        // 3) 토스 웹뷰 → 네이티브 공유 시트 (OG 썸네일 포함)
         if (isInTossWebview) {
-            try {
-                const tossLink = await getTossShareLinkFromParent(refCode);
-                if (tossLink) {
-                    link = tossLink; // 토스 딥링크로 교체
+            const ogImageUrl = `${API_URL}/assets/메인.png`;
+            const path = refCode ? `intoss://my-saju-mbti?ref=${refCode}` : 'intoss://my-saju-mbti';
+            const text = '나도 사주 받았어! 너도 무료로 받아봐 🐱✨';
+
+            window.parent.postMessage({
+                type: "SHARE_VIA_TOSS",
+                path,
+                ogImageUrl,
+                text
+            }, "*");
+
+            // 공유 완료/실패 응답 대기
+            const shareListener = function(e) {
+                let msg = e.data;
+                if (typeof msg === 'string') {
+                    try { msg = JSON.parse(msg); } catch(_) { return; }
                 }
-            } catch(_) {}
+                if (!msg || !msg.type) return;
+                if (msg.type === 'SHARE_COMPLETE') {
+                    window.removeEventListener('message', shareListener);
+                    showToast('✨ 공유 완료! 친구에게 전달됐어요 🐾', 'success');
+                } else if (msg.type === 'SHARE_FAILED') {
+                    window.removeEventListener('message', shareListener);
+                    // 네이티브 공유 실패 → 클립보드 폴백
+                    fallbackCopyLink(link);
+                }
+            };
+            window.addEventListener('message', shareListener);
+            setTimeout(() => {
+                window.removeEventListener('message', shareListener);
+            }, 10000);
+            return;
         }
 
-        // 4) Web Share API 우선 시도 (모바일 친화)
+        // 4) Web Share API (토스 외 모바일)
         if (navigator.share) {
             try {
                 await navigator.share({
@@ -3573,7 +3599,12 @@
             }
         }
 
-        // 5) Clipboard API fallback
+        // 5) 클립보드 폴백
+        fallbackCopyLink(link);
+    }
+
+    // 클립보드 복사 폴백 함수
+    async function fallbackCopyLink(link) {
         let copied = false;
         try {
             if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -3584,7 +3615,6 @@
             console.warn('Clipboard API failed:', clipErr);
         }
 
-        // 6) 최종 fallback: execCommand
         if (!copied) {
             try {
                 const ta = document.createElement('textarea');
@@ -3598,7 +3628,6 @@
             } catch(_) {}
         }
 
-        // 7) 결과 안내
         if (copied) {
             showToast('✨ 공유 링크가 복사됐어요!<br>친구에게 보내주세요 🐾', 'success');
         } else {
