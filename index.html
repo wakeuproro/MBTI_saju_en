@@ -811,11 +811,11 @@
         </button>
     </header>
 
-    <!-- 오늘의 운세 (재방문 시 표시) -->
-    <div id="daily-fortune-area" style="display:none;"></div>
-
     <!-- INTRO SCREEN -->
     <div id="intro-screen" class="screen active">
+        <!-- 오늘의 운세 (재방문 시 표시) -->
+        <div id="daily-fortune-area" style="display:none;"></div>
+
         <div class="intro-hero">
             <div class="cat-mascot" id="cat-intro" style="margin-bottom:8px;">
                 <img src="/assets/메인.png" alt="또또" width="220" height="220" style="object-fit:contain;">
@@ -1829,6 +1829,8 @@
                 time_unknown: timeUnknown, calendar_type: calendarType,
                 is_leap_month: isLeapMonth
             }));
+            // 저장 즉시 오늘의 운세 미리 로드 (다음 화면 전환 시 바로 표시)
+            loadDailyFortune();
         } catch(e) {
             showCatError("서버랑 연결이 안 됐어요. 잠시 후 다시 시도해주세요!");
         } finally {
@@ -3972,10 +3974,30 @@
 
     async function loadDailyFortune() {
         const saved = localStorage.getItem('savedUserData');
-        if (!saved) return; // 첫 방문 → 표시 안 함
+        const area = document.getElementById('daily-fortune-area');
+
+        // savedUserData 없으면 → 폼에서 기본값 추출 시도 (기존 사용자 커버)
+        if (!saved) {
+            // freeUsed=true인데 savedUserData 없으면 → 이전 배포 전에 분석한 사용자
+            if (localStorage.getItem('freeUsed') === 'true') {
+                area.innerHTML = `
+                    <div class="daily-fortune-card fade-in" style="background:linear-gradient(135deg,#5C258D,#4389A2);">
+                        <div class="daily-fortune-title">🔮 오늘의 운세 기능이 추가됐어요!</div>
+                        <div class="daily-fortune-msg">한 번 더 분석하면 매일 오늘의 운세를 확인할 수 있어요.<br>연애운·재물운·직업운·건강운을 매일 체크해보세요!</div>
+                        <div class="daily-fortune-actions">
+                            <button class="daily-btn-new" id="daily-try-btn" style="flex:1;">🔮 분석하고 오늘의 운세 받기</button>
+                        </div>
+                    </div>`;
+                area.style.display = 'block';
+                document.getElementById('daily-try-btn').addEventListener('click', function() {
+                    area.style.display = 'none';
+                    showScreen('intro-screen');
+                });
+            }
+            return;
+        }
 
         const userData = JSON.parse(saved);
-        const area = document.getElementById('daily-fortune-area');
 
         try {
             const res = await fetch(`${API_URL}/get-daily-fortune`, {
