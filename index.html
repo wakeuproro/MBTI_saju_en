@@ -3415,8 +3415,48 @@
 
         // 2) AI 심층 분석 (Gemini)
         if (premium) {
-            Object.values(premium).forEach(s => {
-                html += buildPremiumSection('💎', s.title, `<div class="accordion-desc">${s.desc}</div>`);
+            // 직업운 — 업무스타일 + 추천 분야 태그
+            if (premium.career) {
+                const c = premium.career;
+                const fieldsHtml = (c.best_fields||[]).map(f => `<span class="tag" style="background:#E3F2FD;color:#1565C0;">${f}</span>`).join('');
+                const body = `
+                    <div class="accordion-desc">${c.desc}</div>
+                    <div class="accordion-sub">
+                        <div class="accordion-sub-item"><span class="accordion-sub-label">💼 업무스타일</span><span>${c.work_style||''}</span></div>
+                    </div>
+                    ${fieldsHtml ? `<div style="margin-top:8px;font-size:0.8rem;color:#666;font-weight:700;">✨ 추천 직업/분야</div><div class="tag-row">${fieldsHtml}</div>` : ''}`;
+                html += buildPremiumSection('💼', c.title, body);
+            }
+            // 재물운 — 금전스타일 + 재물팁
+            if (premium.wealth) {
+                const w = premium.wealth;
+                const body = `
+                    <div class="accordion-desc">${w.desc}</div>
+                    <div class="accordion-sub">
+                        <div class="accordion-sub-item"><span class="accordion-sub-label">💰 금전스타일</span><span>${w.money_style||''}</span></div>
+                        <div class="accordion-sub-item"><span class="accordion-sub-label">🔑 재물팁</span><span>${w.wealth_tip||''}</span></div>
+                    </div>`;
+                html += buildPremiumSection('💰', w.title, body);
+            }
+            // 건강운 — 건강팁 + 주의 부위 태그
+            if (premium.health) {
+                const h = premium.health;
+                const weakHtml = (h.weak_points||[]).map(p => `<span class="tag" style="background:#FFEBEE;color:#C62828;">⚠️ ${p}</span>`).join('');
+                const body = `
+                    <div class="accordion-desc">${h.desc}</div>
+                    <div class="accordion-sub">
+                        <div class="accordion-sub-item"><span class="accordion-sub-label">🏥 건강팁</span><span>${h.health_tip||''}</span></div>
+                    </div>
+                    ${weakHtml ? `<div style="margin-top:8px;font-size:0.8rem;color:#666;font-weight:700;">주의 부위</div><div class="tag-row">${weakHtml}</div>` : ''}`;
+                html += buildPremiumSection('🏥', h.title, body);
+            }
+            // 나머지 심층 분석 (성격, 숨겨진 패턴, 전환점, 연애, 조언 등)
+            const specialKeys = ['career', 'wealth', 'health'];
+            Object.entries(premium).forEach(([key, s]) => {
+                if (specialKeys.includes(key)) return;
+                const icons = { deep_personality: '🔮', hidden_pattern: '🔍', life_turning_point: '⏳', deep_love: '💕', deep_wealth: '💰', advice: '📜' };
+                const icon = icons[key] || '💎';
+                html += buildPremiumSection(icon, s.title, `<div class="accordion-desc">${s.desc}</div>`);
             });
         }
 
