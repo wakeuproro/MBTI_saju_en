@@ -2519,6 +2519,226 @@ async def toss_disconnect_callback(request: Request):
     return {"status": "ok", "message": "disconnect callback received"}
 
 
+# ═══════════════════════════════════════════════
+# 🔮 오늘의 운세 + 월간 캘린더
+# ═══════════════════════════════════════════════
+
+# 오행 상생/상극 관계
+_OHENG_SANG_SAENG = {'木': '火', '火': '土', '土': '金', '金': '水', '水': '木'}  # 내가 생하는
+_OHENG_SANG_GEUK = {'木': '土', '火': '金', '土': '水', '金': '木', '水': '火'}  # 내가 극하는
+_OHENG_GEUK_ME   = {'木': '金', '火': '水', '土': '木', '金': '火', '水': '土'}  # 나를 극하는
+
+def _daily_fortune_score(ilgan: str, target_date: date):
+    """일간과 특정 날짜의 간지 관계로 운세 점수(0~100) 및 상세 산출"""
+    day_gan, day_ji = calc_day_pillar(target_date.year, target_date.month, target_date.day)
+    my_oheng = CHEONGAN_OHENG[ilgan]
+    day_gan_oheng = CHEONGAN_OHENG[day_gan]
+    day_ji_oheng = JIJI_OHENG[day_ji]
+
+    score = 50  # 기본 점수
+
+    # 천간 관계 (비중 큼)
+    if day_gan_oheng == my_oheng:
+        score += 15  # 비겁 - 동료운
+    elif _OHENG_SANG_SAENG[my_oheng] == day_gan_oheng:
+        score += 10  # 내가 생 - 식상 (표현, 창작)
+    elif _OHENG_SANG_SAENG[day_gan_oheng] == my_oheng:
+        score += 20  # 나를 생 - 인성 (지원, 도움)
+    elif _OHENG_SANG_GEUK[my_oheng] == day_gan_oheng:
+        score += 12  # 내가 극 - 재성 (재물)
+    elif _OHENG_GEUK_ME[my_oheng] == day_gan_oheng:
+        score -= 15  # 나를 극 - 관성 (압박, 시련)
+
+    # 지지 관계 (보조)
+    if day_ji_oheng == my_oheng:
+        score += 8
+    elif _OHENG_SANG_SAENG[day_ji_oheng] == my_oheng:
+        score += 12
+    elif _OHENG_GEUK_ME[my_oheng] == day_ji_oheng:
+        score -= 8
+
+    # 날짜 기반 미세 변동 (같은 사람이라도 매일 약간 다르게)
+    import hashlib
+    seed = hashlib.md5(f"{ilgan}{target_date.isoformat()}".encode()).hexdigest()
+    micro = int(seed[:4], 16) % 11 - 5  # -5 ~ +5
+    score += micro
+
+    score = max(15, min(95, score))
+    return score, day_gan, day_ji, day_gan_oheng, day_ji_oheng
+
+# 운세 메시지 데이터
+_FORTUNE_MESSAGES = {
+    'total': {
+        (85, 100): ['최고의 하루! 무엇이든 도전하세요 ✨', '모든 일이 순조롭게 흘러가는 날이에요 🌟', '행운이 곳곳에 숨어있는 특별한 날이에요 🍀'],
+        (70, 85): ['기분 좋은 하루가 될 거예요 😊', '좋은 기운이 함께하는 날이에요 🌈', '작은 행운들이 찾아올 거예요 ☘️'],
+        (50, 70): ['평온한 하루예요. 꾸준히 나아가세요 🌿', '무난한 하루, 기본에 충실하면 OK 📚', '차분하게 보내면 좋은 날이에요 🍃'],
+        (30, 50): ['조금 조심하는 게 좋겠어요 🤔', '큰 결정은 내일로 미루는 게 나아요 💭', '에너지 충전이 필요한 날이에요 🔋'],
+        (0, 30): ['무리하지 말고 쉬어가세요 🛌', '잠시 멈추고 재정비하는 날이에요 🧘', '오늘은 내면에 집중하는 게 좋아요 🌙'],
+    },
+    'love': {
+        (85, 100): ['설레는 만남이 기다리고 있어요 💕', '인연의 기운이 강한 날이에요 💘'],
+        (70, 85): ['따뜻한 대화가 관계를 깊게 해요 💬', '사랑하는 사람에게 먼저 연락해보세요 📱'],
+        (50, 70): ['평소처럼 자연스럽게 지내면 OK 😌', '소소한 배려가 빛나는 날 🌸'],
+        (30, 50): ['오해가 생기기 쉬워요. 말조심! ⚠️', '감정적 결정은 피하세요 💭'],
+        (0, 30): ['혼자만의 시간이 필요한 날이에요 🧘‍♀️', '관계보다 나를 돌보는 날 🛁'],
+    },
+    'money': {
+        (85, 100): ['재물 운이 활짝 열린 날! 💰', '투자나 계약에 좋은 타이밍이에요 📈'],
+        (70, 85): ['예상치 못한 소득이 있을 수 있어요 🎁', '금전적으로 안정적인 하루 💵'],
+        (50, 70): ['평소대로 관리하면 무난해요 📊', '작은 지출은 괜찮지만 큰 소비는 신중하게 🛒'],
+        (30, 50): ['충동구매 주의! 지갑을 꼭 닫으세요 🚫', '예상치 못한 지출이 발생할 수 있어요 😥'],
+        (0, 30): ['오늘은 돈을 쓰지 않는 게 최고예요 🔒', '재정 점검의 날로 삼으세요 📝'],
+    },
+    'work': {
+        (85, 100): ['업무 효율 최고! 중요한 일을 오늘 하세요 🚀', '상사나 동료에게 인정받는 날 🏆'],
+        (70, 85): ['집중력이 좋아요. 밀린 일 처리하기 딱! 📋', '새로운 아이디어가 빛나는 날 💡'],
+        (50, 70): ['루틴 업무에 집중하면 안정적 📁', '꾸준히 하면 성과가 쌓여요 🧱'],
+        (30, 50): ['실수에 주의하세요. 더블체크 필수! ✅', '스트레스 관리가 중요한 날 🧃'],
+        (0, 30): ['무리하지 말고 최소한만 하세요 🐢', '컨디션 관리가 최우선이에요 🩺'],
+    },
+    'health': {
+        (85, 100): ['활력 넘치는 날! 운동하기 좋아요 🏃', '몸과 마음이 가벼운 날이에요 🦋'],
+        (70, 85): ['가벼운 산책이나 스트레칭 추천 🚶', '건강 상태 양호! 무리만 안 하면 OK 👌'],
+        (50, 70): ['평소 루틴대로 관리하세요 🥗', '충분한 수면이 중요한 날 😴'],
+        (30, 50): ['피로가 쌓이기 쉬워요. 일찍 쉬세요 🌛', '차가운 음식은 피하는 게 좋아요 🍵'],
+        (0, 30): ['몸이 보내는 신호에 귀 기울이세요 🩺', '오늘은 쉬는 것도 능력이에요 🛌'],
+    },
+}
+
+def _pick_message(category: str, score: int, seed_str: str):
+    """점수대에 맞는 메시지를 시드 기반으로 선택"""
+    import hashlib
+    msgs_dict = _FORTUNE_MESSAGES[category]
+    for (lo, hi), msgs in msgs_dict.items():
+        if lo <= score < hi or (hi == 100 and score == 100):
+            idx = int(hashlib.md5(f"{category}{seed_str}".encode()).hexdigest()[:4], 16) % len(msgs)
+            return msgs[idx]
+    # fallback
+    return list(list(msgs_dict.values())[2])[0]
+
+def _sub_score(base: int, category: str, seed_str: str):
+    """카테고리별 서브 점수 생성 (base 기반 변동)"""
+    import hashlib
+    h = int(hashlib.md5(f"{category}{seed_str}".encode()).hexdigest()[:6], 16)
+    delta = (h % 21) - 10  # -10 ~ +10
+    return max(15, min(95, base + delta))
+
+
+class DailyFortuneInput(BaseModel):
+    birth_date: str
+    birth_time: str = '12:00'
+    mbti: str = ''
+    calendar_type: str = 'solar'
+    is_leap_month: bool = False
+
+
+@app.post("/get-daily-fortune")
+async def get_daily_fortune(inp: DailyFortuneInput):
+    """오늘의 운세 — 사주 일간 기반"""
+    try:
+        raw_y, raw_m, raw_d = map(int, inp.birth_date.split('-'))
+        hour = int(inp.birth_time.split(':')[0]) if inp.birth_time else 12
+
+        if inp.calendar_type == 'lunar':
+            solar = convert_lunar_to_solar(inp.birth_date, inp.is_leap_month)
+            raw_y, raw_m, raw_d = map(int, solar.split('-'))
+
+        year_p, month_p, day_p, time_p = calc_pillars_accurate(
+            raw_y, raw_m, raw_d, hour, inp.calendar_type, inp.is_leap_month
+        )
+        ilgan = day_p[0]
+
+        today = date.today()
+        seed = f"{ilgan}{today.isoformat()}"
+        total_score, day_gan, day_ji, dg_oh, dj_oh = _daily_fortune_score(ilgan, today)
+
+        love_score = _sub_score(total_score, 'love', seed)
+        money_score = _sub_score(total_score, 'money', seed)
+        work_score = _sub_score(total_score, 'work', seed)
+        health_score = _sub_score(total_score, 'health', seed)
+
+        my_oheng = CHEONGAN_OHENG[ilgan]
+        lucky = LUCKY_MAP['ko'].get(my_oheng, {})
+
+        return {
+            "status": "ok",
+            "date": today.isoformat(),
+            "day_pillar": f"{day_gan}{day_ji}",
+            "ilgan": ilgan,
+            "ilgan_name": ILGAN_NAMES['ko'][ilgan],
+            "total": {
+                "score": total_score,
+                "message": _pick_message('total', total_score, seed),
+                "grade": "🔥 대길" if total_score >= 85 else "😊 길" if total_score >= 70 else "🌿 평" if total_score >= 50 else "⚠️ 소흉" if total_score >= 30 else "🌙 흉",
+            },
+            "love": {"score": love_score, "message": _pick_message('love', love_score, seed)},
+            "money": {"score": money_score, "message": _pick_message('money', money_score, seed)},
+            "work": {"score": work_score, "message": _pick_message('work', work_score, seed)},
+            "health": {"score": health_score, "message": _pick_message('health', health_score, seed)},
+            "lucky": {
+                "color": lucky.get('color', ''),
+                "number": lucky.get('num', ''),
+                "direction": lucky.get('dir', ''),
+                "food": lucky.get('food', ''),
+            },
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class MonthlyCalendarInput(BaseModel):
+    birth_date: str
+    birth_time: str = '12:00'
+    mbti: str = ''
+    year: int = 2026
+    month: int = 1
+    calendar_type: str = 'solar'
+    is_leap_month: bool = False
+
+
+@app.post("/get-monthly-calendar")
+async def get_monthly_calendar(inp: MonthlyCalendarInput):
+    """월간 운세 캘린더 — 해당 월 모든 날짜의 운세 점수"""
+    try:
+        raw_y, raw_m, raw_d = map(int, inp.birth_date.split('-'))
+        hour = int(inp.birth_time.split(':')[0]) if inp.birth_time else 12
+
+        if inp.calendar_type == 'lunar':
+            solar = convert_lunar_to_solar(inp.birth_date, inp.is_leap_month)
+            raw_y, raw_m, raw_d = map(int, solar.split('-'))
+
+        year_p, month_p, day_p, time_p = calc_pillars_accurate(
+            raw_y, raw_m, raw_d, hour, inp.calendar_type, inp.is_leap_month
+        )
+        ilgan = day_p[0]
+
+        import calendar
+        _, last_day = calendar.monthrange(inp.year, inp.month)
+
+        days = []
+        for d in range(1, last_day + 1):
+            target = date(inp.year, inp.month, d)
+            score, dg, dj, _, _ = _daily_fortune_score(ilgan, target)
+            grade = "🔥" if score >= 85 else "😊" if score >= 70 else "🌿" if score >= 50 else "⚠️" if score >= 30 else "🌙"
+            days.append({
+                "day": d,
+                "score": score,
+                "grade": grade,
+                "pillar": f"{dg}{dj}",
+            })
+
+        return {
+            "status": "ok",
+            "year": inp.year,
+            "month": inp.month,
+            "ilgan": ilgan,
+            "ilgan_name": ILGAN_NAMES['ko'][ilgan],
+            "days": days,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
