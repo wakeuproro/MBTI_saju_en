@@ -1173,8 +1173,8 @@
 </div>
 
 <!-- 🎴 인스타 스토리 결과 카드 -->
-<div id="result-modal" onclick="closeModal()">
-    <div onclick="event.stopPropagation()" style="width:100%;max-width:360px;">
+<div id="result-modal">
+    <div id="result-modal-inner" style="width:100%;max-width:360px;">
         <div id="result-card">
             <div class="tarot-inner-border"></div>
             <!-- 브랜드 헤더 -->
@@ -1199,10 +1199,10 @@
             </div>
         </div>
         <div style="display:flex; gap:8px; margin-top:12px;">
-            <button class="btn-save" style="flex:1; margin-top:0; background:linear-gradient(135deg,#E1306C,#F77737,#FCAF45);" onclick="shareToInstagram()">📸 인스타 스토리</button>
-            <button class="btn-save" style="flex:1; margin-top:0;" onclick="saveCard()">📥 이미지 저장</button>
+            <button class="btn-save" id="btn-insta-share" style="flex:1; margin-top:0; background:linear-gradient(135deg,#E1306C,#F77737,#FCAF45);">📸 인스타 스토리</button>
+            <button class="btn-save" id="btn-save-card" style="flex:1; margin-top:0;">📥 이미지 저장</button>
         </div>
-        <button class="btn-save" style="background:none;color:var(--text-light);font-size:0.8rem;border:1px solid var(--border);" onclick="closeModal()">닫기</button>
+        <button class="btn-save" id="btn-close-modal" style="background:none;color:var(--text-light);font-size:0.8rem;border:1px solid var(--border);">닫기</button>
     </div>
 </div>
 
@@ -2408,6 +2408,15 @@
         document.getElementById('result-modal').style.display = 'flex';
     }
     function closeModal() { document.getElementById("result-modal").style.display = "none"; }
+
+    // 인스타/저장/닫기 버튼 이벤트 바인딩 (onclick 대신 addEventListener — Android WebView 호환)
+    document.getElementById('btn-insta-share').addEventListener('click', function(e) { e.stopPropagation(); shareToInstagram(); });
+    document.getElementById('btn-save-card').addEventListener('click', function(e) { e.stopPropagation(); saveCard(); });
+    document.getElementById('btn-close-modal').addEventListener('click', function(e) { e.stopPropagation(); closeModal(); });
+    document.getElementById('result-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+    document.getElementById('result-modal-inner').addEventListener('click', function(e) { e.stopPropagation(); });
 
     async function _renderCardCanvas() {
         const card = document.getElementById("result-card");
