@@ -660,12 +660,14 @@
             <input type="text" class="form-input" id="user_name" placeholder="e.g. Alex" maxlength="20">
         </div>
         <div class="form-section">
-            <label class="form-label">Gender</label>
+            <label class="form-label">Gender Identity</label>
             <div style="display: flex; gap: 8px;">
-                <button type="button" class="gender-btn active" data-gender="F" onclick="selectGender('F')">Female</button>
-                <button type="button" class="gender-btn" data-gender="M" onclick="selectGender('M')">Male</button>
+                <button type="button" class="gender-btn active" data-gender="F" onclick="selectGender('F')">♀ Female</button>
+                <button type="button" class="gender-btn" data-gender="M" onclick="selectGender('M')">♂ Male</button>
+                <button type="button" class="gender-btn" data-gender="N" onclick="selectGender('N')">⬡ Non-binary</button>
             </div>
             <input type="hidden" id="user_gender" value="F">
+            <p id="gender-note" style="display:none; font-size:0.75rem; color:#9E9E9E; margin-top:6px;">For cosmic energy calculation, non-binary defaults to a balanced reading.</p>
         </div>
         <div class="form-section">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
@@ -876,10 +878,11 @@
                 <input type="text" class="form-input" id="partner_name" placeholder="e.g. Jordan" maxlength="20">
             </div>
             <div class="form-section">
-                <label class="form-label">Gender</label>
+                <label class="form-label">Gender Identity</label>
                 <div style="display: flex; gap: 8px;">
-                    <button type="button" class="gender-btn" data-pgender="F" onclick="selectPartnerGender('F')">Female</button>
-                    <button type="button" class="gender-btn active" data-pgender="M" onclick="selectPartnerGender('M')">Male</button>
+                    <button type="button" class="gender-btn" data-pgender="F" onclick="selectPartnerGender('F')">♀ Female</button>
+                    <button type="button" class="gender-btn active" data-pgender="M" onclick="selectPartnerGender('M')">♂ Male</button>
+                    <button type="button" class="gender-btn" data-pgender="N" onclick="selectPartnerGender('N')">⬡ Non-binary</button>
                 </div>
                 <input type="hidden" id="partner_gender" value="M">
             </div>
@@ -1370,6 +1373,8 @@
         document.querySelectorAll('.gender-btn').forEach(b => {
             b.classList.toggle('active', b.dataset.gender === g);
         });
+        const note = document.getElementById('gender-note');
+        if (note) note.style.display = (g === 'N') ? 'block' : 'none';
     }
 
     function selectCalendar(type) {
@@ -1547,7 +1552,7 @@
         // Header
         const greetName = userInfo.name && userInfo.name !== 'You' ? `${userInfo.name}'s` : 'Your';
         document.getElementById("report-name-display").textContent = `${greetName} Saju — ${r.ilgan.name} × ${r.mbti}`;
-        const genderChip = userInfo.gender === 'M' ? '♂ Male' : '♀ Female';
+        const genderChip = userInfo.gender === 'M' ? '♂ Male' : userInfo.gender === 'N' ? '⬡ Non-binary' : '♀ Female';
         const timeChip = userInfo.timeUnknown ? '⏰ Time unknown' : '';
         let calChip = '';
         if (r.calendar_info && r.calendar_info.type === 'lunar') {

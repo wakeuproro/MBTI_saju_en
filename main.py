@@ -252,8 +252,12 @@ def calc_daewoon(year: int, month: int, day: int, hour: int, gender: str = 'F',
     yp, mp, dp, tp = calc_pillars_accurate(year, month, day, hour, calendar_type, is_leap_month)
 
     is_yang_year = yp[0] in _YANG_GAN_SET
-    is_male = (gender == 'M')
-    forward = (is_yang_year and is_male) or (not is_yang_year and not is_male)
+    if gender == 'N':
+        # Non-binary: follow the year's natural energy direction (Yang=forward)
+        forward = is_yang_year
+    else:
+        is_male = (gender == 'M')
+        forward = (is_yang_year and is_male) or (not is_yang_year and not is_male)
     direction = 'forward' if forward else 'backward'
 
     days = _days_to_nearest_jieqi(sy, sm, sd, forward)
