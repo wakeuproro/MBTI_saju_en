@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1200px; height: 630px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #FFF8E1 0%, #F3E5F5 50%, #EDE7F6 100%); font-family: 'Noto Sans KR', -apple-system, sans-serif; overflow: hidden; }
+
+  .container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 50px;
+    width: 100%;
+    height: 100%;
+    padding: 40px 60px;
+  }
+
+  /* 또또 영역 */
+  .ddoddo-area {
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  /* 말풍선 */
+  .speech-bubble {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #fff;
+    border: 3px solid #CE93D8;
+    border-radius: 20px;
+    padding: 12px 20px;
+    font-size: 22px;
+    font-weight: 800;
+    color: #4A148C;
+    white-space: nowrap;
+    box-shadow: 0 4px 15px rgba(74,20,140,0.1);
+  }
+  .speech-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 14px solid transparent;
+    border-right: 14px solid transparent;
+    border-top: 14px solid #fff;
+  }
+  .speech-bubble::before {
+    content: '';
+    position: absolute;
+    bottom: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 16px solid transparent;
+    border-right: 16px solid transparent;
+    border-top: 16px solid #CE93D8;
+  }
+
+  /* 별/반짝이 효과 */
+  .sparkle {
+    position: absolute;
+    font-size: 28px;
+    animation: twinkle 1.5s ease-in-out infinite;
+  }
+  .sparkle:nth-child(1) { top: 30px; left: -30px; animation-delay: 0s; }
+  .sparkle:nth-child(2) { top: 80px; right: -40px; animation-delay: 0.5s; }
+  .sparkle:nth-child(3) { bottom: 30px; left: -20px; animation-delay: 1s; }
+  .sparkle:nth-child(4) { bottom: 60px; right: -25px; animation-delay: 0.3s; }
+
+  @keyframes twinkle {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  /* 텍스트 영역 */
+  .text-area {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .title {
+    font-size: 72px;
+    font-weight: 900;
+    color: #4A148C;
+    line-height: 1.1;
+    letter-spacing: -2px;
+  }
+  .title span {
+    color: #E65100;
+  }
+
+  .subtitle {
+    font-size: 30px;
+    font-weight: 700;
+    color: #7B1FA2;
+    margin-top: 4px;
+  }
+
+  .desc {
+    font-size: 22px;
+    color: #8D6E63;
+    font-weight: 500;
+    line-height: 1.5;
+  }
+
+  .tags {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+  .tag {
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-size: 18px;
+    font-weight: 700;
+    border: 2px solid;
+  }
+  .tag-purple { background: #F3E5F5; color: #7B1FA2; border-color: #CE93D8; }
+  .tag-orange { background: #FFF3E0; color: #E65100; border-color: #FFB74D; }
+  .tag-green { background: #E8F5E9; color: #2E7D32; border-color: #A5D6A7; }
+  .tag-pink { background: #FCE4EC; color: #C2185B; border-color: #F48FB1; }
+
+  .free-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #43A047, #66BB6A);
+    color: #fff;
+    padding: 10px 24px;
+    border-radius: 30px;
+    font-size: 22px;
+    font-weight: 800;
+    margin-top: 4px;
+    box-shadow: 0 4px 15px rgba(67,160,71,0.3);
+  }
+
+  /* 또또 고양이 (SVG 인라인) */
+  .toto-fur { fill: #0a0610; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <!-- 또또 캐릭터 -->
+    <div class="ddoddo-area">
+      <div class="speech-bubble">너의 운명을 알려줄게 🔮</div>
+      <span class="sparkle">✨</span>
+      <span class="sparkle">⭐</span>
+      <span class="sparkle">💫</span>
+      <span class="sparkle">🌟</span>
+      <svg width="280" height="300" viewBox="0 0 220 240" style="margin-top: 40px;">
+        <!-- 꼬리 (뒤에) -->
+        <path d="M 155 180 Q 195 155 188 120 Q 184 105 174 110 Q 170 125 165 140 Q 158 165 153 178" class="toto-fur"/>
+        <!-- 몸통 (머리에 붙임) -->
+        <ellipse cx="110" cy="192" rx="55" ry="38" class="toto-fur"/>
+        <!-- 앞발 -->
+        <ellipse cx="85" cy="220" rx="18" ry="10" class="toto-fur"/>
+        <ellipse cx="135" cy="220" rx="18" ry="10" class="toto-fur"/>
+        <!-- 머리 -->
+        <g>
+          <path d="M 50 80 Q 26 88 22 115 Q 26 158 80 162 Q 110 168 140 162 Q 194 158 198 115 Q 194 88 170 80 L 150 12 L 132 78 Q 110 70 88 78 L 70 12 L 50 80 Z" class="toto-fur"/>
+        </g>
+        <!-- 눈 (반짝반짝) -->
+        <circle cx="82" cy="115" r="16" fill="#FFFFFF"/>
+        <circle cx="138" cy="115" r="16" fill="#FFFFFF"/>
+        <circle cx="86" cy="112" r="9" fill="#0a0610"/>
+        <circle cx="142" cy="112" r="9" fill="#0a0610"/>
+        <!-- 눈 하이라이트 -->
+        <circle cx="90" cy="108" r="4" fill="#FFFFFF"/>
+        <circle cx="146" cy="108" r="4" fill="#FFFFFF"/>
+        <!-- 코 -->
+        <ellipse cx="110" cy="132" rx="5" ry="3.5" fill="#CE93D8"/>
+        <!-- 입 (미소) -->
+        <path d="M 100 138 Q 110 148 120 138" stroke="#CE93D8" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <!-- 수염 -->
+        <line x1="45" y1="125" x2="75" y2="128" stroke="#CE93D8" stroke-width="2" stroke-linecap="round"/>
+        <line x1="45" y1="135" x2="75" y2="135" stroke="#CE93D8" stroke-width="2" stroke-linecap="round"/>
+        <line x1="145" y1="128" x2="175" y2="125" stroke="#CE93D8" stroke-width="2" stroke-linecap="round"/>
+        <line x1="145" y1="135" x2="175" y2="135" stroke="#CE93D8" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </div>
+
+    <!-- 텍스트 -->
+    <div class="text-area">
+      <div class="title">사주 <span>×</span> MBTI</div>
+      <div class="subtitle">AI가 풀어주는 나만의 운명카드</div>
+      <div class="desc">동양 명리학 + 서양 성격유형의 완벽한 결합</div>
+      <div class="tags">
+        <span class="tag tag-purple">사주 팔자</span>
+        <span class="tag tag-orange">오행 분석</span>
+        <span class="tag tag-green">궁합 분석</span>
+        <span class="tag tag-pink">월별 운세</span>
+      </div>
+      <div class="free-badge">🎬 광고 보면 전부 무료!</div>
+    </div>
+  </div>
+</body>
+</html>

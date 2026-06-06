@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { width:390px; height:844px; font-family:'Noto Sans KR',sans-serif; background:#FAF7FF; overflow:hidden; }
+.status-bar { height:44px; }
+
+.section-title {
+  font-size:0.95rem; font-weight:900; color:#4A148C;
+  margin:0 16px 10px; padding-top:4px;
+}
+
+/* 캘린더 */
+.calendar {
+  background:#fff;
+  border-radius:16px;
+  margin:0 16px 14px;
+  padding:14px;
+  border:1px solid #E8E0F0;
+}
+.cal-header {
+  display:flex; justify-content:space-between; align-items:center;
+  margin-bottom:10px;
+}
+.cal-header h3 { font-size:0.9rem; font-weight:800; color:#4A148C; }
+.cal-nav { display:flex; gap:4px; }
+.cal-nav button { width:28px; height:28px; border:none; border-radius:6px; background:#EDE7F6; color:#4A148C; font-weight:700; font-size:0.8rem; cursor:pointer; }
+.cal-stat { text-align:center; font-size:0.72rem; color:#7B1FA2; margin-bottom:8px; }
+.weekdays { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; margin-bottom:4px; }
+.wd { text-align:center; font-size:0.65rem; font-weight:700; color:#999; padding:3px; }
+.wd:first-child { color:#E53935; }
+.wd:last-child { color:#1565C0; }
+.days { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+.day { text-align:center; padding:4px 2px; border-radius:8px; }
+.day-num { font-size:0.72rem; font-weight:700; color:#333; }
+.day-grade { font-size:0.65rem; }
+.day.today { border:2px solid #7B1FA2; }
+.day.empty { visibility:hidden; }
+
+/* 하단 기능 카드들 */
+.features {
+  display:flex; flex-direction:column; gap:8px;
+  margin:0 16px;
+}
+.feature-card {
+  display:flex; align-items:center; gap:12px;
+  background:#fff;
+  border-radius:14px;
+  padding:14px;
+  border:1px solid #E8E0F0;
+}
+.feature-icon {
+  width:48px; height:48px;
+  border-radius:12px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.4rem;
+  flex-shrink:0;
+}
+.feature-text h4 { font-size:0.85rem; font-weight:800; color:#333; margin-bottom:2px; }
+.feature-text p { font-size:0.7rem; color:#777; line-height:1.4; }
+.feat-compat .feature-icon { background:linear-gradient(135deg,#FCE4EC,#F8BBD0); }
+.feat-yearly .feature-icon { background:linear-gradient(135deg,#EDE7F6,#D1C4E9); }
+.feat-star .feature-icon { background:linear-gradient(135deg,#E3F2FD,#BBDEFB); }
+.feat-zodiac .feature-icon { background:linear-gradient(135deg,#FFF3E0,#FFE0B2); }
+</style></head><body>
+<div class="status-bar"></div>
+
+<div class="section-title">📅 이달의 운세 캘린더</div>
+<div class="calendar">
+  <div class="cal-header">
+    <div class="cal-nav"><button>◀</button></div>
+    <h3>2026년 5월</h3>
+    <div class="cal-nav"><button>▶</button></div>
+  </div>
+  <div class="cal-stat">이달 평균 <b>62점</b> · 최고의 날 <b>14일(92점)</b></div>
+  <div class="weekdays">
+    <div class="wd">일</div><div class="wd">월</div><div class="wd">화</div><div class="wd">수</div><div class="wd">목</div><div class="wd">금</div><div class="wd">토</div>
+  </div>
+  <div class="days">
+    <div class="day empty"><div class="day-num"></div></div>
+    <div class="day empty"><div class="day-num"></div></div>
+    <div class="day empty"><div class="day-num"></div></div>
+    <div class="day empty"><div class="day-num"></div></div>
+    <div class="day empty"><div class="day-num"></div></div>
+    <div class="day"><div class="day-num">1</div><div class="day-grade">🌿</div></div>
+    <div class="day"><div class="day-num">2</div><div class="day-grade">😊</div></div>
+    <div class="day"><div class="day-num">3</div><div class="day-grade">⚠️</div></div>
+    <div class="day"><div class="day-num">4</div><div class="day-grade">🌿</div></div>
+    <div class="day"><div class="day-num">5</div><div class="day-grade">😊</div></div>
+    <div class="day"><div class="day-num">6</div><div class="day-grade">🌿</div></div>
+    <div class="day"><div class="day-num">7</div><div class="day-grade">😊</div></div>
+    <div class="day"><div class="day-num">8</div><div class="day-grade">🔥</div></div>
+    <div class="day"><div class="day-num">9</div><div class="day-grade">🌿</div></div>
+    <div class="day"><div class="day-num">10</div><div class="day-grade">⚠️</div></div>
+    <div class="day"><div class="day-num">11</div><div class="day-grade">😊</div></div>
+    <div class="day"><div class="day-num">12</div><div class="day-grade">🌿</div></div>
+    <div class="day"><div class="day-num">13</div><div class="day-grade">😊</div></div>
+    <div class="day"><div class="day-num">14</div><div class="day-grade">🔥</div></div>
+    <div class="day"><div class="day-num">15</div><div class="day-grade">😊</div></div>
+    <div class="day"><div class="day-num">16</div><div class="day-grade">🌿</div></div>
+    <div class="day"><div class="day-num">17</div><div class="day-grade">⚠️</div></div>
+    <div class="day"><div class="day-num">18</div><div class="day-grade">🌿</div></div>
+    <div class="day"><div class="day-num">19</div><div class="day-grade">😊</div></div>
+    <div class="day"><div class="day-num">20</div><div class="day-grade">🌿</div></div>
+    <div class="day"><div class="day-num">21</div><div class="day-grade">😊</div></div>
+    <div class="day"><div class="day-num">22</div><div class="day-grade">🔥</div></div>
+    <div class="day"><div class="day-num">23</div><div class="day-grade">🌿</div></div>
+    <div class="day"><div class="day-num">24</div><div class="day-grade">⚠️</div></div>
+    <div class="day"><div class="day-num">25</div><div class="day-grade">😊</div></div>
+    <div class="day"><div class="day-num">26</div><div class="day-grade">🌿</div></div>
+    <div class="day"><div class="day-num">27</div><div class="day-grade">😊</div></div>
+    <div class="day"><div class="day-num">28</div><div class="day-grade">🌿</div></div>
+    <div class="day today"><div class="day-num">29</div><div class="day-grade">⚠️</div></div>
+    <div class="day"><div class="day-num">30</div><div class="day-grade">😊</div></div>
+    <div class="day"><div class="day-num">31</div><div class="day-grade">🔥</div></div>
+  </div>
+</div>
+
+<div class="section-title">🔮 더 많은 운명 분석</div>
+<div class="features">
+  <div class="feature-card feat-compat">
+    <div class="feature-icon">💕</div>
+    <div class="feature-text">
+      <h4>사주 궁합 분석</h4>
+      <p>두 사람의 사주로 연애·결혼·갈등 포인트 분석</p>
+    </div>
+  </div>
+  <div class="feature-card feat-yearly">
+    <div class="feature-icon">📆</div>
+    <div class="feature-text">
+      <h4>2026 신년 운세</h4>
+      <p>올해의 총운·월별 운세·전환점 상세 분석</p>
+    </div>
+  </div>
+  <div class="feature-card feat-star">
+    <div class="feature-icon">⭐</div>
+    <div class="feature-text">
+      <h4>별자리 × 오행 운세</h4>
+      <p>서양 별자리와 동양 오행의 특별한 시너지</p>
+    </div>
+  </div>
+  <div class="feature-card feat-zodiac">
+    <div class="feature-icon">🐉</div>
+    <div class="feature-text">
+      <h4>띠 운세 · 대운 분석</h4>
+      <p>12띠 성격 + 10년 대운 흐름 분석</p>
+    </div>
+  </div>
+</div>
+</body></html>

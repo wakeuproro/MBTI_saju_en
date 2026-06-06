@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { width:720px; height:400px; display:flex; align-items:center; justify-content:center; background:transparent; }
+.thumb {
+  width:700px; height:380px;
+  border-radius:24px;
+  background: linear-gradient(135deg, #8E24AA 0%, #7B1FA2 40%, #4A148C 100%);
+  display:flex; align-items:center;
+  position:relative;
+  overflow:hidden;
+  padding:0 40px;
+}
+.thumb::before {
+  content:'';
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  background:
+    radial-gradient(circle at 70% 30%, rgba(255,255,255,0.08) 0%, transparent 50%),
+    radial-gradient(circle at 20% 80%, rgba(255,255,255,0.05) 0%, transparent 40%);
+}
+.star { position:absolute; color:rgba(255,255,255,0.15); z-index:1; }
+.s1 { top:10%; left:5%; font-size:20px; }
+.s2 { top:15%; left:45%; font-size:14px; }
+.s3 { bottom:15%; left:35%; font-size:12px; }
+.s4 { top:20%; right:5%; font-size:16px; }
+.s5 { bottom:10%; right:15%; font-size:18px; }
+
+.text-area {
+  position:relative; z-index:2;
+  flex:1;
+}
+.title {
+  color:#fff;
+  font-family:'Noto Sans KR', sans-serif;
+  font-weight:900;
+  font-size:48px;
+  line-height:1.2;
+  text-shadow: 0 3px 10px rgba(0,0,0,0.3);
+  margin-bottom:10px;
+}
+.subtitle {
+  color:rgba(255,255,255,0.85);
+  font-family:'Noto Sans KR', sans-serif;
+  font-weight:700;
+  font-size:18px;
+  line-height:1.5;
+  margin-bottom:16px;
+}
+.tags {
+  display:flex; gap:8px; flex-wrap:wrap;
+}
+.tag {
+  background:rgba(255,255,255,0.2);
+  color:#fff;
+  padding:6px 14px;
+  border-radius:20px;
+  font-family:'Noto Sans KR', sans-serif;
+  font-weight:700;
+  font-size:13px;
+  backdrop-filter:blur(4px);
+}
+
+.cat-area {
+  position:relative; z-index:2;
+  flex-shrink:0;
+  margin-left:20px;
+}
+.cat-img {
+  width:280px; height:280px;
+  object-fit:contain;
+  filter: drop-shadow(0 6px 25px rgba(0,0,0,0.35));
+}
+</style></head><body>
+<div class="thumb">
+  <span class="star s1">✦</span>
+  <span class="star s2">✧</span>
+  <span class="star s3">⋆</span>
+  <span class="star s4">✦</span>
+  <span class="star s5">✧</span>
+
+  <div class="text-area">
+    <div class="title">사주 × MBTI</div>
+    <div class="subtitle">AI가 풀어주는 나만의 운명카드<br>검은 고양이 또또와 함께</div>
+    <div class="tags">
+      <span class="tag">🔮 오늘의 운세</span>
+      <span class="tag">💕 궁합 분석</span>
+      <span class="tag">📅 운세 캘린더</span>
+      <span class="tag">⭐ 별자리</span>
+    </div>
+  </div>
+  <div class="cat-area">
+    <img class="cat-img" src="http://localhost:8899/메인.png" alt="또또">
+  </div>
+</div>
+</body></html>

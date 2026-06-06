@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: saju-mbti-en
+    runtime: docker
+    plan: free
+    envVars:
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: PUBLIC_BASE_URL
+        sync: false

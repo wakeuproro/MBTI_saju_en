@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@800;900&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { width:512px; height:512px; display:flex; align-items:center; justify-content:center; background:transparent; }
+.logo {
+  width:480px; height:480px;
+  border-radius:110px;
+  background: linear-gradient(145deg, #8E24AA 0%, #7B1FA2 35%, #6A1B9A 70%, #4A148C 100%);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  position:relative;
+  overflow:hidden;
+}
+.logo::before {
+  content:'';
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  background:
+    radial-gradient(circle at 20% 25%, rgba(255,255,255,0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(255,255,255,0.05) 0%, transparent 40%);
+}
+.star { position:absolute; color:rgba(255,255,255,0.2); z-index:1; }
+.s1 { top:10%; left:10%; font-size:24px; }
+.s2 { top:6%; right:14%; font-size:18px; }
+.s3 { bottom:22%; left:8%; font-size:14px; }
+.s4 { bottom:10%; right:10%; font-size:20px; }
+.s5 { top:30%; right:6%; font-size:12px; }
+
+.cat-img {
+  position:relative; z-index:2;
+  width:300px; height:300px;
+  object-fit:contain;
+  margin-top:-20px;
+  filter: drop-shadow(0 4px 20px rgba(0,0,0,0.3));
+}
+.logo-text {
+  position:relative; z-index:2;
+  color:#fff;
+  font-family:'Noto Sans KR', sans-serif;
+  font-weight:900;
+  font-size:52px;
+  letter-spacing:3px;
+  text-shadow: 0 3px 12px rgba(0,0,0,0.35);
+  margin-top:-15px;
+}
+</style></head><body>
+<div class="logo">
+  <span class="star s1">✦</span>
+  <span class="star s2">✧</span>
+  <span class="star s3">✦</span>
+  <span class="star s4">✧</span>
+  <span class="star s5">⋆</span>
+  <img class="cat-img" src="http://localhost:8899/메인.png" alt="또또">
+  <div class="logo-text">사주×MBTI</div>
+</div>
+</body></html>

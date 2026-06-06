@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { width:390px; height:844px; font-family:'Noto Sans KR',sans-serif; background:#FAF7FF; overflow:hidden; }
+.status-bar { height:44px; }
+
+.header {
+  text-align:center;
+  padding:8px 16px 12px;
+}
+.header-name { font-size:1rem; font-weight:900; color:#4A148C; }
+.header-info { display:flex; gap:6px; justify-content:center; margin-top:6px; flex-wrap:wrap; }
+.info-chip { background:#EDE7F6; color:#4A148C; padding:3px 10px; border-radius:12px; font-size:0.7rem; font-weight:700; }
+
+/* 사주 기둥 */
+.pillars {
+  display:flex; justify-content:center; gap:8px;
+  margin:8px 16px 12px; padding:14px 10px;
+  background:linear-gradient(135deg,#EDE7F6,#F3E5F5);
+  border-radius:16px;
+}
+.pillar { text-align:center; flex:1; }
+.pillar-label { font-size:0.65rem; color:#7B1FA2; font-weight:700; margin-bottom:4px; }
+.pillar-gan { font-size:1.1rem; font-weight:900; color:#4A148C; background:#fff; border-radius:8px; padding:6px 0; margin-bottom:3px; }
+.pillar-ji { font-size:1.1rem; font-weight:900; color:#6A1B9A; background:#fff; border-radius:8px; padding:6px 0; }
+.pillar-el { font-size:0.6rem; color:#9C27B0; margin-top:2px; }
+
+/* 오행 차트 */
+.oheng-section { margin:0 16px 10px; }
+.oheng-title { font-size:0.85rem; font-weight:800; color:#4A148C; margin-bottom:8px; }
+.oheng-bars { display:flex; flex-direction:column; gap:5px; }
+.oheng-row { display:flex; align-items:center; gap:8px; }
+.oheng-name { width:60px; font-size:0.75rem; font-weight:700; color:#333; }
+.oheng-bar-bg { flex:1; height:16px; background:#EDE7F6; border-radius:8px; overflow:hidden; position:relative; }
+.oheng-bar-fill { height:100%; border-radius:8px; display:flex; align-items:center; justify-content:flex-end; padding-right:6px; }
+.oheng-pct { font-size:0.6rem; font-weight:800; color:#fff; }
+
+/* 프리미엄 아코디언 미리보기 */
+.premium-section { margin:0 16px; }
+.premium-title { font-size:0.85rem; font-weight:800; color:#4A148C; margin-bottom:8px; }
+.accordion {
+  background:#fff;
+  border-radius:14px;
+  margin-bottom:6px;
+  border:1px solid #E8E0F0;
+  overflow:hidden;
+}
+.acc-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 14px;
+  font-size:0.82rem; font-weight:700; color:#333;
+}
+.acc-arrow { color:#B39DDB; font-size:0.8rem; }
+.acc-body {
+  padding:0 14px 12px;
+  font-size:0.75rem; color:#555; line-height:1.6;
+  border-top:1px solid #F3E5F5;
+}
+.acc-open .acc-body { display:block; }
+
+.tag-row { display:flex; gap:4px; flex-wrap:wrap; margin-top:6px; }
+.tag { background:#E8EAF6; color:#283593; padding:2px 8px; border-radius:8px; font-size:0.65rem; font-weight:700; }
+.tag.green { background:#E8F5E9; color:#2E7D32; }
+</style></head><body>
+<div class="status-bar"></div>
+
+<div class="header">
+  <div class="header-name">로로님의 사주 — 병화(丙火) × ENFP</div>
+  <div class="header-info">
+    <span class="info-chip">♀ 여자</span>
+    <span class="info-chip">ENFP</span>
+    <span class="info-chip">일간: 병화(丙火)</span>
+  </div>
+</div>
+
+<div class="pillars">
+  <div class="pillar">
+    <div class="pillar-label">시주</div>
+    <div class="pillar-gan">경</div>
+    <div class="pillar-ji">오</div>
+    <div class="pillar-el">🤍 金 / 🔴 火</div>
+  </div>
+  <div class="pillar">
+    <div class="pillar-label">일주</div>
+    <div class="pillar-gan" style="color:#E53935;">병</div>
+    <div class="pillar-ji">인</div>
+    <div class="pillar-el">🔴 火 / 🟢 木</div>
+  </div>
+  <div class="pillar">
+    <div class="pillar-label">월주</div>
+    <div class="pillar-gan">신</div>
+    <div class="pillar-ji">사</div>
+    <div class="pillar-el">🤍 金 / 🔴 火</div>
+  </div>
+  <div class="pillar">
+    <div class="pillar-label">년주</div>
+    <div class="pillar-gan">을</div>
+    <div class="pillar-ji">해</div>
+    <div class="pillar-el">🟢 木 / 🔵 水</div>
+  </div>
+</div>
+
+<div class="oheng-section">
+  <div class="oheng-title">⚖️ 오행 밸런스</div>
+  <div class="oheng-bars">
+    <div class="oheng-row"><span class="oheng-name">🟢 목(木)</span><div class="oheng-bar-bg"><div class="oheng-bar-fill" style="width:25%;background:linear-gradient(90deg,#66BB6A,#43A047);"><span class="oheng-pct">25%</span></div></div></div>
+    <div class="oheng-row"><span class="oheng-name">🔴 화(火)</span><div class="oheng-bar-bg"><div class="oheng-bar-fill" style="width:38%;background:linear-gradient(90deg,#EF5350,#C62828);"><span class="oheng-pct">38%</span></div></div></div>
+    <div class="oheng-row"><span class="oheng-name">🟡 토(土)</span><div class="oheng-bar-bg"><div class="oheng-bar-fill" style="width:8%;background:linear-gradient(90deg,#FFA726,#E65100);"><span class="oheng-pct">8%</span></div></div></div>
+    <div class="oheng-row"><span class="oheng-name">🤍 금(金)</span><div class="oheng-bar-bg"><div class="oheng-bar-fill" style="width:18%;background:linear-gradient(90deg,#BDBDBD,#757575);"><span class="oheng-pct">18%</span></div></div></div>
+    <div class="oheng-row"><span class="oheng-name">🔵 수(水)</span><div class="oheng-bar-bg"><div class="oheng-bar-fill" style="width:11%;background:linear-gradient(90deg,#42A5F5,#1565C0);"><span class="oheng-pct">11%</span></div></div></div>
+  </div>
+</div>
+
+<div class="premium-section">
+  <div class="premium-title">🔮 프리미엄 심층 분석</div>
+  <div class="accordion acc-open">
+    <div class="acc-header">💼 직업운 — 타고난 리더의 불꽃 에너지 <span class="acc-arrow">▼</span></div>
+    <div class="acc-body">
+      화(火)의 강렬한 에너지로 사람들을 이끄는 천생 리더. 창의적이고 열정적인 분야에서 두각을 나타냅니다.
+      <div class="tag-row">
+        <span class="tag green">마케팅</span>
+        <span class="tag green">콘텐츠 크리에이터</span>
+        <span class="tag green">스타트업 CEO</span>
+        <span class="tag green">교육</span>
+      </div>
+    </div>
+  </div>
+  <div class="accordion">
+    <div class="acc-header">💰 재물운 — 직관적 투자의 달인 <span class="acc-arrow">▶</span></div>
+  </div>
+  <div class="accordion">
+    <div class="acc-header">🏥 건강운 — 심장과 혈액순환 관리 <span class="acc-arrow">▶</span></div>
+  </div>
+  <div class="accordion">
+    <div class="acc-header">💕 연애운 — 뜨겁고 강렬한 사랑 <span class="acc-arrow">▶</span></div>
+  </div>
+</div>
+</body></html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { width:390px; height:844px; font-family:'Noto Sans KR',sans-serif; background:#FAF7FF; overflow:hidden; }
+
+.status-bar { height:50px; background:transparent; }
+
+.daily-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20px;
+  padding: 22px 18px;
+  margin: 0 16px 14px;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+.daily-card::before { content:'✨'; position:absolute; top:-10px; right:-10px; font-size:70px; opacity:0.1; }
+.daily-date { font-size:0.78rem; opacity:0.85; margin-bottom:4px; }
+.daily-title { font-size:1.1rem; font-weight:800; margin-bottom:10px; }
+.daily-grade { display:inline-block; background:rgba(255,255,255,0.2); border-radius:20px; padding:4px 14px; font-size:0.85rem; font-weight:700; margin-bottom:12px; }
+.daily-msg { font-size:0.88rem; line-height:1.5; margin-bottom:14px; }
+
+.scores { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-bottom:14px; }
+.score-item { background:rgba(255,255,255,0.15); border-radius:10px; padding:9px 10px; }
+.score-label { font-size:0.72rem; opacity:0.85; margin-bottom:3px; }
+.score-bar { background:rgba(255,255,255,0.2); border-radius:5px; height:5px; overflow:hidden; margin-bottom:3px; }
+.score-fill { height:100%; border-radius:5px; background:linear-gradient(90deg,#FFD54F,#FF8A65); }
+.score-msg { font-size:0.68rem; opacity:0.9; line-height:1.3; }
+
+.lucky-row { display:flex; gap:6px; flex-wrap:wrap; }
+.lucky-chip { background:rgba(255,255,255,0.2); border-radius:14px; padding:4px 10px; font-size:0.7rem; }
+
+.hero { text-align:center; padding:10px 20px 0; }
+.hero img { width:160px; height:160px; object-fit:contain; }
+.hero-title { font-size:1.15rem; font-weight:900; color:#4A148C; margin-top:4px; line-height:1.4; }
+.hero-sub { font-size:0.82rem; color:#7B1FA2; margin-top:4px; }
+.badge { display:inline-block; background:linear-gradient(135deg,#7B1FA2,#9C27B0); color:#fff; padding:5px 16px; border-radius:20px; font-size:0.78rem; font-weight:700; margin-top:8px; }
+
+.bottom-label {
+  text-align:center;
+  padding:14px;
+  font-size:0.75rem;
+  color:#9E9E9E;
+}
+</style></head><body>
+<div class="status-bar"></div>
+
+<div class="daily-card">
+  <div class="daily-date">📅 2026년 5월 29일 목요일 · 계묘일</div>
+  <div class="daily-title">로로님의 오늘의 운세</div>
+  <div class="daily-grade">😊 길 78점</div>
+  <div class="daily-msg">좋은 기운이 함께하는 날이에요 🌈</div>
+  <div class="scores">
+    <div class="score-item">
+      <div class="score-label">💕 연애운</div>
+      <div class="score-bar"><div class="score-fill" style="width:82%"></div></div>
+      <div class="score-msg">설레는 만남이 기다려요 💘</div>
+    </div>
+    <div class="score-item">
+      <div class="score-label">💰 재물운</div>
+      <div class="score-bar"><div class="score-fill" style="width:71%"></div></div>
+      <div class="score-msg">예상치 못한 소득이 있어요 🎁</div>
+    </div>
+    <div class="score-item">
+      <div class="score-label">💼 직업운</div>
+      <div class="score-bar"><div class="score-fill" style="width:88%"></div></div>
+      <div class="score-msg">업무 효율 최고의 날! 🚀</div>
+    </div>
+    <div class="score-item">
+      <div class="score-label">🏥 건강운</div>
+      <div class="score-bar"><div class="score-fill" style="width:65%"></div></div>
+      <div class="score-msg">가벼운 산책 추천 🚶</div>
+    </div>
+  </div>
+  <div class="lucky-row">
+    <span class="lucky-chip">🎨 빨강, 보라</span>
+    <span class="lucky-chip">🔢 2, 7</span>
+    <span class="lucky-chip">🧭 남쪽</span>
+  </div>
+</div>
+
+<div class="hero">
+  <img src="https://web-production-705a3.up.railway.app/assets/메인.png" alt="또또">
+  <div class="hero-title">나는 왜 이런 사람일까?<br>MBTI × 사주로 함께 알아보기</div>
+  <div class="hero-sub">🐱 사주 보는 검은 고양이 <b>또또</b>가 도와드려요</div>
+  <div class="badge">🔮 매일 오늘의 운세 확인하기</div>
+</div>
+
+<div class="bottom-label">사주 × MBTI — AI가 풀어주는 나만의 운명카드</div>
+</body></html>
