@@ -1516,12 +1516,29 @@
         ]);
 
         try {
-            const res = await fetch(`${API_URL}/get-report`, {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({ birth_date: bd, birth_time: bt, mbti, lang: currentLang, name, gender, time_unknown: timeUnknown, calendar_type: calendarType, is_leap_month: isLeapMonth })
-            });
-            reportData = await res.json();
+            // Render free tier cold start can take 50s+ — retry once on failure
+            const fetchReport = async (attempt = 1) => {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 120000);
+                try {
+                    const res = await fetch(`${API_URL}/get-report`, {
+                        method: "POST",
+                        headers: {"Content-Type": "application/json"},
+                        body: JSON.stringify({ birth_date: bd, birth_time: bt, mbti, lang: currentLang, name, gender, time_unknown: timeUnknown, calendar_type: calendarType, is_leap_month: isLeapMonth }),
+                        signal: controller.signal
+                    });
+                    clearTimeout(timeout);
+                    return await res.json();
+                } catch (e) {
+                    clearTimeout(timeout);
+                    if (attempt < 2) {
+                        document.querySelector(".loading-text").textContent = "Waking up the server... hang tight!";
+                        return fetchReport(attempt + 1);
+                    }
+                    throw e;
+                }
+            };
+            reportData = await fetchReport();
             renderReport();
             document.getElementById("intro-screen").classList.remove("active");
             document.getElementById("report-screen").classList.add("active");
