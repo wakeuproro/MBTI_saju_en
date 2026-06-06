@@ -3,6 +3,7 @@ import json
 import uuid
 import base64
 import httpx
+import stripe
 from datetime import date
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
@@ -384,12 +385,12 @@ if GOOGLE_API_KEY:
     gemini_model = genai.GenerativeModel('gemini-2.5-flash')
 
 # ─────────────────────────────────────────────
-# Payment (Toss Payments)
+# Payment (Stripe)
 # ─────────────────────────────────────────────
-TOSS_CLIENT_KEY = os.getenv("TOSS_CLIENT_KEY", "test_ck_D5GePWvyJnrK0W0k6q8gLzN97Eoq")
-TOSS_SECRET_KEY = os.getenv("TOSS_SECRET_KEY", "test_sk_zXLkKEypNArWmo50nX3lmeaxYG5R")
-TOSS_PREMIUM_AMOUNT = int(os.getenv("TOSS_PREMIUM_AMOUNT", "99"))
-TOSS_IS_TEST = TOSS_SECRET_KEY.startswith("test_")
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
+STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY", "")
+STRIPE_IS_TEST = STRIPE_SECRET_KEY.startswith("sk_test_") or not STRIPE_SECRET_KEY
+stripe.api_key = STRIPE_SECRET_KEY
 
 app = FastAPI()
 
@@ -455,10 +456,8 @@ async def read_terms():
 @app.get("/payment-config")
 async def payment_config():
     return {
-        "client_key": TOSS_CLIENT_KEY,
-        "amount": TOSS_PREMIUM_AMOUNT,
-        "is_test": TOSS_IS_TEST,
-        "order_name": "Four Pillars × MBTI Premium Analysis",
+        "publishable_key": STRIPE_PUBLISHABLE_KEY,
+        "is_test": STRIPE_IS_TEST,
     }
 
 # ═══════════════════════════════════════════════
@@ -1424,14 +1423,10 @@ class PaidPremiumInput(BaseModel):
     time_unknown: bool = False
     calendar_type: str = 'solar'
     is_leap_month: bool = False
-    paymentKey: str
-    orderId: str
-    amount: int
+    paymentKey: str  # Stripe PaymentIntent ID
 
 class PaymentCreditInput(BaseModel):
-    paymentKey: str
-    orderId: str
-    amount: int
+    paymentKey: str   # Stripe PaymentIntent ID (pi_...)
     product: str
 
 class PersonInput(BaseModel):
@@ -1447,9 +1442,7 @@ class PersonInput(BaseModel):
 class CompatibilityInput(BaseModel):
     person_a: PersonInput
     person_b: PersonInput
-    paymentKey: str = ''
-    orderId: str = ''
-    amount: int = 0
+    paymentKey: str = ''  # Stripe PaymentIntent ID
 
 class YearlyFortuneInput(BaseModel):
     birth_date: str
@@ -1460,9 +1453,7 @@ class YearlyFortuneInput(BaseModel):
     target_year: int = 2026
     calendar_type: str = 'solar'
     is_leap_month: bool = False
-    paymentKey: str = ''
-    orderId: str = ''
-    amount: int = 0
+    paymentKey: str = ''  # Stripe PaymentIntent ID
 
 @app.post("/get-report")
 async def get_report(input_data: ReportInput):
@@ -1621,68 +1612,60 @@ async def get_premium_report(input_data: PremiumReportInput):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-async def _verify_toss_payment(payment_key: str, order_id: str, amount: int) -> dict:
-    auth = base64.b64encode(f"{TOSS_SECRET_KEY}:".encode()).decode()
+def _verify_stripe_payment(payment_intent_id: str, expected_product: str) -> dict:
+    """Verify a Stripe PaymentIntent and return it if valid."""
     try:
-        async with httpx.AsyncClient(timeout=20.0) as client:
-            resp = await client.post(
-                "https://api.tosspayments.com/v1/payments/confirm",
-                headers={
-                    "Authorization": f"Basic {auth}",
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "paymentKey": payment_key,
-                    "orderId": order_id,
-                    "amount": amount,
-                },
-            )
-        if resp.status_code != 200:
-            err = {}
-            try:
-                err = resp.json()
-            except Exception:
-                pass
-            msg = err.get("message", resp.text[:200])
-            raise HTTPException(status_code=400, detail=f"Payment verification failed: {msg}")
+        intent = stripe.PaymentIntent.retrieve(payment_intent_id)
+    except stripe.error.StripeError as e:
+        raise HTTPException(status_code=400, detail=f"Stripe error: {str(e)[:200]}")
 
-        toss_result = resp.json()
-        if toss_result.get("status") not in ("DONE", "WAITING_FOR_DEPOSIT"):
-            raise HTTPException(status_code=400, detail=f"Abnormal payment status: {toss_result.get('status')}")
-        return toss_result
+    if intent.status != "succeeded":
+        raise HTTPException(status_code=400, detail=f"Payment not completed (status: {intent.status})")
 
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Payment verification error: {str(e)[:200]}")
+    meta_product = intent.metadata.get("product", "")
+    if meta_product != expected_product:
+        raise HTTPException(status_code=400, detail="Payment product mismatch")
+
+    expected_amount = PRODUCT_PRICES.get(expected_product, 99)
+    if intent.amount != expected_amount:
+        raise HTTPException(status_code=400, detail="Payment amount mismatch")
+
+    return intent
 
 
+# All prices in USD cents ($0.99 = 99)
 PRODUCT_PRICES = {
-    "premium": TOSS_PREMIUM_AMOUNT,
+    "premium": 99,
     "additional": 99,
-    "compatibility": 199,
-    "yearly": 299,
+    "compatibility": 99,
+    "yearly": 99,
+    "constellation": 99,
 }
+
+
+@app.post("/create-payment-intent")
+async def create_payment_intent(data: dict):
+    product = data.get("product", "premium")
+    amount = PRODUCT_PRICES.get(product, 99)
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=503, detail="Payment not configured")
+    try:
+        intent = stripe.PaymentIntent.create(
+            amount=amount,
+            currency="usd",
+            metadata={"product": product},
+        )
+        return {"clientSecret": intent.client_secret}
+    except stripe.error.StripeError as e:
+        raise HTTPException(status_code=400, detail=str(e)[:200])
 
 
 @app.post("/confirm-and-get-premium")
 async def confirm_and_get_premium(data: PaidPremiumInput):
-    if data.amount != TOSS_PREMIUM_AMOUNT:
-        raise HTTPException(status_code=400, detail=f"Invalid payment amount. (Requested: ${data.amount/100:.2f}, Price: ${TOSS_PREMIUM_AMOUNT/100:.2f})")
-
-    toss_result = await _verify_toss_payment(data.paymentKey, data.orderId, data.amount)
-
+    _verify_stripe_payment(data.paymentKey, "premium")
     try:
-        payload = _build_premium_payload(data.birth_date, data.birth_time, data.mbti,
-                                          calendar_type=data.calendar_type, is_leap_month=data.is_leap_month)
-        payload["payment"] = {
-            "approved_at": toss_result.get("approvedAt"),
-            "order_id": data.orderId,
-            "amount": data.amount,
-            "method": toss_result.get("method"),
-            "is_test": TOSS_IS_TEST,
-        }
-        return payload
+        return _build_premium_payload(data.birth_date, data.birth_time, data.mbti,
+                                      calendar_type=data.calendar_type, is_leap_month=data.is_leap_month)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Analysis generation failed: {str(e)[:200]}")
 
@@ -1911,10 +1894,7 @@ async def get_compatibility_full(data: CompatibilityInput):
 
 @app.post("/confirm-and-get-compatibility")
 async def confirm_and_get_compatibility(data: CompatibilityInput):
-    expected = PRODUCT_PRICES['compatibility']
-    if data.amount != expected:
-        raise HTTPException(status_code=400, detail=f"Invalid payment amount (Requested: {data.amount}, Price: {expected})")
-    await _verify_toss_payment(data.paymentKey, data.orderId, data.amount)
+    _verify_stripe_payment(data.paymentKey, "compatibility")
     result = calc_compatibility(data.person_a.dict(), data.person_b.dict())
     result['unlocked'] = True
     return result
@@ -2122,10 +2102,7 @@ async def get_yearly_full(data: YearlyFortuneInput):
 
 @app.post("/confirm-and-get-yearly-fortune")
 async def confirm_and_get_yearly(data: YearlyFortuneInput):
-    expected = PRODUCT_PRICES['yearly']
-    if data.amount != expected:
-        raise HTTPException(status_code=400, detail=f"Invalid payment amount (Requested: {data.amount}, Price: {expected})")
-    await _verify_toss_payment(data.paymentKey, data.orderId, data.amount)
+    _verify_stripe_payment(data.paymentKey, "yearly")
     result = build_yearly_fortune(data.birth_date, data.birth_time, data.mbti, data.target_year,
                                    calendar_type=data.calendar_type, is_leap_month=data.is_leap_month)
     result['unlocked'] = True
@@ -2134,25 +2111,10 @@ async def confirm_and_get_yearly(data: YearlyFortuneInput):
 
 @app.post("/confirm-payment-credit")
 async def confirm_payment_credit(data: PaymentCreditInput):
-    expected = PRODUCT_PRICES.get(data.product)
-    if not expected:
+    if not PRODUCT_PRICES.get(data.product):
         raise HTTPException(status_code=400, detail=f"Unknown product: {data.product}")
-    if data.amount != expected:
-        raise HTTPException(status_code=400, detail=f"Invalid payment amount. (Requested: {data.amount}, Price: {expected})")
-
-    toss_result = await _verify_toss_payment(data.paymentKey, data.orderId, data.amount)
-
-    return {
-        "status": "ok",
-        "product": data.product,
-        "payment": {
-            "approved_at": toss_result.get("approvedAt"),
-            "order_id": data.orderId,
-            "amount": data.amount,
-            "method": toss_result.get("method"),
-            "is_test": TOSS_IS_TEST,
-        },
-    }
+    _verify_stripe_payment(data.paymentKey, data.product)
+    return {"status": "ok", "product": data.product}
 
 # ═══════════════════════════════════════════════
 # Referral System
