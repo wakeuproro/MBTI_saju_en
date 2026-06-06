@@ -1833,15 +1833,14 @@
         if (r.phonetic_oheng) {
             const ph = r.phonetic_oheng;
             const ohColors = {'wood':'#43A047','fire':'#E53935','earth':'#FB8C00','metal':'#8E24AA','water':'#1E88E5'};
-            const syllableHTML = ph.syllables.map(s => {
-                const parts = [];
-                if (s.onset_oh) parts.push(`<span style="background:${ohColors[s.onset_oh]}22;color:${ohColors[s.onset_oh]};padding:1px 5px;border-radius:6px;font-size:0.65rem;font-weight:700;">${s.onset}=${capitalize(s.onset_oh)}</span>`);
-                if (s.vowel_oh) parts.push(`<span style="background:${ohColors[s.vowel_oh]}22;color:${ohColors[s.vowel_oh]};padding:1px 5px;border-radius:6px;font-size:0.65rem;font-weight:700;">${s.vowel}=${capitalize(s.vowel_oh)}</span>`);
-                if (s.coda_oh) parts.push(`<span style="background:${ohColors[s.coda_oh]}22;color:${ohColors[s.coda_oh]};padding:1px 5px;border-radius:6px;font-size:0.65rem;font-weight:700;">${s.coda}=${capitalize(s.coda_oh)}</span>`);
+            const letterItems = ph.letters || [];
+            const syllableHTML = letterItems.map(s => {
                 return `
                     <div style="background:var(--bg-card); border:1px solid var(--border-soft); border-radius:10px; padding:10px;">
                         <div style="font-size:1.4rem; font-weight:900; color:var(--primary-dark); text-align:center; margin-bottom:6px;">${s.char}</div>
-                        <div style="display:flex; gap:3px; flex-wrap:wrap; justify-content:center;">${parts.join('')}</div>
+                        <div style="display:flex; gap:3px; flex-wrap:wrap; justify-content:center;">
+                            <span style="background:${ohColors[s.element]}22;color:${ohColors[s.element]};padding:1px 5px;border-radius:6px;font-size:0.65rem;font-weight:700;">${capitalize(s.element)}</span>
+                        </div>
                     </div>`;
             }).join('');
             const distEntries = Object.entries(ph.distribution).sort((a,b) => b[1]-a[1]);
@@ -1851,7 +1850,7 @@
             const phHTML = `
                 <div style="background:linear-gradient(135deg,#F3E5F5,#E1BEE7); border:1.5px solid #BA68C8; border-radius:14px; padding:14px; margin-bottom:10px;">
                     <div style="font-size:0.78rem; font-weight:700; color:#4A148C; margin-bottom:6px;">📛 ${ph.name}'s Name Sound Elements</div>
-                    <div style="display:grid; grid-template-columns:repeat(${Math.min(ph.syllables.length,6)},1fr); gap:6px;">${syllableHTML}</div>
+                    <div style="display:grid; grid-template-columns:repeat(${Math.min(letterItems.length,8)},1fr); gap:6px;">${syllableHTML}</div>
                 </div>
                 <div style="background:var(--bg-card); border:1px solid var(--border-soft); border-radius:12px; padding:12px; margin-bottom:10px; text-align:center;">
                     <div style="font-size:0.78rem; color:var(--text-light); font-weight:700; margin-bottom:6px;">Element Distribution</div>
