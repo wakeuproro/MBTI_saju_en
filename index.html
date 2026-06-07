@@ -541,8 +541,6 @@
         /* Animations */
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         .fade-in { animation: fadeInUp 0.5s ease forwards; }
-        @keyframes slideUpReview { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes slideDownReview { from { transform: translateY(0); opacity: 1; } to { transform: translateY(100%); opacity: 0; } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
 
@@ -1637,7 +1635,6 @@
             document.getElementById("report-screen").classList.add("active");
             document.getElementById("floating-cta").style.display = "block";
             window.scrollTo(0, 0);
-            scheduleReviewPopup();
 
             localStorage.setItem('savedUserData', JSON.stringify({
                 birth_date: bd, birth_time: bt, mbti, name, gender,
@@ -2279,70 +2276,6 @@
         }
     }
 
-    let reviewPopupTimer = null;
-    let reviewPopupShownThisSession = false;
-    function scheduleReviewPopup() {
-        if (reviewPopupShownThisSession) return;
-        if (localStorage.getItem('reviewSubmitted') === 'true') return;
-        if (reviewPopupTimer) clearTimeout(reviewPopupTimer);
-        reviewPopupTimer = setTimeout(() => {
-            showReviewPopup();
-        }, 30000);
-    }
-
-    function showReviewPopup() {
-        if (document.getElementById('review-popup')) return;
-
-        const popup = document.createElement('div');
-        popup.id = 'review-popup';
-        popup.style.cssText = 'position:fixed; bottom:0; left:0; right:0; z-index:9999; animation:slideUpReview 0.4s ease-out;';
-
-        const inner = document.createElement('div');
-        inner.style.cssText = 'background:#fff; border-top:3px solid #FFB300; border-radius:20px 20px 0 0; padding:24px 20px 28px; box-shadow:0 -4px 20px rgba(0,0,0,0.15); text-align:center; position:relative;';
-
-        const closeX = document.createElement('button');
-        closeX.textContent = '✕';
-        closeX.style.cssText = 'position:absolute; top:12px; right:16px; background:none; border:none; font-size:1.2rem; color:#999; cursor:pointer;';
-        closeX.addEventListener('click', () => dismissReviewPopup());
-
-        const emoji = document.createElement('div');
-        emoji.style.cssText = 'font-size:2rem; margin-bottom:8px;';
-        emoji.textContent = '🐱';
-
-        const title = document.createElement('div');
-        title.style.cssText = 'font-size:1rem; font-weight:900; color:#E65100;';
-        title.textContent = 'How was your reading?';
-
-        const desc = document.createElement('div');
-        desc.style.cssText = 'font-size:0.8rem; color:#8D6E63; margin:6px 0 16px;';
-        desc.textContent = 'Your feedback means the world to Mystic! 🐾';
-
-        const btnRow = document.createElement('div');
-        btnRow.style.cssText = 'display:flex; gap:10px; justify-content:center;';
-
-        const laterBtn = document.createElement('button');
-        laterBtn.textContent = 'Maybe later';
-        laterBtn.style.cssText = 'flex:1; max-width:180px; padding:14px; background:#F5F5F5; border:none; color:#999; border-radius:14px; font-size:0.85rem; font-weight:600; cursor:pointer;';
-        laterBtn.addEventListener('click', () => dismissReviewPopup());
-
-        btnRow.appendChild(laterBtn);
-        inner.appendChild(closeX);
-        inner.appendChild(emoji);
-        inner.appendChild(title);
-        inner.appendChild(desc);
-        inner.appendChild(btnRow);
-        popup.appendChild(inner);
-        document.body.appendChild(popup);
-    }
-
-    function dismissReviewPopup() {
-        const popup = document.getElementById('review-popup');
-        if (popup) {
-            popup.style.animation = 'slideDownReview 0.3s ease-in forwards';
-            setTimeout(() => popup.remove(), 300);
-        }
-        reviewPopupShownThisSession = true;
-    }
 
     async function copyLink() {
         const url = window.location.href;
