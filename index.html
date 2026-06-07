@@ -959,20 +959,17 @@
     </button>
 </div>
 
-<!-- Polar Payment Waiting Modal -->
-<div id="polar-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:10000; align-items:flex-end; justify-content:center;">
+<!-- PayPal Payment Modal -->
+<div id="paypal-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:10000; align-items:flex-end; justify-content:center;">
     <div style="background:#fff; border-radius:24px 24px 0 0; padding:28px 24px 44px; width:100%; max-width:440px; box-shadow:0 -8px 40px rgba(0,0,0,0.18);">
         <div style="width:40px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 20px;"></div>
         <div style="text-align:center; margin-bottom:20px;">
             <div style="font-size:1.5rem; font-weight:900; color:#4A148C;">🔮 Unlock for <span style="color:#7B1FA2;">$0.99</span></div>
-            <div id="polar-modal-desc" style="font-size:0.85rem; color:#666; margin-top:6px; line-height:1.5;"></div>
+            <div id="paypal-modal-desc" style="font-size:0.85rem; color:#666; margin-top:6px; line-height:1.5;"></div>
         </div>
-        <div style="text-align:center; padding:20px 0;">
-            <div id="polar-modal-status" style="font-size:0.95rem; color:#7B1FA2; font-weight:600;">⏳ Complete payment in the new tab...</div>
-            <div style="font-size:0.8rem; color:#999; margin-top:8px;">This page updates automatically when payment is complete.</div>
-        </div>
-        <div id="polar-modal-error" style="color:#c62828; font-size:0.78rem; margin-bottom:10px; display:none; padding:8px 12px; background:#FFEBEE; border-radius:8px;"></div>
-        <button onclick="closePolarModal()" style="width:100%; padding:12px; background:transparent; border:1.5px solid #CE93D8; color:#7B1FA2; font-size:0.85rem; cursor:pointer; border-radius:12px; font-weight:600; margin-top:6px;">
+        <div id="paypal-buttons-container" style="margin-bottom:12px;"></div>
+        <div id="paypal-modal-error" style="color:#c62828; font-size:0.78rem; margin-bottom:10px; display:none; padding:8px 12px; background:#FFEBEE; border-radius:8px;"></div>
+        <button onclick="closePaypalModal()" style="width:100%; padding:12px; background:transparent; border:none; color:#aaa; font-size:0.85rem; cursor:pointer; margin-top:6px;">
             Cancel
         </button>
     </div>
@@ -1104,64 +1101,82 @@
         if (sub) sub.textContent = '';
     }
 
-    // ── Polar Payment ──
-    let _polarCheckoutId = null;
-    let _polarPollTimer = null;
-    let _polarSuccessCallback = null;
+    // ── PayPal Payment ──
+    let _paypalSuccessCallback = null;
+    let _paypalProduct = null;
+    let _paypalButtonsInstance = null;
 
-    function closePolarModal() {
-        document.getElementById('polar-modal').style.display = 'none';
-        if (_polarPollTimer) { clearInterval(_polarPollTimer); _polarPollTimer = null; }
-        _polarCheckoutId = null;
-        _polarSuccessCallback = null;
+    function closePaypalModal() {
+        document.getElementById('paypal-modal').style.display = 'none';
+        if (_paypalButtonsInstance) { _paypalButtonsInstance.close(); _paypalButtonsInstance = null; }
+        _paypalSuccessCallback = null;
+        _paypalProduct = null;
     }
 
-    async function showPolarPayment(product, description, onSuccess) {
-        _polarSuccessCallback = onSuccess;
-        document.getElementById('polar-modal-desc').textContent = description;
-        document.getElementById('polar-modal-error').style.display = 'none';
-        document.getElementById('polar-modal-status').textContent = '⏳ Opening payment page...';
-        document.getElementById('polar-modal').style.display = 'flex';
+    async function _ensurePaypalSDK() {
+        if (window.paypal) return;
+        const cfg = await fetch(`${API_URL}/payment-config`).then(r => r.json());
+        if (!cfg.client_id) throw new Error('PayPal not configured');
+        await new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = `https://www.paypal.com/sdk/js?client-id=${cfg.client_id}&currency=USD`;
+            s.onload = resolve;
+            s.onerror = () => reject(new Error('PayPal SDK load failed'));
+            document.head.appendChild(s);
+        });
+    }
+
+    async function showPaypalPayment(product, description, onSuccess) {
+        _paypalProduct = product;
+        _paypalSuccessCallback = onSuccess;
+        document.getElementById('paypal-modal-desc').textContent = description;
+        document.getElementById('paypal-modal-error').style.display = 'none';
+        document.getElementById('paypal-buttons-container').innerHTML = '<div style="text-align:center;padding:20px;color:#999;">Loading PayPal...</div>';
+        document.getElementById('paypal-modal').style.display = 'flex';
 
         try {
-            const res = await fetch(`${API_URL}/create-polar-checkout`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({product})
+            await _ensurePaypalSDK();
+            document.getElementById('paypal-buttons-container').innerHTML = '';
+            _paypalButtonsInstance = paypal.Buttons({
+                style: { layout: 'vertical', color: 'gold', shape: 'pill', label: 'pay' },
+                createOrder: async () => {
+                    const res = await fetch(`${API_URL}/create-paypal-order`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({product: _paypalProduct})
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.detail || 'Order creation failed');
+                    return data.order_id;
+                },
+                onApprove: async (data) => {
+                    document.getElementById('paypal-buttons-container').innerHTML = '<div style="text-align:center;padding:20px;color:#7B1FA2;">⏳ Confirming payment...</div>';
+                    const res = await fetch(`${API_URL}/capture-paypal-order`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({order_id: data.orderID, product: _paypalProduct})
+                    });
+                    const result = await res.json();
+                    if (!res.ok) throw new Error(result.detail || 'Capture failed');
+                    closePaypalModal();
+                    showToast('✅ Unlocked!', 'success');
+                    if (_paypalSuccessCallback) _paypalSuccessCallback();
+                },
+                onError: (err) => {
+                    document.getElementById('paypal-modal-error').textContent = 'Payment failed. Please try again.';
+                    document.getElementById('paypal-modal-error').style.display = 'block';
+                }
             });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.detail || 'Payment setup failed');
-
-            _polarCheckoutId = data.checkout_id;
-            window.open(data.checkout_url, '_blank');
-            document.getElementById('polar-modal-status').textContent = '⏳ Complete payment in the new tab...';
-
-            // Poll every 3 seconds for up to 10 minutes
-            let tries = 0;
-            _polarPollTimer = setInterval(async () => {
-                tries++;
-                if (tries > 200) { clearInterval(_polarPollTimer); return; }
-                try {
-                    const vres = await fetch(`${API_URL}/verify-polar-checkout?checkout_id=${_polarCheckoutId}`);
-                    const vdata = await vres.json();
-                    if (vdata.status === 'succeeded') {
-                        clearInterval(_polarPollTimer);
-                        _polarPollTimer = null;
-                        closePolarModal();
-                        showToast('✅ Unlocked!', 'success');
-                        if (_polarSuccessCallback) _polarSuccessCallback();
-                    }
-                } catch(e) { /* ignore poll errors */ }
-            }, 3000);
+            _paypalButtonsInstance.render('#paypal-buttons-container');
         } catch(e) {
-            document.getElementById('polar-modal-error').textContent = e.message || 'Payment setup failed. Please try again.';
-            document.getElementById('polar-modal-error').style.display = 'block';
-            document.getElementById('polar-modal-status').textContent = '';
+            document.getElementById('paypal-modal-error').textContent = e.message || 'Payment setup failed.';
+            document.getElementById('paypal-modal-error').style.display = 'block';
+            document.getElementById('paypal-buttons-container').innerHTML = '';
         }
     }
 
         function watchAdForBasicAnalysis() {
-        showPolarPayment('additional', 'Get another full Saju x MBTI destiny reading', function() {
+        showPaypalPayment('additional', 'Get another full Saju x MBTI destiny reading', function() {
             freeUsed = false;
             localStorage.removeItem('freeUsed');
             showScreen('intro-screen');
@@ -1170,19 +1185,19 @@
 
     function watchAdForPremium() {
         if (!reportData) { showCatError('Please complete the free analysis first.'); return; }
-        showPolarPayment('premium', 'Feng Shui tips - Lucky accessories - Signature scents - AI deep reading', function() {
+        showPaypalPayment('premium', 'Feng Shui tips - Lucky accessories - Signature scents - AI deep reading', function() {
             loadPremiumReport();
         });
     }
 
     function watchAdForPremiumExtra() {
-        showPolarPayment('premium', 'Unlock all deep analyses for your reading', function() {
+        showPaypalPayment('premium', 'Unlock all deep analyses for your reading', function() {
             unlockPremiumExtra();
         });
     }
 
     function watchAdForConstellation() {
-        showPolarPayment('constellation', 'Star sign x Saju synergy - your cosmic blueprint', function() {
+        showPaypalPayment('constellation', 'Star sign x Saju synergy - your cosmic blueprint', function() {
             unlockConstellation();
         });
     }
@@ -1241,7 +1256,7 @@
     }
 
     function watchAdForYearly(meInput) {
-        showPolarPayment('yearly', '2026 full 12-month fortune forecast with personalized advice', function() {
+        showPaypalPayment('yearly', '2026 full 12-month fortune forecast with personalized advice', function() {
             loadYearlyFull(meInput);
         });
     }

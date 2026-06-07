@@ -385,14 +385,29 @@ if GOOGLE_API_KEY:
     gemini_model = genai.GenerativeModel('gemini-2.5-flash')
 
 # ─────────────────────────────────────────────
-# Payment (Polar)
+# Payment (PayPal Orders API v2)
 # ─────────────────────────────────────────────
-POLAR_ACCESS_TOKEN = os.getenv("POLAR_ACCESS_TOKEN", "")
-POLAR_PRODUCT_ID   = os.getenv("POLAR_PRODUCT_ID", "")   # single $0.99 product in Polar dashboard
-POLAR_SERVER       = os.getenv("POLAR_SERVER", "production")  # "sandbox" for testing
+PAYPAL_CLIENT_ID     = os.getenv("PAYPAL_CLIENT_ID", "")
+PAYPAL_CLIENT_SECRET = os.getenv("PAYPAL_CLIENT_SECRET", "")
+PAYPAL_MODE          = os.getenv("PAYPAL_MODE", "sandbox")  # "sandbox" or "live"
+PAYPAL_BASE_URL      = "https://api-m.sandbox.paypal.com" if PAYPAL_MODE == "sandbox" else "https://api-m.paypal.com"
 
-# In-memory checkout tracker (checkout_id -> {product, ts})
-_polar_checkouts: dict = {}
+# Captured order IDs — prevents double-use
+_captured_orders: set = set()
+
+
+async def _paypal_token() -> str:
+    """Fetch a short-lived OAuth2 access token from PayPal."""
+    async with httpx.AsyncClient() as client:
+        r = await client.post(
+            f"{PAYPAL_BASE_URL}/v1/oauth2/token",
+            auth=(PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET),
+            data={"grant_type": "client_credentials"},
+            timeout=10,
+        )
+    if r.status_code != 200:
+        raise HTTPException(status_code=502, detail="PayPal auth failed")
+    return r.json()["access_token"]
 
 app = FastAPI()
 
@@ -458,8 +473,9 @@ async def read_terms():
 @app.get("/payment-config")
 async def payment_config():
     return {
-        "provider": "polar",
-        "configured": bool(POLAR_ACCESS_TOKEN and POLAR_PRODUCT_ID),
+        "provider": "paypal",
+        "client_id": PAYPAL_CLIENT_ID,
+        "mode": PAYPAL_MODE,
     }
 
 # ═══════════════════════════════════════════════
@@ -1617,64 +1633,78 @@ async def get_premium_report(input_data: PremiumReportInput):
 VALID_PRODUCTS = {"premium", "additional", "compatibility", "yearly", "constellation"}
 
 
-def _verify_polar_checkout(checkout_id: str, expected_product: str) -> None:
-    """Verify a Polar checkout is succeeded and matches expected product."""
-    if not POLAR_ACCESS_TOKEN:
-        raise HTTPException(status_code=503, detail="Payment not configured")
-    try:
-        from polar_sdk import Polar as PolarClient
-        polar = PolarClient(server=POLAR_SERVER, access_token=POLAR_ACCESS_TOKEN)
-        checkout = polar.checkouts.get(id=checkout_id)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Polar error: {str(e)[:200]}")
-
-    if checkout.status.value != "succeeded":
-        raise HTTPException(status_code=400, detail=f"Payment not completed (status: {checkout.status.value})")
-
-    meta_product = checkout.metadata.get("product", "")
-    if meta_product != expected_product:
+def _verify_paypal_capture(order_id: str, expected_product: str) -> None:
+    """Verify that a PayPal order was captured and matches the expected product."""
+    if order_id not in _captured_orders:
+        raise HTTPException(status_code=400, detail="Payment not verified. Complete payment first.")
+    # product tag is embedded as <product>:<order_id> in the set
+    key = f"{expected_product}:{order_id}"
+    if key not in _captured_orders:
         raise HTTPException(status_code=400, detail="Payment product mismatch")
 
 
-@app.post("/create-polar-checkout")
-async def create_polar_checkout(data: dict):
+@app.post("/create-paypal-order")
+async def create_paypal_order(data: dict):
     product = data.get("product", "premium")
     if product not in VALID_PRODUCTS:
         raise HTTPException(status_code=400, detail="Unknown product")
-    if not POLAR_ACCESS_TOKEN or not POLAR_PRODUCT_ID:
+    if not PAYPAL_CLIENT_ID or not PAYPAL_CLIENT_SECRET:
         raise HTTPException(status_code=503, detail="Payment not configured")
-    try:
-        from polar_sdk import Polar as PolarClient
-        from polar_sdk.models import CheckoutCreate
-        polar = PolarClient(server=POLAR_SERVER, access_token=POLAR_ACCESS_TOKEN)
-        checkout = polar.checkouts.create(CheckoutCreate(
-            products=[POLAR_PRODUCT_ID],
-            success_url=data.get("success_url", ""),
-            metadata={"product": product},
-        ))
-        _polar_checkouts[checkout.id] = {"product": product, "ts": time.time()}
-        return {"checkout_url": checkout.url, "checkout_id": checkout.id}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e)[:200])
+    token = await _paypal_token()
+    async with httpx.AsyncClient() as client:
+        r = await client.post(
+            f"{PAYPAL_BASE_URL}/v2/checkout/orders",
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+            json={
+                "intent": "CAPTURE",
+                "purchase_units": [{
+                    "amount": {"currency_code": "USD", "value": "0.99"},
+                    "custom_id": product,
+                    "description": f"Destiny Reading Unlock — {product}",
+                }],
+            },
+            timeout=15,
+        )
+    if r.status_code not in (200, 201):
+        raise HTTPException(status_code=502, detail="PayPal order creation failed")
+    return {"order_id": r.json()["id"]}
 
 
-@app.get("/verify-polar-checkout")
-async def verify_polar_checkout(checkout_id: str):
-    if not POLAR_ACCESS_TOKEN:
+@app.post("/capture-paypal-order")
+async def capture_paypal_order(data: dict):
+    order_id = data.get("order_id", "")
+    product  = data.get("product", "premium")
+    if not order_id or product not in VALID_PRODUCTS:
+        raise HTTPException(status_code=400, detail="Invalid request")
+    if not PAYPAL_CLIENT_ID or not PAYPAL_CLIENT_SECRET:
         raise HTTPException(status_code=503, detail="Payment not configured")
-    try:
-        from polar_sdk import Polar as PolarClient
-        polar = PolarClient(server=POLAR_SERVER, access_token=POLAR_ACCESS_TOKEN)
-        checkout = polar.checkouts.get(id=checkout_id)
-        product = checkout.metadata.get("product", "")
-        return {"status": checkout.status.value, "product": product}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e)[:200])
+    token = await _paypal_token()
+    async with httpx.AsyncClient() as client:
+        r = await client.post(
+            f"{PAYPAL_BASE_URL}/v2/checkout/orders/{order_id}/capture",
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+            timeout=15,
+        )
+    if r.status_code not in (200, 201):
+        raise HTTPException(status_code=502, detail="PayPal capture failed")
+    body = r.json()
+    if body.get("status") != "COMPLETED":
+        raise HTTPException(status_code=400, detail=f"Payment not completed: {body.get('status')}")
+    # Verify amount and product
+    units = body.get("purchase_units", [{}])
+    custom_id = units[0].get("payments", {}).get("captures", [{}])[0].get("custom_id", "")
+    if custom_id != product:
+        raise HTTPException(status_code=400, detail="Product mismatch")
+    amount = units[0].get("payments", {}).get("captures", [{}])[0].get("amount", {}).get("value", "0")
+    if float(amount) < 0.98:
+        raise HTTPException(status_code=400, detail="Amount mismatch")
+    _captured_orders.add(f"{product}:{order_id}")
+    return {"status": "ok", "product": product}
 
 
 @app.post("/confirm-and-get-premium")
 async def confirm_and_get_premium(data: PaidPremiumInput):
-    _verify_polar_checkout(data.paymentKey, "premium")
+    _verify_paypal_capture(data.paymentKey, "premium")
     try:
         return _build_premium_payload(data.birth_date, data.birth_time, data.mbti,
                                       calendar_type=data.calendar_type, is_leap_month=data.is_leap_month)
@@ -1906,7 +1936,7 @@ async def get_compatibility_full(data: CompatibilityInput):
 
 @app.post("/confirm-and-get-compatibility")
 async def confirm_and_get_compatibility(data: CompatibilityInput):
-    _verify_polar_checkout(data.paymentKey, "compatibility")
+    _verify_paypal_capture(data.paymentKey, "compatibility")
     result = calc_compatibility(data.person_a.dict(), data.person_b.dict())
     result['unlocked'] = True
     return result
@@ -2114,7 +2144,7 @@ async def get_yearly_full(data: YearlyFortuneInput):
 
 @app.post("/confirm-and-get-yearly-fortune")
 async def confirm_and_get_yearly(data: YearlyFortuneInput):
-    _verify_polar_checkout(data.paymentKey, "yearly")
+    _verify_paypal_capture(data.paymentKey, "yearly")
     result = build_yearly_fortune(data.birth_date, data.birth_time, data.mbti, data.target_year,
                                    calendar_type=data.calendar_type, is_leap_month=data.is_leap_month)
     result['unlocked'] = True
@@ -2125,7 +2155,7 @@ async def confirm_and_get_yearly(data: YearlyFortuneInput):
 async def confirm_payment_credit(data: PaymentCreditInput):
     if data.product not in VALID_PRODUCTS:
         raise HTTPException(status_code=400, detail=f"Unknown product: {data.product}")
-    _verify_polar_checkout(data.paymentKey, data.product)
+    _verify_paypal_capture(data.paymentKey, data.product)
     return {"status": "ok", "product": data.product}
 
 # ═══════════════════════════════════════════════
