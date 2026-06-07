@@ -979,16 +979,8 @@
 <div id="payment-modal" onclick="closePaymentModal()">
     <div class="payment-sheet" onclick="event.stopPropagation()">
         <div class="payment-handle"></div>
-        <div class="payment-title">Explore more destinies</div>
-        <div class="payment-sub">Unlock with a one-time $0.99 payment</div>
-
-        <div class="payment-option" onclick="closePaymentModal(); watchAdForBasicAnalysis();">
-            <div class="payment-option-row">
-                <span class="payment-option-label">🔮 New Saju Reading</span>
-                <span class="payment-option-price" style="color:#7B1FA2;">$0.99</span>
-            </div>
-            <div class="payment-option-desc">Analyze another person's Saju × MBTI destiny</div>
-        </div>
+        <div class="payment-title">Unlock deeper readings</div>
+        <div class="payment-sub">One-time $0.99 · No subscription</div>
 
         <div class="payment-option" onclick="closePaymentModal(); watchAdForPremium();">
             <div class="payment-option-row">
@@ -1551,11 +1543,6 @@
 
         userInfo = { name, gender, timeUnknown, calendarType, isLeapMonth };
 
-        if (freeUsed) {
-            showPaymentModal();
-            return;
-        }
-
         window._pendingReport = { bd, bt, mbti, name, gender, timeUnknown, calendarType, isLeapMonth };
         executeReport();
     }
@@ -1602,9 +1589,6 @@
             document.getElementById("floating-cta").style.display = "block";
             window.scrollTo(0, 0);
             scheduleReviewPopup();
-
-            localStorage.setItem('freeUsed', 'true');
-            freeUsed = true;
 
             localStorage.setItem('savedUserData', JSON.stringify({
                 birth_date: bd, birth_time: bt, mbti, name, gender,
@@ -1844,7 +1828,7 @@
                 </div>
                 <div class="constellation-unlock-banner">
                     <button class="constellation-unlock-btn" id="constellation-ad-btn">⭐ Unlock Star Sign Reading</button>
-                    <div class="constellation-unlock-hint">Free to unlock</div>
+                    <div class="constellation-unlock-hint">$0.99 to unlock</div>
                 </div>`;
             window._constellationLockedDiv = lockedDiv;
         }
@@ -3040,7 +3024,7 @@
                 </div>
                 <div class="constellation-unlock-banner" style="background: linear-gradient(135deg, #F3E5F5, #EDE7F6); border-color: #CE93D8;">
                     <button class="constellation-unlock-btn" id="premium-extra-ad-btn" style="background: linear-gradient(135deg, #7B1FA2, #9C27B0);">💎 Unlock All Analyses</button>
-                    <div class="constellation-unlock-hint">Free to unlock</div>
+                    <div class="constellation-unlock-hint">$0.99 to unlock</div>
                 </div>`;
 
             allSections[FREE_COUNT].parentNode.insertBefore(lockBanner, allSections[FREE_COUNT]);
@@ -3185,21 +3169,20 @@
         const area = document.getElementById('daily-fortune-area');
 
         if (!saved) {
-            if (localStorage.getItem('freeUsed') === 'true') {
-                area.innerHTML = `
-                    <div class="daily-fortune-card fade-in" style="background:linear-gradient(135deg,#5C258D,#4389A2);">
-                        <div class="daily-fortune-title">🔮 Daily Fortune is now available!</div>
-                        <div class="daily-fortune-msg">Get one more reading to unlock daily fortune checks.<br>Love, wealth, career, and health — checked every day!</div>
-                        <div class="daily-fortune-actions">
-                            <button class="daily-btn-new" id="daily-try-btn" style="flex:1;">🔮 Get a Reading for Daily Fortune</button>
-                        </div>
-                    </div>`;
-                area.style.display = 'block';
-                document.getElementById('daily-try-btn').addEventListener('click', function() {
-                    area.style.display = 'none';
-                    showScreen('intro-screen');
-                });
-            }
+            area.innerHTML = `
+                <div class="daily-fortune-card fade-in" style="background:linear-gradient(135deg,#5C258D,#4389A2);">
+                    <div class="daily-fortune-title">🔮 Unlock Daily Fortune</div>
+                    <div class="daily-fortune-msg">Complete a free reading to unlock daily fortune checks.<br>Love, wealth, career, and health — checked every day!</div>
+                    <div class="daily-fortune-actions">
+                        <button class="daily-btn-new" id="daily-try-btn" style="flex:1;">🔮 Start Free Reading</button>
+                    </div>
+                </div>`;
+            area.style.display = 'block';
+            document.getElementById('daily-try-btn').addEventListener('click', function() {
+                area.style.display = 'none';
+                showScreen('intro-screen');
+            });
+            {
             return;
         }
 
