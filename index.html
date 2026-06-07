@@ -630,6 +630,8 @@
 <div id="app">
     <header>
         <div style="display:flex;align-items:center;gap:8px;">
+            <button id="home-btn" onclick="goHome()" aria-label="Home" title="New Reading"
+                style="display:none; width:36px; height:36px; border-radius:50%; border:1.5px solid var(--border); background:var(--bg-soft); color:var(--primary); cursor:pointer; font-size:1.1rem; align-items:center; justify-content:center; padding:0; transition:all 0.3s; flex-shrink:0;">🏠</button>
             <span class="header-logo">
                 <img src="/assets/main.png" alt="Mystic" width="30" height="30" style="object-fit:contain;">
             </span>
@@ -836,7 +838,7 @@
         </div>
 
         <!-- Retry -->
-        <button class="retry-btn" onclick="location.reload()">Start Over</button>
+        <button class="retry-btn" onclick="goHome()">🔄 New Reading</button>
 
         <!-- Footer -->
         <div style="margin-top:24px; padding-top:16px; border-top:1px dashed #E1BEE7; text-align:center; font-size:0.72rem; color:#8D6E63; line-height:1.7;">
@@ -2438,10 +2440,21 @@
         document.getElementById('floating-cta').style.display = 'none';
         window.scrollTo(0,0);
 
+        // Show home button on all screens except intro
+        var homeBtn = document.getElementById('home-btn');
+        if (homeBtn) homeBtn.style.display = (id === 'intro-screen') ? 'none' : 'flex';
+
         if (screenHistory[screenHistory.length - 1] !== id) {
             screenHistory.push(id);
             history.pushState({ screen: id }, '', '');
         }
+    }
+
+    function goHome() {
+        // Reset state and go back to intro screen
+        reportData = null;
+        showScreen('intro-screen');
+        document.getElementById('floating-cta').style.display = 'none';
     }
 
     function backToReport() {
