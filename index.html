@@ -959,20 +959,20 @@
     </button>
 </div>
 
-<!-- Stripe Payment Modal -->
-<div id="stripe-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:10000; align-items:flex-end; justify-content:center;">
+<!-- Polar Payment Waiting Modal -->
+<div id="polar-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:10000; align-items:flex-end; justify-content:center;">
     <div style="background:#fff; border-radius:24px 24px 0 0; padding:28px 24px 44px; width:100%; max-width:440px; box-shadow:0 -8px 40px rgba(0,0,0,0.18);">
         <div style="width:40px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 20px;"></div>
         <div style="text-align:center; margin-bottom:20px;">
             <div style="font-size:1.5rem; font-weight:900; color:#4A148C;">🔮 Unlock for <span style="color:#7B1FA2;">$0.99</span></div>
-            <div id="stripe-modal-desc" style="font-size:0.85rem; color:#666; margin-top:6px; line-height:1.5;"></div>
+            <div id="polar-modal-desc" style="font-size:0.85rem; color:#666; margin-top:6px; line-height:1.5;"></div>
         </div>
-        <div id="stripe-card-element" style="border:1.5px solid #CE93D8; border-radius:12px; padding:14px 16px; background:#FAFAFA; margin-bottom:12px; min-height:44px;"></div>
-        <div id="stripe-error" style="color:#c62828; font-size:0.78rem; margin-bottom:10px; display:none; padding:8px 12px; background:#FFEBEE; border-radius:8px;"></div>
-        <button id="stripe-pay-btn" onclick="submitStripePayment()" style="width:100%; padding:16px; background:linear-gradient(135deg,#7B1FA2,#9C27B0); color:#fff; border:none; border-radius:14px; font-size:1rem; font-weight:800; cursor:pointer; box-shadow:0 4px 16px rgba(123,31,162,0.3);">
-            💳 Pay $0.99
-        </button>
-        <button onclick="closeStripeModal()" style="width:100%; padding:12px; background:transparent; border:none; color:#aaa; font-size:0.85rem; cursor:pointer; margin-top:6px;">
+        <div style="text-align:center; padding:20px 0;">
+            <div id="polar-modal-status" style="font-size:0.95rem; color:#7B1FA2; font-weight:600;">⏳ Complete payment in the new tab...</div>
+            <div style="font-size:0.8rem; color:#999; margin-top:8px;">This page updates automatically when payment is complete.</div>
+        </div>
+        <div id="polar-modal-error" style="color:#c62828; font-size:0.78rem; margin-bottom:10px; display:none; padding:8px 12px; background:#FFEBEE; border-radius:8px;"></div>
+        <button onclick="closePolarModal()" style="width:100%; padding:12px; background:transparent; border:1.5px solid #CE93D8; color:#7B1FA2; font-size:0.85rem; cursor:pointer; border-radius:12px; font-weight:600; margin-top:6px;">
             Cancel
         </button>
     </div>
@@ -1077,7 +1077,6 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
-<script src="https://js.stripe.com/v3/"></script>
 <script>
     const API_URL = window.location.origin;
     let appConfigPromise = null;
@@ -1105,102 +1104,64 @@
         if (sub) sub.textContent = '';
     }
 
-    // ── Ad system (postMessage communication) ──
-    // ── Stripe Payment ──
-    let stripeInstance = null;
-    let stripeCardElement = null;
-    let stripeClientSecret = null;
-    let stripeSuccessCallback = null;
-    let stripeCurrentProduct = null;
+    // ── Polar Payment ──
+    let _polarCheckoutId = null;
+    let _polarPollTimer = null;
+    let _polarSuccessCallback = null;
 
-    async function initStripe() {
-        if (stripeInstance) return stripeInstance;
-        const config = await fetch(`${API_URL}/payment-config`).then(r => r.json());
-        if (!config.publishable_key) throw new Error('Payment not configured');
-        stripeInstance = Stripe(config.publishable_key);
-        return stripeInstance;
+    function closePolarModal() {
+        document.getElementById('polar-modal').style.display = 'none';
+        if (_polarPollTimer) { clearInterval(_polarPollTimer); _polarPollTimer = null; }
+        _polarCheckoutId = null;
+        _polarSuccessCallback = null;
     }
 
-    async function showStripeModal(product, description, onSuccess) {
-        stripeCurrentProduct = product;
-        stripeSuccessCallback = onSuccess;
-        document.getElementById('stripe-modal-desc').textContent = description;
-        document.getElementById('stripe-error').style.display = 'none';
-        document.getElementById('stripe-pay-btn').disabled = false;
-        document.getElementById('stripe-pay-btn').textContent = '💳 Pay $0.99';
-        document.getElementById('stripe-modal').style.display = 'flex';
+    async function showPolarPayment(product, description, onSuccess) {
+        _polarSuccessCallback = onSuccess;
+        document.getElementById('polar-modal-desc').textContent = description;
+        document.getElementById('polar-modal-error').style.display = 'none';
+        document.getElementById('polar-modal-status').textContent = '⏳ Opening payment page...';
+        document.getElementById('polar-modal').style.display = 'flex';
 
         try {
-            const res = await fetch(`${API_URL}/create-payment-intent`, {
+            const res = await fetch(`${API_URL}/create-polar-checkout`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({product})
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.detail || 'Payment setup failed');
-            stripeClientSecret = data.clientSecret;
 
-            const stripe = await initStripe();
-            const elements = stripe.elements();
-            document.getElementById('stripe-card-element').innerHTML = '';
-            stripeCardElement = elements.create('card', {
-                style: { base: { fontSize: '16px', color: '#333', fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', '::placeholder': { color: '#aaa' } } }
-            });
-            stripeCardElement.mount('#stripe-card-element');
+            _polarCheckoutId = data.checkout_id;
+            window.open(data.checkout_url, '_blank');
+            document.getElementById('polar-modal-status').textContent = '⏳ Complete payment in the new tab...';
+
+            // Poll every 3 seconds for up to 10 minutes
+            let tries = 0;
+            _polarPollTimer = setInterval(async () => {
+                tries++;
+                if (tries > 200) { clearInterval(_polarPollTimer); return; }
+                try {
+                    const vres = await fetch(`${API_URL}/verify-polar-checkout?checkout_id=${_polarCheckoutId}`);
+                    const vdata = await vres.json();
+                    if (vdata.status === 'succeeded') {
+                        clearInterval(_polarPollTimer);
+                        _polarPollTimer = null;
+                        closePolarModal();
+                        showToast('✅ Unlocked!', 'success');
+                        if (_polarSuccessCallback) _polarSuccessCallback();
+                    }
+                } catch(e) { /* ignore poll errors */ }
+            }, 3000);
         } catch(e) {
-            document.getElementById('stripe-error').textContent = e.message || 'Payment setup failed. Please try again.';
-            document.getElementById('stripe-error').style.display = 'block';
-            document.getElementById('stripe-pay-btn').disabled = true;
+            document.getElementById('polar-modal-error').textContent = e.message || 'Payment setup failed. Please try again.';
+            document.getElementById('polar-modal-error').style.display = 'block';
+            document.getElementById('polar-modal-status').textContent = '';
         }
     }
 
-    function closeStripeModal() {
-        document.getElementById('stripe-modal').style.display = 'none';
-        stripeClientSecret = null;
-        stripeSuccessCallback = null;
-        stripeCurrentProduct = null;
-    }
-
-    async function submitStripePayment() {
-        if (!stripeClientSecret || !stripeCardElement) return;
-        const btn = document.getElementById('stripe-pay-btn');
-        btn.disabled = true;
-        btn.textContent = '⏳ Processing...';
-        document.getElementById('stripe-error').style.display = 'none';
-
-        try {
-            const {error, paymentIntent} = await stripeInstance.confirmCardPayment(stripeClientSecret, {
-                payment_method: { card: stripeCardElement }
-            });
-            if (error) {
-                document.getElementById('stripe-error').textContent = error.message;
-                document.getElementById('stripe-error').style.display = 'block';
-                btn.disabled = false;
-                btn.textContent = '💳 Pay $0.99';
-                return;
-            }
-            const verifyRes = await fetch(`${API_URL}/confirm-payment-credit`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({paymentKey: paymentIntent.id, product: stripeCurrentProduct})
-            });
-            if (!verifyRes.ok) {
-                const err = await verifyRes.json();
-                throw new Error(err.detail || 'Verification failed');
-            }
-            closeStripeModal();
-            showToast('✅ Unlocked!', 'success');
-            if (stripeSuccessCallback) stripeSuccessCallback();
-        } catch(e) {
-            document.getElementById('stripe-error').textContent = e.message || 'Payment failed. Please try again.';
-            document.getElementById('stripe-error').style.display = 'block';
-            btn.disabled = false;
-            btn.textContent = '💳 Pay $0.99';
-        }
-    }
-
-    function watchAdForBasicAnalysis() {
-        showStripeModal('additional', 'Get another full Saju x MBTI destiny reading', function() {
+        function watchAdForBasicAnalysis() {
+        showPolarPayment('additional', 'Get another full Saju x MBTI destiny reading', function() {
             freeUsed = false;
             localStorage.removeItem('freeUsed');
             showScreen('intro-screen');
@@ -1209,19 +1170,19 @@
 
     function watchAdForPremium() {
         if (!reportData) { showCatError('Please complete the free analysis first.'); return; }
-        showStripeModal('premium', 'Feng Shui tips - Lucky accessories - Signature scents - AI deep reading', function() {
+        showPolarPayment('premium', 'Feng Shui tips - Lucky accessories - Signature scents - AI deep reading', function() {
             loadPremiumReport();
         });
     }
 
     function watchAdForPremiumExtra() {
-        showStripeModal('premium', 'Unlock all deep analyses for your reading', function() {
+        showPolarPayment('premium', 'Unlock all deep analyses for your reading', function() {
             unlockPremiumExtra();
         });
     }
 
     function watchAdForConstellation() {
-        showStripeModal('constellation', 'Star sign x Saju synergy - your cosmic blueprint', function() {
+        showPolarPayment('constellation', 'Star sign x Saju synergy - your cosmic blueprint', function() {
             unlockConstellation();
         });
     }
@@ -1280,7 +1241,7 @@
     }
 
     function watchAdForYearly(meInput) {
-        showStripeModal('yearly', '2026 full 12-month fortune forecast with personalized advice', function() {
+        showPolarPayment('yearly', '2026 full 12-month fortune forecast with personalized advice', function() {
             loadYearlyFull(meInput);
         });
     }

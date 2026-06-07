@@ -3,7 +3,7 @@ import json
 import uuid
 import base64
 import httpx
-import stripe
+import time
 from datetime import date
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
@@ -385,12 +385,14 @@ if GOOGLE_API_KEY:
     gemini_model = genai.GenerativeModel('gemini-2.5-flash')
 
 # ─────────────────────────────────────────────
-# Payment (Stripe)
+# Payment (Polar)
 # ─────────────────────────────────────────────
-STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
-STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY", "")
-STRIPE_IS_TEST = STRIPE_SECRET_KEY.startswith("sk_test_") or not STRIPE_SECRET_KEY
-stripe.api_key = STRIPE_SECRET_KEY
+POLAR_ACCESS_TOKEN = os.getenv("POLAR_ACCESS_TOKEN", "")
+POLAR_PRODUCT_ID   = os.getenv("POLAR_PRODUCT_ID", "")   # single $0.99 product in Polar dashboard
+POLAR_SERVER       = os.getenv("POLAR_SERVER", "production")  # "sandbox" for testing
+
+# In-memory checkout tracker (checkout_id -> {product, ts})
+_polar_checkouts: dict = {}
 
 app = FastAPI()
 
@@ -456,8 +458,8 @@ async def read_terms():
 @app.get("/payment-config")
 async def payment_config():
     return {
-        "publishable_key": STRIPE_PUBLISHABLE_KEY,
-        "is_test": STRIPE_IS_TEST,
+        "provider": "polar",
+        "configured": bool(POLAR_ACCESS_TOKEN and POLAR_PRODUCT_ID),
     }
 
 # ═══════════════════════════════════════════════
@@ -1423,10 +1425,10 @@ class PaidPremiumInput(BaseModel):
     time_unknown: bool = False
     calendar_type: str = 'solar'
     is_leap_month: bool = False
-    paymentKey: str  # Stripe PaymentIntent ID
+    paymentKey: str  # Polar checkout ID
 
 class PaymentCreditInput(BaseModel):
-    paymentKey: str   # Stripe PaymentIntent ID (pi_...)
+    paymentKey: str   # Polar checkout ID
     product: str
 
 class PersonInput(BaseModel):
@@ -1612,57 +1614,67 @@ async def get_premium_report(input_data: PremiumReportInput):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-def _verify_stripe_payment(payment_intent_id: str, expected_product: str) -> dict:
-    """Verify a Stripe PaymentIntent and return it if valid."""
+VALID_PRODUCTS = {"premium", "additional", "compatibility", "yearly", "constellation"}
+
+
+def _verify_polar_checkout(checkout_id: str, expected_product: str) -> None:
+    """Verify a Polar checkout is succeeded and matches expected product."""
+    if not POLAR_ACCESS_TOKEN:
+        raise HTTPException(status_code=503, detail="Payment not configured")
     try:
-        intent = stripe.PaymentIntent.retrieve(payment_intent_id)
-    except stripe.error.StripeError as e:
-        raise HTTPException(status_code=400, detail=f"Stripe error: {str(e)[:200]}")
+        from polar_sdk import Polar as PolarClient
+        polar = PolarClient(server=POLAR_SERVER, access_token=POLAR_ACCESS_TOKEN)
+        checkout = polar.checkouts.get(id=checkout_id)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Polar error: {str(e)[:200]}")
 
-    if intent.status != "succeeded":
-        raise HTTPException(status_code=400, detail=f"Payment not completed (status: {intent.status})")
+    if checkout.status.value != "succeeded":
+        raise HTTPException(status_code=400, detail=f"Payment not completed (status: {checkout.status.value})")
 
-    meta_product = intent.metadata.get("product", "")
+    meta_product = checkout.metadata.get("product", "")
     if meta_product != expected_product:
         raise HTTPException(status_code=400, detail="Payment product mismatch")
 
-    expected_amount = PRODUCT_PRICES.get(expected_product, 99)
-    if intent.amount != expected_amount:
-        raise HTTPException(status_code=400, detail="Payment amount mismatch")
 
-    return intent
-
-
-# All prices in USD cents ($0.99 = 99)
-PRODUCT_PRICES = {
-    "premium": 99,
-    "additional": 99,
-    "compatibility": 99,
-    "yearly": 99,
-    "constellation": 99,
-}
-
-
-@app.post("/create-payment-intent")
-async def create_payment_intent(data: dict):
+@app.post("/create-polar-checkout")
+async def create_polar_checkout(data: dict):
     product = data.get("product", "premium")
-    amount = PRODUCT_PRICES.get(product, 99)
-    if not STRIPE_SECRET_KEY:
+    if product not in VALID_PRODUCTS:
+        raise HTTPException(status_code=400, detail="Unknown product")
+    if not POLAR_ACCESS_TOKEN or not POLAR_PRODUCT_ID:
         raise HTTPException(status_code=503, detail="Payment not configured")
     try:
-        intent = stripe.PaymentIntent.create(
-            amount=amount,
-            currency="usd",
+        from polar_sdk import Polar as PolarClient
+        from polar_sdk.models import CheckoutCreate
+        polar = PolarClient(server=POLAR_SERVER, access_token=POLAR_ACCESS_TOKEN)
+        checkout = polar.checkouts.create(CheckoutCreate(
+            products=[POLAR_PRODUCT_ID],
+            success_url=data.get("success_url", ""),
             metadata={"product": product},
-        )
-        return {"clientSecret": intent.client_secret}
-    except stripe.error.StripeError as e:
+        ))
+        _polar_checkouts[checkout.id] = {"product": product, "ts": time.time()}
+        return {"checkout_url": checkout.url, "checkout_id": checkout.id}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e)[:200])
+
+
+@app.get("/verify-polar-checkout")
+async def verify_polar_checkout(checkout_id: str):
+    if not POLAR_ACCESS_TOKEN:
+        raise HTTPException(status_code=503, detail="Payment not configured")
+    try:
+        from polar_sdk import Polar as PolarClient
+        polar = PolarClient(server=POLAR_SERVER, access_token=POLAR_ACCESS_TOKEN)
+        checkout = polar.checkouts.get(id=checkout_id)
+        product = checkout.metadata.get("product", "")
+        return {"status": checkout.status.value, "product": product}
+    except Exception as e:
         raise HTTPException(status_code=400, detail=str(e)[:200])
 
 
 @app.post("/confirm-and-get-premium")
 async def confirm_and_get_premium(data: PaidPremiumInput):
-    _verify_stripe_payment(data.paymentKey, "premium")
+    _verify_polar_checkout(data.paymentKey, "premium")
     try:
         return _build_premium_payload(data.birth_date, data.birth_time, data.mbti,
                                       calendar_type=data.calendar_type, is_leap_month=data.is_leap_month)
@@ -1881,7 +1893,7 @@ async def get_compatibility_preview(data: CompatibilityInput):
         'person_a_summary': {'name': result['person_a']['name'], 'ilgan': result['person_a']['ilgan_name'], 'mbti': result['person_a']['mbti']},
         'person_b_summary': {'name': result['person_b']['name'], 'ilgan': result['person_b']['ilgan_name'], 'mbti': result['person_b']['mbti']},
         'locked': True,
-        'unlock_price': PRODUCT_PRICES['compatibility'],
+        'unlock_price': 99,
     }
 
 
@@ -1894,7 +1906,7 @@ async def get_compatibility_full(data: CompatibilityInput):
 
 @app.post("/confirm-and-get-compatibility")
 async def confirm_and_get_compatibility(data: CompatibilityInput):
-    _verify_stripe_payment(data.paymentKey, "compatibility")
+    _verify_polar_checkout(data.paymentKey, "compatibility")
     result = calc_compatibility(data.person_a.dict(), data.person_b.dict())
     result['unlocked'] = True
     return result
@@ -2088,7 +2100,7 @@ async def yearly_preview(data: YearlyFortuneInput):
         'caution_month': result['caution_month'],
         'summary': result['summary'],
         'locked': True,
-        'unlock_price': PRODUCT_PRICES['yearly'],
+        'unlock_price': 99,
     }
 
 
@@ -2102,7 +2114,7 @@ async def get_yearly_full(data: YearlyFortuneInput):
 
 @app.post("/confirm-and-get-yearly-fortune")
 async def confirm_and_get_yearly(data: YearlyFortuneInput):
-    _verify_stripe_payment(data.paymentKey, "yearly")
+    _verify_polar_checkout(data.paymentKey, "yearly")
     result = build_yearly_fortune(data.birth_date, data.birth_time, data.mbti, data.target_year,
                                    calendar_type=data.calendar_type, is_leap_month=data.is_leap_month)
     result['unlocked'] = True
@@ -2111,9 +2123,9 @@ async def confirm_and_get_yearly(data: YearlyFortuneInput):
 
 @app.post("/confirm-payment-credit")
 async def confirm_payment_credit(data: PaymentCreditInput):
-    if not PRODUCT_PRICES.get(data.product):
+    if data.product not in VALID_PRODUCTS:
         raise HTTPException(status_code=400, detail=f"Unknown product: {data.product}")
-    _verify_stripe_payment(data.paymentKey, data.product)
+    _verify_polar_checkout(data.paymentKey, data.product)
     return {"status": "ok", "product": data.product}
 
 # ═══════════════════════════════════════════════
