@@ -1075,6 +1075,39 @@
     var _resizeObserver = new MutationObserver(notifyResize);
     _resizeObserver.observe(document.body, {childList: true, subtree: true, attributes: false});
 
+    // ── In-App Browser (KakaoTalk / Instagram / Line etc.) Detection ──
+    // PayPal is blocked in WebView / in-app browsers. Show "Open in Browser" notice.
+    (function() {
+        const ua = navigator.userAgent || '';
+        const isInApp = /KAKAOTALK|Instagram|FBAN|FBAV|Line\/|MicroMessenger|Naver|DaumApps|NaverSearchApp/i.test(ua)
+                     || (ua.includes('iPhone') && !ua.includes('Safari'))
+                     || (ua.includes('Android') && ua.includes('wv'));  // Android WebView flag
+        if (isInApp) {
+            const currentUrl = window.location.href;
+            document.body.innerHTML = `
+                <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#f5f0ff,#ede7f6);padding:32px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
+                    <div style="font-size:3.5rem;margin-bottom:12px;">🌐</div>
+                    <h2 style="color:#4A148C;font-size:1.4rem;font-weight:900;margin-bottom:10px;">Open in Browser</h2>
+                    <p style="color:#5D4037;font-size:0.95rem;line-height:1.7;max-width:300px;margin-bottom:8px;">
+                        For the best experience and to enable <strong>PayPal payment</strong>,<br>
+                        please open this page in <strong>Safari</strong> or <strong>Chrome</strong>.
+                    </p>
+                    <div style="background:#FFF8E1;border:1.5px solid #FFD54F;border-radius:12px;padding:12px 20px;margin-bottom:24px;max-width:300px;">
+                        <p style="color:#5D4037;font-size:0.82rem;margin:0;line-height:1.6;">
+                            📱 Tap the <strong>⋯ menu</strong> or <strong>⋮ settings</strong> icon<br>
+                            → Select <strong>"Open in Browser"</strong>
+                        </p>
+                    </div>
+                    <a href="${currentUrl}" target="_blank" rel="noopener"
+                       style="display:inline-block;padding:16px 32px;background:linear-gradient(135deg,#7B1FA2,#9C27B0);color:#fff;text-decoration:none;border-radius:16px;font-size:1rem;font-weight:900;box-shadow:0 4px 20px rgba(123,31,162,0.35);margin-bottom:12px;">
+                        🔮 Open in Browser →
+                    </a>
+                    <p style="color:#aaa;font-size:0.72rem;margin-top:8px;">Free · No sign-up · Secure PayPal</p>
+                </div>`;
+            return;
+        }
+    })();
+
     // ── WordPress Access Gate ──
     (function() {
         const params = new URLSearchParams(window.location.search);
