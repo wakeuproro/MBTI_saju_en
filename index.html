@@ -1313,7 +1313,13 @@
     }
 
     function watchAdForCompatibility(personA, personB) {
-        showPaypalPayment('compatibility', 'Full Saju + MBTI compatibility analysis with personalized advice', function(orderId) {
+        // If user already paid $1.99 Unlock All, skip payment
+        if (window._allUnlockOrderId) {
+            loadCompatibilityFull(personA, personB, window._allUnlockOrderId);
+            return;
+        }
+        showPaypalPayment('all', '💕 Compatibility analysis + everything unlocked — $1.99', function(orderId) {
+            window._allUnlockOrderId = orderId;
             loadCompatibilityFull(personA, personB, orderId);
         });
     }
@@ -2633,12 +2639,13 @@
                     </div>
                 </div>
             </div>
-            <div style="background:#E8F5E9; border:1.5px solid #A5D6A7; border-radius:16px; padding:20px; margin-top:16px; text-align:center;">
-                <div style="font-size:0.95rem; font-weight:800; color:#2E7D32; margin-bottom:6px;">🔓 Unlock Detailed Analysis</div>
-                <div style="font-size:0.82rem; color:#388E3C; margin-bottom:14px;">Full elemental + zodiac + MBTI breakdown with advice</div>
-                <button id="compat-ad-btn" style="padding:14px 30px; background:linear-gradient(135deg,#7B1FA2,#9C27B0); color:#fff; border:none; border-radius:14px; font-size:0.95rem; font-weight:800; cursor:pointer;">
-                    💎 See Full Analysis
+            <div style="background:linear-gradient(135deg,#F3E5F5,#EDE7F6); border:2px solid #CE93D8; border-radius:16px; padding:20px; margin-top:16px; text-align:center;">
+                <div style="font-size:0.95rem; font-weight:800; color:#6A1B9A; margin-bottom:6px;">🔮 Unlock Full Compatibility Report</div>
+                <div style="font-size:0.82rem; color:#7B1FA2; margin-bottom:14px;">Elemental · Zodiac · MBTI breakdown with personalized advice</div>
+                <button id="compat-ad-btn" style="padding:14px 30px; background:linear-gradient(135deg,#7B1FA2,#9C27B0); color:#fff; border:none; border-radius:14px; font-size:0.95rem; font-weight:800; cursor:pointer; width:100%;">
+                    🔓 See Full Report — $1.99
                 </button>
+                <div style="font-size:0.75rem; color:#9C27B0; margin-top:8px;">One-time · Unlocks everything · No subscription</div>
             </div>`;
         document.getElementById('compat-ad-btn').addEventListener('click', function() {
             watchAdForCompatibility(personA, personB);
