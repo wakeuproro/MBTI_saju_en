@@ -1244,8 +1244,8 @@
             ]);
             const premiumData = await premiumRes.json();
             const yearlyData = await yearlyRes.json();
-            if (!premiumRes.ok) throw new Error(premiumData.detail || 'Premium failed');
-            if (!yearlyRes.ok) throw new Error(yearlyData.detail || 'Yearly failed');
+            if (!premiumRes.ok) throw new Error('[Premium] ' + (premiumData.detail || premiumRes.status));
+            if (!yearlyRes.ok) throw new Error('[Yearly] ' + (yearlyData.detail || yearlyRes.status));
 
             // Mark as fully unlocked (before rendering so callbacks work)
             window._allUnlockOrderId = orderId;
@@ -1290,18 +1290,18 @@
     }
 
     function watchAdForPremiumExtra() {
-        if (window._allUnlockOrderId) { unlockPremiumExtra(window._allUnlockOrderId); return; }
+        if (window._allUnlockOrderId) { unlockPremiumExtra(); return; }
+        // Any button triggers full unlock
         showPaypalPayment('all', '💎 Deep analyses · ⭐ Zodiac · 📅 2026 forecast · 💕 Compatibility — all unlocked', function(orderId) {
-            window._allUnlockOrderId = orderId;
-            unlockPremiumExtra(orderId);
+            loadAllContent(orderId);
         });
     }
 
     function watchAdForConstellation() {
-        if (window._allUnlockOrderId) { unlockConstellation(window._allUnlockOrderId); return; }
+        if (window._allUnlockOrderId) { unlockConstellation(); return; }
+        // Any button triggers full unlock
         showPaypalPayment('all', '⭐ Star sign synergy · 💎 Deep analyses · 📅 2026 forecast — all unlocked', function(orderId) {
-            window._allUnlockOrderId = orderId;
-            unlockConstellation(orderId);
+            loadAllContent(orderId);
         });
     }
 
@@ -1368,9 +1368,9 @@
 
     function watchAdForYearly(meInput) {
         if (window._allUnlockOrderId) { loadYearlyFull(meInput, window._allUnlockOrderId); return; }
+        // Full unlock — also fetches premium content alongside yearly
         showPaypalPayment('all', '📅 2026 full forecast · 💎 Deep analyses · ⭐ Zodiac · 💕 Compatibility — all unlocked', function(orderId) {
-            window._allUnlockOrderId = orderId;
-            loadYearlyFull(meInput, orderId);
+            loadAllContent(orderId);
         });
     }
 
