@@ -24,6 +24,8 @@
     <meta name="twitter:image" content="https://web-production-705a3.up.railway.app/assets/main.png">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        /* 📱 Mobile: prevent 300ms tap delay, ensure touch events register on all interactive elements */
+        button, input, select, textarea, a, [onclick], label { touch-action: manipulation; }
 
         /* 🎨 Purple Magic Theme — Light Mode */
         :root, [data-theme="light"] {
@@ -72,7 +74,7 @@
         #app { width: 100%; max-width: 480px; min-height: 100dvh; background: var(--bg-main); display: flex; flex-direction: column; position: relative; padding-bottom: 80px; overflow-x: hidden; }
 
         /* Header */
-        header { padding: 14px 20px; background: var(--header-bg); border-bottom: 2px solid var(--border-soft); display: flex; justify-content: space-between; align-items: center; backdrop-filter: blur(10px); z-index: 10; position: sticky; top: 0; }
+        header { padding: 14px 20px; background: var(--header-bg); border-bottom: 2px solid var(--border-soft); display: flex; justify-content: space-between; align-items: center; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); z-index: 10; position: sticky; top: 0; }
         .header-title { font-weight: 900; font-size: 1rem; color: var(--primary); letter-spacing: 1px; }
         .header-logo { font-size: 1.2rem; display: flex; align-items: center; }
 
@@ -285,7 +287,7 @@
         .floating-cta-btn:active { opacity: 0.9; }
 
         /* Payment Modal */
-        #payment-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: flex-end; }
+        #payment-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: flex-end; pointer-events: none; }
         .payment-sheet { width: 100%; max-width: 480px; background: var(--bg-card); border-radius: 24px 24px 0 0; padding: 28px 24px 40px; animation: slideUp 0.3s ease; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .payment-handle { width: 40px; height: 4px; background: #E0E0E0; border-radius: 2px; margin: 0 auto 20px; }
@@ -300,7 +302,8 @@
         .payment-close { width: 100%; padding: 14px; background: none; border: 2px solid #E0E0E0; border-radius: 14px; color: #8D6E63; font-size: 0.9rem; font-weight: 700; cursor: pointer; margin-top: 8px; }
 
         /* 🎴 Instagram Story style result card (9:16) */
-        #result-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 100; justify-content: center; align-items: center; padding: 16px; backdrop-filter: blur(8px); overflow-y: auto; }
+        #result-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 100; justify-content: center; align-items: center; padding: 16px; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); overflow-y: auto; pointer-events: none; }
+        #result-modal.open { pointer-events: auto; }
         #result-card {
             width: 100%;
             max-width: 360px;
@@ -406,8 +409,8 @@
         .bar-water { background: linear-gradient(180deg, #42A5F5, #1565C0); }
 
         /* Loading */
-        .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, rgba(74,20,140,0.92), rgba(123,31,162,0.88)); z-index: 200; justify-content: center; align-items: center; flex-direction: column; backdrop-filter: blur(4px); }
-        .loading-overlay.active { display: flex; }
+        .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, rgba(74,20,140,0.92), rgba(123,31,162,0.88)); z-index: 200; justify-content: center; align-items: center; flex-direction: column; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); pointer-events: none; }
+        .loading-overlay.active { display: flex; pointer-events: auto; }
         .loading-spinner { width: 56px; height: 56px; border: 5px solid rgba(255,255,255,0.25); border-top: 5px solid #fff; border-radius: 50%; animation: spin 0.9s linear infinite; margin-bottom: 20px; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .loading-text { font-size: 1.05rem; color: #fff; font-weight: 700; animation: pulse-text 2s ease-in-out infinite; text-align: center; }
@@ -966,7 +969,7 @@
 </div>
 
 <!-- PayPal Payment Modal -->
-<div id="paypal-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:10000; align-items:flex-end; justify-content:center;">
+<div id="paypal-modal" style="display:none; position:fixed; top:0; right:0; bottom:0; left:0; background:rgba(0,0,0,0.55); z-index:10000; align-items:flex-end; justify-content:center; pointer-events:none;">
     <div style="background:#fff; border-radius:24px 24px 0 0; padding:28px 24px 44px; width:100%; max-width:440px; box-shadow:0 -8px 40px rgba(0,0,0,0.18);">
         <div style="width:40px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 20px;"></div>
         <div style="text-align:center; margin-bottom:20px;">
@@ -1035,7 +1038,7 @@
 </div>
 
 <!-- 😿 Error Modal -->
-<div id="cat-error-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(74,20,140,0.55); z-index:200; justify-content:center; align-items:center; padding:20px; backdrop-filter:blur(4px);" onclick="closeCatError()">
+<div id="cat-error-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(74,20,140,0.55); z-index:200; justify-content:center; align-items:center; padding:20px; -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); pointer-events:none;" onclick="closeCatError()">
     <div onclick="event.stopPropagation()" style="background:var(--bg-card); border-radius:24px; padding:32px 24px; max-width:340px; width:100%; text-align:center; box-shadow:0 10px 40px rgba(74,20,140,0.3);">
         <div class="cat-mascot" style="margin-bottom:8px;">
             <img src="/assets/error.png" alt="Confused Mystic" width="160" height="160" style="object-fit:contain;">
@@ -1134,7 +1137,9 @@
     let _paypalButtonsInstance = null;
 
     function closePaypalModal() {
-        document.getElementById('paypal-modal').style.display = 'none';
+        const pm = document.getElementById('paypal-modal');
+        pm.style.display = 'none';
+        pm.style.pointerEvents = 'none';
         if (_paypalButtonsInstance) { _paypalButtonsInstance.close(); _paypalButtonsInstance = null; }
         _paypalSuccessCallback = null;
         _paypalProduct = null;
@@ -1159,7 +1164,9 @@
         document.getElementById('paypal-modal-desc').textContent = description;
         document.getElementById('paypal-modal-error').style.display = 'none';
         document.getElementById('paypal-buttons-container').innerHTML = '<div style="text-align:center;padding:20px;color:#999;">Loading PayPal...</div>';
-        document.getElementById('paypal-modal').style.display = 'flex';
+        const pm = document.getElementById('paypal-modal');
+        pm.style.display = 'flex';
+        pm.style.pointerEvents = 'auto';
 
         try {
             await _ensurePaypalSDK();
@@ -1519,10 +1526,14 @@
     // 🐱 Error modal
     function showCatError(msg) {
         document.getElementById('cat-error-msg').innerHTML = msg || 'Please try again in a moment 🐾';
-        document.getElementById('cat-error-modal').style.display = 'flex';
+        const em = document.getElementById('cat-error-modal');
+        em.style.display = 'flex';
+        em.style.pointerEvents = 'auto';
     }
     function closeCatError() {
-        document.getElementById('cat-error-modal').style.display = 'none';
+        const em = document.getElementById('cat-error-modal');
+        em.style.display = 'none';
+        em.style.pointerEvents = 'none';
     }
 
     // ✨ Toast notification
@@ -2174,10 +2185,14 @@
 
     // Payment
     function showPaymentModal() {
-        document.getElementById("payment-modal").style.display = "flex";
+        const modal = document.getElementById("payment-modal");
+        modal.style.display = "flex";
+        modal.style.pointerEvents = "auto";
     }
     function closePaymentModal() {
-        document.getElementById("payment-modal").style.display = "none";
+        const modal = document.getElementById("payment-modal");
+        modal.style.display = "none";
+        modal.style.pointerEvents = "none";
     }
 
     // 🎴 Result Card
@@ -2239,9 +2254,17 @@
         }
 
         document.getElementById('rc-summary').innerHTML = summaryParts.join('<br>');
-        document.getElementById('result-modal').style.display = 'flex';
+        const rm = document.getElementById('result-modal');
+        rm.style.display = 'flex';
+        rm.style.pointerEvents = 'auto';
+        rm.classList.add('open');
     }
-    function closeModal() { document.getElementById("result-modal").style.display = "none"; }
+    function closeModal() {
+        const rm = document.getElementById('result-modal');
+        rm.style.display = 'none';
+        rm.style.pointerEvents = 'none';
+        rm.classList.remove('open');
+    }
 
     document.getElementById('btn-insta-share').addEventListener('click', function(e) { e.stopPropagation(); shareToInstagram(); });
     document.getElementById('btn-save-card').addEventListener('click', function(e) { e.stopPropagation(); saveCard(); });
