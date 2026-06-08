@@ -1246,22 +1246,21 @@
             if (!premiumRes.ok) throw new Error(premiumData.detail || 'Premium failed');
             if (!yearlyRes.ok) throw new Error(yearlyData.detail || 'Yearly failed');
 
-            // Render premium
+            // Mark as fully unlocked (before rendering so callbacks work)
+            window._allUnlockOrderId = orderId;
+            window._yearlyData = yearlyData;  // cache for yearly screen
+
+            // Render premium (all sections fully unlocked)
             renderPremiumResult(premiumData.premium, premiumData.lifestyle, premiumData.ai_error);
-            document.getElementById('premium-unlock-banner').style.display = 'none';
-            document.getElementById('premium-result-area').style.display = 'block';
+            unlockPremiumExtra();  // remove the "sections 6+" lock banner
 
             // Unlock constellation (client-side from cached data)
             unlockConstellation();
 
-            // Render yearly
-            showScreen('yearly-screen');
-            renderYearlyFull(yearlyData);
+            // Stay on report screen so user can see everything
+            showScreen('report-screen');
 
-            // Mark compatibility as unlocked (user can enter partner info)
-            window._allUnlockOrderId = orderId;
-
-            showToast('🎉 Everything unlocked!', 'success');
+            showToast('🎉 Everything unlocked! Scroll down to see it all.', 'success');
         } catch(e) {
             console.error('Unlock all error:', e);
             showCatError('Error: ' + (e.message || 'Unlock failed') + '<br><small>orderId: ' + (orderId || 'MISSING') + '</small>');
@@ -1269,6 +1268,17 @@
             stopLoadingMessages();
             document.getElementById('loading').classList.remove('active');
         }
+    }
+
+    function unlockPremiumExtra() {
+        // Remove the "more sections locked" banner
+        const banner = document.getElementById('premium-extra-lock-banner');
+        if (banner) banner.remove();
+        // Show all hidden premium sections
+        document.querySelectorAll('.premium-extra-locked').forEach(el => {
+            el.style.display = '';
+            el.classList.add('open');
+        });
     }
 
     function watchAdForPremium() {
@@ -1364,6 +1374,12 @@
     }
 
     async function loadYearlyFull(meInput, orderId) {
+        // Use cached yearly data if already fetched via loadAllContent
+        if (window._yearlyData) {
+            showScreen('yearly-screen');
+            renderYearlyFull(window._yearlyData);
+            return;
+        }
         document.getElementById("loading").classList.add("active");
         document.querySelector(".loading-text").textContent = "Generating monthly forecast";
         startLoadingMessages([
@@ -3097,9 +3113,14 @@
                 allSections[i].classList.add('premium-extra-locked');
             }
 
-            document.getElementById('premium-extra-ad-btn').addEventListener('click', function() {
-                watchAdForPremiumExtra();
-            });
+            // If already paid for 'all', skip the lock immediately
+            if (window._allUnlockOrderId) {
+                unlockPremiumExtra();
+            } else {
+                document.getElementById('premium-extra-ad-btn').addEventListener('click', function() {
+                    watchAdForPremiumExtra();
+                });
+            }
         } else {
             allSections.forEach(s => s.classList.add('open'));
         }
