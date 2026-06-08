@@ -1621,13 +1621,7 @@ def _build_premium_payload(birth_date: str, birth_time: str, mbti: str,
 
 @app.post("/get-premium-report")
 async def get_premium_report(input_data: PremiumReportInput):
-    try:
-        return _build_premium_payload(input_data.birth_date, input_data.birth_time, input_data.mbti,
-                                       calendar_type=input_data.calendar_type, is_leap_month=input_data.is_leap_month)
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    raise HTTPException(status_code=403, detail="Payment required. Use /confirm-and-get-premium.")
 
 
 VALID_PRODUCTS = {"premium", "additional", "compatibility", "yearly", "constellation"}
@@ -1929,9 +1923,7 @@ async def get_compatibility_preview(data: CompatibilityInput):
 
 @app.post("/get-compatibility-full")
 async def get_compatibility_full(data: CompatibilityInput):
-    result = calc_compatibility(data.person_a.dict(), data.person_b.dict())
-    result['unlocked'] = True
-    return result
+    raise HTTPException(status_code=403, detail="Payment required. Use /confirm-and-get-compatibility.")
 
 
 @app.post("/confirm-and-get-compatibility")
@@ -2136,10 +2128,7 @@ async def yearly_preview(data: YearlyFortuneInput):
 
 @app.post("/get-yearly-fortune-full")
 async def get_yearly_full(data: YearlyFortuneInput):
-    result = build_yearly_fortune(data.birth_date, data.birth_time, data.mbti, data.target_year,
-                                   calendar_type=data.calendar_type, is_leap_month=data.is_leap_month)
-    result['unlocked'] = True
-    return result
+    raise HTTPException(status_code=403, detail="Payment required. Use /confirm-and-get-yearly-fortune.")
 
 
 @app.post("/confirm-and-get-yearly-fortune")

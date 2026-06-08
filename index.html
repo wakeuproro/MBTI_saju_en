@@ -1197,9 +1197,10 @@
                     });
                     const result = await res.json();
                     if (!res.ok) throw new Error(result.detail || 'Capture failed');
+                    const capturedOrderId = data.orderID;
                     closePaypalModal();
                     showToast('✅ Unlocked!', 'success');
-                    if (_paypalSuccessCallback) _paypalSuccessCallback();
+                    if (_paypalSuccessCallback) _paypalSuccessCallback(capturedOrderId);
                 },
                 onError: (err) => {
                     document.getElementById('paypal-modal-error').textContent = 'Payment failed. Please try again.';
@@ -1224,20 +1225,20 @@
 
     function watchAdForPremium() {
         if (!reportData) { showCatError('Please complete the free analysis first.'); return; }
-        showPaypalPayment('premium', 'Feng Shui tips - Lucky accessories - Signature scents - AI deep reading', function() {
-            loadPremiumReport();
+        showPaypalPayment('premium', 'Feng Shui tips - Lucky accessories - Signature scents - AI deep reading', function(orderId) {
+            loadPremiumReport(orderId);
         });
     }
 
     function watchAdForPremiumExtra() {
-        showPaypalPayment('premium', 'Unlock all deep analyses for your reading', function() {
-            unlockPremiumExtra();
+        showPaypalPayment('premium', 'Unlock all deep analyses for your reading', function(orderId) {
+            unlockPremiumExtra(orderId);
         });
     }
 
     function watchAdForConstellation() {
-        showPaypalPayment('constellation', 'Star sign x Saju synergy - your cosmic blueprint', function() {
-            unlockConstellation();
+        showPaypalPayment('constellation', 'Star sign x Saju synergy - your cosmic blueprint', function(orderId) {
+            unlockConstellation(orderId);
         });
     }
 
@@ -1264,10 +1265,12 @@
     }
 
     function watchAdForCompatibility(personA, personB) {
-        loadCompatibilityFull(personA, personB);
+        showPaypalPayment('compatibility', 'Full Saju + MBTI compatibility analysis with personalized advice', function(orderId) {
+            loadCompatibilityFull(personA, personB, orderId);
+        });
     }
 
-    async function loadCompatibilityFull(personA, personB) {
+    async function loadCompatibilityFull(personA, personB, orderId) {
         document.getElementById("loading").classList.add("active");
         document.querySelector(".loading-text").textContent = "Analyzing compatibility";
         startLoadingMessages([
@@ -1276,10 +1279,10 @@
             'Preparing personalized advice'
         ]);
         try {
-            const res = await fetch(`${API_URL}/get-compatibility-full`, {
+            const res = await fetch(`${API_URL}/confirm-and-get-compatibility`, {
                 method: 'POST',
                 headers: {'Content-Type':'application/json'},
-                body: JSON.stringify({ person_a: personA, person_b: personB })
+                body: JSON.stringify({ person_a: personA, person_b: personB, paymentKey: orderId })
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.detail || 'Server error');
@@ -1295,12 +1298,12 @@
     }
 
     function watchAdForYearly(meInput) {
-        showPaypalPayment('yearly', '2026 full 12-month fortune forecast with personalized advice', function() {
-            loadYearlyFull(meInput);
+        showPaypalPayment('yearly', '2026 full 12-month fortune forecast with personalized advice', function(orderId) {
+            loadYearlyFull(meInput, orderId);
         });
     }
 
-    async function loadYearlyFull(meInput) {
+    async function loadYearlyFull(meInput, orderId) {
         document.getElementById("loading").classList.add("active");
         document.querySelector(".loading-text").textContent = "Generating monthly forecast";
         startLoadingMessages([
@@ -1309,10 +1312,10 @@
             'Preparing personalized advice'
         ]);
         try {
-            const res = await fetch(`${API_URL}/get-yearly-fortune-full`, {
+            const res = await fetch(`${API_URL}/confirm-and-get-yearly-fortune`, {
                 method: 'POST',
                 headers: {'Content-Type':'application/json'},
-                body: JSON.stringify({ ...meInput, target_year: 2026 })
+                body: JSON.stringify({ ...meInput, target_year: 2026, paymentKey: orderId })
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.detail || 'Server error');
@@ -1327,7 +1330,7 @@
         }
     }
 
-    async function loadPremiumReport() {
+    async function loadPremiumReport(orderId) {
         document.getElementById("loading").classList.add("active");
         document.querySelector(".loading-text").textContent = "AI deep analysis in progress";
         startLoadingMessages([
@@ -1338,10 +1341,10 @@
         ]);
         try {
             const input = collectAnalysisInput();
-            const res = await fetch(`${API_URL}/get-premium-report`, {
+            const res = await fetch(`${API_URL}/confirm-and-get-premium`, {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
-                body: JSON.stringify(input)
+                body: JSON.stringify({ ...input, paymentKey: orderId })
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.detail || 'Server error');
