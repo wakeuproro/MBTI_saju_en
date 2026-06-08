@@ -633,10 +633,14 @@
         <div style="display:flex;align-items:center;gap:8px;">
             <button id="home-btn" onclick="goHome()" aria-label="Home" title="New Reading"
                 style="display:none; width:36px; height:36px; border-radius:50%; border:1.5px solid var(--border); background:var(--bg-soft); color:var(--primary); cursor:pointer; font-size:1.1rem; align-items:center; justify-content:center; padding:0; transition:all 0.3s; flex-shrink:0;">🏠</button>
-            <span class="header-logo">
-                <img src="/assets/main.png" alt="Mystic" width="30" height="30" style="object-fit:contain;">
-            </span>
-            <span class="header-title">SAJU x MBTI</span>
+            <button onclick="goHome()" aria-label="Go to home" title="Home"
+                style="display:flex;align-items:center;gap:8px;background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:10px;transition:background 0.2s;"
+                onmouseover="this.style.background='var(--bg-soft)'" onmouseout="this.style.background='none'">
+                <span class="header-logo">
+                    <img src="/assets/main.png" alt="Mystic" width="30" height="30" style="object-fit:contain;">
+                </span>
+                <span class="header-title">SAJU x MBTI</span>
+            </button>
         </div>
         <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
             <span class="icon-light">🌙</span>
