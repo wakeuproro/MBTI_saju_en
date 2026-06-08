@@ -790,12 +790,15 @@
         <!-- Premium Teaser (locked) -->
         <div id="premium-teaser-area"></div>
 
-        <!-- Premium Unlock Banner -->
+        <!-- Unlock All Banner -->
         <div class="premium-unlock-banner" id="premium-unlock-banner">
-            <div class="premium-unlock-title">💎 A deeper reading awaits you</div>
-            <div class="premium-unlock-desc">Feng Shui tips for your element · Lucky accessories · Signature scents<br>+ AI-powered deep analysis — all in one place</div>
-            <button class="premium-unlock-btn" onclick="watchAdForPremium()" style="background:linear-gradient(135deg,#7B1FA2,#9C27B0);">💎 Unlock Premium Reading</button>
-            <div class="premium-unlock-price">Deep AI analysis of your cosmic blueprint</div>
+            <div class="premium-unlock-title">🔮 Unlock Your Full Destiny Reading</div>
+            <div class="premium-unlock-desc">
+                💎 Feng Shui & Lucky items · ⭐ Zodiac synergy · 📅 2026 monthly forecast<br>
+                💕 Compatibility analysis · 🤖 AI deep reading — everything in one go
+            </div>
+            <button class="premium-unlock-btn" onclick="watchAdForAll()" style="background:linear-gradient(135deg,#7B1FA2,#9C27B0);font-size:1.05rem;">🔓 Unlock Everything — $1.99</button>
+            <div class="premium-unlock-price">One-time · No subscription · Instant access</div>
         </div>
 
         <!-- Premium Result (hidden, shown after unlock) -->
@@ -982,31 +985,15 @@
 <div id="payment-modal" onclick="closePaymentModal()">
     <div class="payment-sheet" onclick="event.stopPropagation()">
         <div class="payment-handle"></div>
-        <div class="payment-title">Unlock deeper readings</div>
-        <div class="payment-sub">One-time $0.99 · No subscription</div>
+        <div class="payment-title">🔮 Unlock Your Full Reading</div>
+        <div class="payment-sub">One-time $1.99 · Everything included · No subscription</div>
 
-        <div class="payment-option" onclick="closePaymentModal(); watchAdForPremium();">
+        <div class="payment-option" onclick="closePaymentModal(); watchAdForAll();" style="border:2px solid #7B1FA2;">
             <div class="payment-option-row">
-                <span class="payment-option-label">💎 Premium Deep Analysis</span>
-                <span class="payment-option-price" style="color:#7B1FA2;">$0.99</span>
+                <span class="payment-option-label">🔓 Unlock Everything</span>
+                <span class="payment-option-price" style="color:#7B1FA2;font-size:1.1rem;font-weight:900;">$1.99</span>
             </div>
-            <div class="payment-option-desc">Feng Shui · Lucky accessories · Signature scents · AI reading</div>
-        </div>
-
-        <div class="payment-option" onclick="closePaymentModal(); openCompatibilityScreen();">
-            <div class="payment-option-row">
-                <span class="payment-option-label">💕 Compatibility Analysis</span>
-                <span class="payment-option-price" style="color:#7B1FA2;">$0.99</span>
-            </div>
-            <div class="payment-option-desc">Deep Saju × MBTI compatibility reading for two people</div>
-        </div>
-
-        <div class="payment-option" onclick="closePaymentModal(); openYearlyScreen();">
-            <div class="payment-option-row">
-                <span class="payment-option-label">📅 2026 Detailed Forecast</span>
-                <span class="payment-option-price" style="color:#7B1FA2;">$0.99</span>
-            </div>
-            <div class="payment-option-desc">Month-by-month fortune with personalized advice</div>
+            <div class="payment-option-desc">💎 Premium analysis · ⭐ Zodiac · 📅 2026 forecast · 💕 Compatibility</div>
         </div>
 
         <button class="payment-close" onclick="closePaymentModal()">Close</button>
@@ -1222,6 +1209,66 @@
             localStorage.removeItem('freeUsed');
             showScreen('intro-screen');
         });
+    }
+
+    function watchAdForAll() {
+        if (!reportData) { showCatError('Please complete the free analysis first.'); return; }
+        showPaypalPayment('all',
+            '💎 Premium analysis · ⭐ Zodiac · 📅 2026 forecast · 💕 Compatibility — all unlocked',
+            function(orderId) { loadAllContent(orderId); }
+        );
+    }
+
+    async function loadAllContent(orderId) {
+        document.getElementById('loading').classList.add('active');
+        document.querySelector('.loading-text').textContent = 'Unlocking your full reading...';
+        startLoadingMessages([
+            'Unlocking premium analysis',
+            'Loading zodiac synergy',
+            'Generating 2026 forecast',
+            'Almost there!'
+        ]);
+        try {
+            const input = collectAnalysisInput();
+            // Run premium + yearly in parallel
+            const [premiumRes, yearlyRes] = await Promise.all([
+                fetch(`${API_URL}/confirm-and-get-premium`, {
+                    method: 'POST', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({...input, paymentKey: orderId})
+                }),
+                fetch(`${API_URL}/confirm-and-get-yearly-fortune`, {
+                    method: 'POST', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({...input, target_year: 2026, paymentKey: orderId})
+                })
+            ]);
+            const premiumData = await premiumRes.json();
+            const yearlyData = await yearlyRes.json();
+            if (!premiumRes.ok) throw new Error(premiumData.detail || 'Premium failed');
+            if (!yearlyRes.ok) throw new Error(yearlyData.detail || 'Yearly failed');
+
+            // Render premium
+            renderPremiumResult(premiumData.premium, premiumData.lifestyle, premiumData.ai_error);
+            document.getElementById('premium-unlock-banner').style.display = 'none';
+            document.getElementById('premium-result-area').style.display = 'block';
+
+            // Unlock constellation (client-side from cached data)
+            unlockConstellation();
+
+            // Render yearly
+            showScreen('yearly-screen');
+            renderYearlyFull(yearlyData);
+
+            // Mark compatibility as unlocked (user can enter partner info)
+            window._allUnlockOrderId = orderId;
+
+            showToast('🎉 Everything unlocked!', 'success');
+        } catch(e) {
+            console.error('Unlock all error:', e);
+            showCatError('Error: ' + (e.message || 'Unlock failed') + '<br><small>orderId: ' + (orderId || 'MISSING') + '</small>');
+        } finally {
+            stopLoadingMessages();
+            document.getElementById('loading').classList.remove('active');
+        }
     }
 
     function watchAdForPremium() {

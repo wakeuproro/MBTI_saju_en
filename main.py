@@ -1624,14 +1624,18 @@ async def get_premium_report(input_data: PremiumReportInput):
     raise HTTPException(status_code=403, detail="Payment required. Use /confirm-and-get-premium.")
 
 
-VALID_PRODUCTS = {"premium", "additional", "compatibility", "yearly", "constellation"}
+VALID_PRODUCTS = {"premium", "additional", "compatibility", "yearly", "constellation", "all"}
+PRODUCT_PRICES = {"all": "1.99"}  # everything else defaults to $0.99
 
 
 def _verify_paypal_capture(order_id: str, expected_product: str) -> None:
-    """Verify that a PayPal order was captured and matches the expected product."""
-    key = f"{expected_product}:{order_id}"
-    if key not in _captured_orders:
-        raise HTTPException(status_code=400, detail="Payment not verified. Complete payment first.")
+    """Verify that a PayPal order was captured.
+    Accepts either exact product match OR 'all' bundle purchase."""
+    if f"{expected_product}:{order_id}" in _captured_orders:
+        return
+    if f"all:{order_id}" in _captured_orders:
+        return  # 'all' bundle unlocks everything
+    raise HTTPException(status_code=400, detail="Payment not verified. Complete payment first.")
 
 
 @app.post("/create-paypal-order")
@@ -1649,9 +1653,9 @@ async def create_paypal_order(data: dict):
             json={
                 "intent": "CAPTURE",
                 "purchase_units": [{
-                    "amount": {"currency_code": "USD", "value": "0.99"},
+                    "amount": {"currency_code": "USD", "value": PRODUCT_PRICES.get(product, "0.99")},
                     "custom_id": product,
-                    "description": f"Destiny Reading Unlock — {product}",
+                    "description": "Destiny Reading — Unlock All" if product == "all" else f"Destiny Reading Unlock — {product}",
                 }],
             },
             timeout=15,
@@ -1685,7 +1689,8 @@ async def capture_paypal_order(data: dict):
     units = body.get("purchase_units", [{}])
     captures = units[0].get("payments", {}).get("captures", [{}])
     amount = captures[0].get("amount", {}).get("value", "0") if captures else "0"
-    if float(amount) < 0.98:
+    expected_min = 1.98 if product == "all" else 0.98
+    if float(amount) < expected_min:
         raise HTTPException(status_code=400, detail="Amount mismatch")
     _captured_orders.add(f"{product}:{order_id}")
     return {"status": "ok", "product": product}
