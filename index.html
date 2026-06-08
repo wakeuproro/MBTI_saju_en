@@ -1158,7 +1158,7 @@
         if (!cfg.client_id) throw new Error('PayPal not configured');
         await new Promise((resolve, reject) => {
             const s = document.createElement('script');
-            s.src = `https://www.paypal.com/sdk/js?client-id=${cfg.client_id}&currency=USD`;
+            s.src = `https://www.paypal.com/sdk/js?client-id=${cfg.client_id}&currency=USD&locale=en_US`;
             s.onload = resolve;
             s.onerror = () => reject(new Error('PayPal SDK load failed'));
             document.head.appendChild(s);
@@ -1203,7 +1203,8 @@
                     if (_paypalSuccessCallback) _paypalSuccessCallback(capturedOrderId);
                 },
                 onError: (err) => {
-                    document.getElementById('paypal-modal-error').textContent = 'Payment failed. Please try again.';
+                    const msg = (err && err.message) ? err.message : JSON.stringify(err);
+                    document.getElementById('paypal-modal-error').textContent = 'Payment error: ' + msg;
                     document.getElementById('paypal-modal-error').style.display = 'block';
                 }
             });
