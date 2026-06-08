@@ -1848,8 +1848,12 @@
         const weakest = useAdvanced ? r.oheng_advanced.weakest
             : Object.entries(r.oheng).sort((a,b) => a[1]-b[1])[0][0];
         const calcMethod = useAdvanced ? '<small style="color:var(--text-light);font-size:0.7rem;">※ Precision analysis with hidden stems & seasonal weights</small><br>' : '';
+        const zeroElements = Object.entries(chartData).filter(([k,v]) => v === 0 || v < 0.5).map(([k]) => capitalize(k));
+        const deficitNote = zeroElements.length > 0
+            ? ` Your chart shows a <b>deficiency in ${zeroElements.join(' &amp; ')}</b> — a deep inner yearning that shapes your drives and blind spots.`
+            : ` Your <b>${capitalize(weakest)}</b> element is depleted — nurturing it is the key to finding cosmic balance.`;
         document.getElementById("oheng-advice").innerHTML =
-            `${calcMethod}<b>${capitalize(strongest)}</b> energy is your strongest force, while <b>${capitalize(weakest)}</b> energy needs a boost. Supplementing your ${capitalize(weakest)} element is the key to finding cosmic balance.`;
+            `${calcMethod}<b>${capitalize(strongest)}</b> energy defines your core nature.${deficitNote}`;
 
         // Build Accordion Sections
         const container = document.getElementById("accordion-container");

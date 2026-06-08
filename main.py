@@ -1511,6 +1511,7 @@ Based on the birth chart and MBTI below, write a deeply personal and insightful 
 3. Write warmly but honestly, like a wise mentor having an intimate conversation
 4. Use vivid metaphors and imagery, but never exaggerate
 5. Each section should be 3-5 sentences
+6. When describing a Five Element with a low or zero score, NEVER use the word "missing". Instead use words like "depleted", "deficient", "yearning for", "hungering for", "starved of", or "an unfulfilled longing for". Frame it as an inner need or growth edge, not an absence.
 
 [Output Format — respond ONLY with this JSON structure]
 {{
