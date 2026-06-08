@@ -773,8 +773,8 @@
         <div class="section-guide">Tap each section to reveal your reading</div>
         <div id="accordion-container"></div>
 
-        <!-- Lucky Items -->
-        <div class="accordion-section fade-in" style="animation-delay:0.2s">
+        <!-- Lucky Items (moved into accordion-container by JS after Final Word section) -->
+        <div id="lucky-boosters-section" class="accordion-section fade-in" style="display:none;">
             <div class="accordion-header" onclick="toggleAccordion(this)">
                 <div class="accordion-icon" style="background:#E8F5E9;">🍀</div>
                 <div class="accordion-title">Lucky Boosters</div>
@@ -970,7 +970,7 @@
     <div style="background:#fff; border-radius:24px 24px 0 0; padding:28px 24px 44px; width:100%; max-width:440px; box-shadow:0 -8px 40px rgba(0,0,0,0.18);">
         <div style="width:40px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 20px;"></div>
         <div style="text-align:center; margin-bottom:20px;">
-            <div style="font-size:1.5rem; font-weight:900; color:#4A148C;">🔮 Unlock for <span style="color:#7B1FA2;">$0.99</span></div>
+            <div style="font-size:1.5rem; font-weight:900; color:#4A148C;">🔮 Unlock Everything — <span style="color:#7B1FA2;">$1.99</span></div>
             <div id="paypal-modal-desc" style="font-size:0.85rem; color:#666; margin-top:6px; line-height:1.5;"></div>
         </div>
         <div id="paypal-buttons-container" style="margin-bottom:12px;"></div>
@@ -1279,13 +1279,17 @@
     }
 
     function watchAdForPremiumExtra() {
-        showPaypalPayment('premium', 'Unlock all deep analyses for your reading', function(orderId) {
+        if (window._allUnlockOrderId) { unlockPremiumExtra(window._allUnlockOrderId); return; }
+        showPaypalPayment('all', '💎 Deep analyses · ⭐ Zodiac · 📅 2026 forecast · 💕 Compatibility — all unlocked', function(orderId) {
+            window._allUnlockOrderId = orderId;
             unlockPremiumExtra(orderId);
         });
     }
 
     function watchAdForConstellation() {
-        showPaypalPayment('constellation', 'Star sign x Saju synergy - your cosmic blueprint', function(orderId) {
+        if (window._allUnlockOrderId) { unlockConstellation(window._allUnlockOrderId); return; }
+        showPaypalPayment('all', '⭐ Star sign synergy · 💎 Deep analyses · 📅 2026 forecast — all unlocked', function(orderId) {
+            window._allUnlockOrderId = orderId;
             unlockConstellation(orderId);
         });
     }
@@ -1352,7 +1356,9 @@
     }
 
     function watchAdForYearly(meInput) {
-        showPaypalPayment('yearly', '2026 full 12-month fortune forecast with personalized advice', function(orderId) {
+        if (window._allUnlockOrderId) { loadYearlyFull(meInput, window._allUnlockOrderId); return; }
+        showPaypalPayment('all', '📅 2026 full forecast · 💎 Deep analyses · ⭐ Zodiac · 💕 Compatibility — all unlocked', function(orderId) {
+            window._allUnlockOrderId = orderId;
             loadYearlyFull(meInput, orderId);
         });
     }
@@ -1930,8 +1936,8 @@
                     ${c.desc.substring(0, 80)}... When Saju meets your star sign, hidden traits emerge.
                 </div>
                 <div class="constellation-unlock-banner">
-                    <button class="constellation-unlock-btn" id="constellation-ad-btn">⭐ Unlock Star Sign Reading</button>
-                    <div class="constellation-unlock-hint">$0.99 to unlock</div>
+                    <button class="constellation-unlock-btn" id="constellation-ad-btn">🔓 Unlock Everything — $1.99</button>
+                    <div class="constellation-unlock-hint">One-time · Unlocks all premium content</div>
                 </div>`;
             window._constellationLockedDiv = lockedDiv;
         }
@@ -2118,6 +2124,10 @@
             container.appendChild(div);
         });
 
+        // Lucky Boosters — inserted here (after Final Word, before locked sections)
+        const luckySection = document.getElementById('lucky-boosters-section');
+        if (luckySection) container.appendChild(luckySection);
+
         // Constellation locked section
         if (window._constellationLockedDiv) {
             container.appendChild(window._constellationLockedDiv);
@@ -2127,7 +2137,8 @@
             }
         }
 
-        // Lucky Grid
+        // Lucky Grid — make visible now that it's been moved into container
+        if (luckySection) luckySection.style.display = '';
         const l = r.lucky;
         document.getElementById("lucky-grid").innerHTML = `
             <div class="lucky-card"><div class="lucky-card-icon">🎨</div><div class="lucky-card-label">Lucky Color</div><div class="lucky-card-value">${l.color}</div></div>
@@ -2883,11 +2894,12 @@
                 </div>
             </div>
             <div style="background:#E8F5E9; border:1.5px solid #A5D6A7; border-radius:16px; padding:20px; margin-top:16px; text-align:center;">
-                <div style="font-size:0.95rem; font-weight:800; color:#2E7D32; margin-bottom:6px;">🔓 Unlock Full 12-Month Forecast</div>
+                <div style="font-size:0.95rem; font-weight:800; color:#2E7D32; margin-bottom:6px;">🔮 Unlock Full 12-Month Forecast</div>
                 <div style="font-size:0.82rem; color:#388E3C; margin-bottom:14px;">Monthly themes, advice, and fortune flow at a glance</div>
-                <button id="yearly-ad-btn" style="padding:14px 30px; background:linear-gradient(135deg,#7B1FA2,#9C27B0); color:#fff; border:none; border-radius:14px; font-size:0.95rem; font-weight:800; cursor:pointer;">
-                    💎 See All 12 Months
+                <button id="yearly-ad-btn" style="padding:14px 30px; background:linear-gradient(135deg,#7B1FA2,#9C27B0); color:#fff; border:none; border-radius:14px; font-size:0.95rem; font-weight:800; cursor:pointer; width:100%;">
+                    🔓 Unlock Everything — $1.99
                 </button>
+                <div style="font-size:0.75rem; color:#9C27B0; margin-top:8px;">One-time · Unlocks all premium content · No subscription</div>
             </div>
             <button id="yearly-back-btn" style="width:100%; margin-top:14px; padding:14px; background:var(--bg-card); border:2px solid #E1BEE7; color:#8D6E63; border-radius:14px; font-weight:700; cursor:pointer;">← Back to Results</button>`;
         document.getElementById('yearly-ad-btn').addEventListener('click', function() {
@@ -3074,8 +3086,8 @@
                     <div class="constellation-locked-lock">🔒</div>
                 </div>
                 <div class="constellation-unlock-banner" style="background: linear-gradient(135deg, #F3E5F5, #EDE7F6); border-color: #CE93D8;">
-                    <button class="constellation-unlock-btn" id="premium-extra-ad-btn" style="background: linear-gradient(135deg, #7B1FA2, #9C27B0);">💎 Unlock All Analyses</button>
-                    <div class="constellation-unlock-hint">$0.99 to unlock</div>
+                    <button class="constellation-unlock-btn" id="premium-extra-ad-btn" style="background: linear-gradient(135deg, #7B1FA2, #9C27B0);">🔓 Unlock Everything — $1.99</button>
+                    <div class="constellation-unlock-hint">One-time · Unlocks all premium content</div>
                 </div>`;
 
             allSections[FREE_COUNT].parentNode.insertBefore(lockBanner, allSections[FREE_COUNT]);
