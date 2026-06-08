@@ -244,8 +244,8 @@
         .accordion-content { padding: 0 18px 18px; }
         .accordion-desc { font-size: 0.88rem; line-height: 1.8; color: #5D4037; }
         .accordion-sub { margin-top: 12px; }
-        .accordion-sub-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; font-size: 0.82rem; color: #6D4C41; }
-        .accordion-sub-label { font-weight: 700; color: #7B1FA2; white-space: nowrap; min-width: 88px; flex-shrink: 0; }
+        .accordion-sub-item { display: block; margin-bottom: 10px; font-size: 0.82rem; color: #6D4C41; background: rgba(123,31,162,0.04); border-radius: 8px; padding: 8px 10px; }
+        .accordion-sub-label { display: block; font-weight: 700; color: #7B1FA2; font-size: 0.75rem; margin-bottom: 3px; }
         .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
         .tag { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
 
@@ -476,8 +476,8 @@
         .daewoon-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--bg-card); border-radius: 10px; border: 1px solid var(--border-soft); font-size: 0.82rem; }
         .daewoon-item.current { background: linear-gradient(135deg, #FFF9C4, #FFF59D); border: 2px solid #FFC107; box-shadow: 0 2px 8px rgba(255,193,7,0.3); }
         .daewoon-item.past { opacity: 0.65; }
-        .daewoon-age { font-weight: 700; color: var(--primary-dark); font-size: 0.75rem; min-width: 70px; }
-        .daewoon-label { font-weight: 800; font-size: 0.95rem; color: var(--primary-dark); min-width: 50px; }
+        .daewoon-age { font-weight: 700; color: var(--primary-dark); font-size: 0.75rem; min-width: 70px; flex-shrink: 0; }
+        .daewoon-label { font-weight: 800; font-size: 0.95rem; color: var(--primary-dark); min-width: 80px; flex-shrink: 0; }
         .daewoon-oheng { font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; font-weight: 700; }
         .daewoon-theme-text { flex: 1; font-size: 0.78rem; color: var(--text-mid); }
 
@@ -2714,7 +2714,7 @@
             return `
             <div style="margin-bottom:8px;">
                 <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.75rem; margin-bottom:3px;">
-                    <span style="color:#5D4037; font-weight:700; width:70px;">${elementNames[k]}</span>
+                    <span style="color:#5D4037; font-weight:700; min-width:80px; flex-shrink:0;">${elementNames[k]}</span>
                     <span style="color:#C2185B; font-size:0.7rem;">${pA.name} ${aPct}%</span>
                     <span style="color:#5E35B1; font-size:0.7rem;">${pB.name} ${bPct}%</span>
                 </div>
