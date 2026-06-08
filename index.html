@@ -406,15 +406,15 @@
         .bar-water { background: linear-gradient(180deg, #42A5F5, #1565C0); }
 
         /* Loading */
-        .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(250,247,255,0.95); z-index: 200; justify-content: center; align-items: center; flex-direction: column; }
+        .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, rgba(74,20,140,0.92), rgba(123,31,162,0.88)); z-index: 200; justify-content: center; align-items: center; flex-direction: column; backdrop-filter: blur(4px); }
         .loading-overlay.active { display: flex; }
-        .loading-spinner { width: 50px; height: 50px; border: 4px solid #E1BEE7; border-top: 4px solid #7B1FA2; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
+        .loading-spinner { width: 56px; height: 56px; border: 5px solid rgba(255,255,255,0.25); border-top: 5px solid #fff; border-radius: 50%; animation: spin 0.9s linear infinite; margin-bottom: 20px; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .loading-text { font-size: 0.95rem; color: #8D6E63; font-weight: 600; animation: pulse-text 2s ease-in-out infinite; }
-        @keyframes pulse-text { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .loading-text { font-size: 1.05rem; color: #fff; font-weight: 700; animation: pulse-text 2s ease-in-out infinite; text-align: center; }
+        @keyframes pulse-text { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
         .loading-dots::after { content: ''; animation: dots 1.5s steps(4, end) infinite; }
         @keyframes dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
-        .loading-sub { font-size: 0.78rem; color: #A1887F; margin-top: 8px; animation: fadeInUp 0.5s ease; }
+        .loading-sub { font-size: 0.82rem; color: rgba(255,255,255,0.75); margin-top: 10px; text-align: center; animation: fadeInUp 0.5s ease; }
 
         /* Travel place cards */
         .travel-places { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
@@ -1048,10 +1048,11 @@
 
 <!-- Loading -->
 <div class="loading-overlay" id="loading">
-    <div class="cat-mascot" style="margin-bottom: 14px;">
-        <img src="/assets/loading.png" alt="Mystic reading your destiny" width="180" height="180" style="object-fit:contain;">
+    <div class="loading-spinner"></div>
+    <div class="cat-mascot" style="margin-bottom: 16px; margin-top: -10px;">
+        <img src="/assets/loading.png" alt="Mystic reading your destiny" width="160" height="160" style="object-fit:contain; filter: drop-shadow(0 4px 20px rgba(255,255,255,0.3));">
     </div>
-    <div class="loading-text">Mystic is reading your destiny<span class="loading-dots"></span></div>
+    <div class="loading-text">🔮 Mystic is reading your destiny<span class="loading-dots"></span></div>
     <div class="loading-sub" id="loading-sub"></div>
 </div>
 
