@@ -1196,10 +1196,10 @@
                         body: JSON.stringify({order_id: data.orderID, product: _paypalProduct})
                     });
                     const result = await res.json();
-                    if (!res.ok) throw new Error(result.detail || 'Capture failed');
+                    if (!res.ok) throw new Error('Capture failed: ' + (result.detail || res.status));
                     const capturedOrderId = data.orderID;
                     closePaypalModal();
-                    showToast('✅ Unlocked!', 'success');
+                    showToast('✅ Payment captured! Loading content...', 'success');
                     if (_paypalSuccessCallback) _paypalSuccessCallback(capturedOrderId);
                 },
                 onError: (err) => {
@@ -1353,7 +1353,7 @@
             document.getElementById('premium-result-area').style.display = 'block';
         } catch(e) {
             console.error('Premium report error:', e);
-            showCatError('AI analysis failed.<br>Please try again shortly.');
+            showCatError('Error: ' + (e.message || 'AI analysis failed') + '<br><small>orderId: ' + (orderId || 'MISSING') + '</small>');
         } finally {
             stopLoadingMessages();
             document.getElementById("loading").classList.remove("active");
