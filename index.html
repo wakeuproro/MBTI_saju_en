@@ -1185,9 +1185,10 @@
                     const result = await res.json();
                     if (!res.ok) throw new Error('Capture failed: ' + (result.detail || res.status));
                     const capturedOrderId = data.orderID;
+                    const cb = _paypalSuccessCallback;  // save before closePaypalModal nulls it
                     closePaypalModal();
                     showToast('✅ Payment captured! Loading content...', 'success');
-                    if (_paypalSuccessCallback) _paypalSuccessCallback(capturedOrderId);
+                    if (cb) cb(capturedOrderId);
                 },
                 onError: (err) => {
                     const msg = (err && err.message) ? err.message : JSON.stringify(err);
