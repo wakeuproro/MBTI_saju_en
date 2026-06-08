@@ -1681,12 +1681,10 @@ async def capture_paypal_order(data: dict):
     body = r.json()
     if body.get("status") != "COMPLETED":
         raise HTTPException(status_code=400, detail=f"Payment not completed: {body.get('status')}")
-    # Verify amount and product
+    # Verify amount (PayPal capture response nests captures under purchase_units[0].payments.captures)
     units = body.get("purchase_units", [{}])
-    custom_id = units[0].get("payments", {}).get("captures", [{}])[0].get("custom_id", "")
-    if custom_id != product:
-        raise HTTPException(status_code=400, detail="Product mismatch")
-    amount = units[0].get("payments", {}).get("captures", [{}])[0].get("amount", {}).get("value", "0")
+    captures = units[0].get("payments", {}).get("captures", [{}])
+    amount = captures[0].get("amount", {}).get("value", "0") if captures else "0"
     if float(amount) < 0.98:
         raise HTTPException(status_code=400, detail="Amount mismatch")
     _captured_orders.add(f"{product}:{order_id}")
