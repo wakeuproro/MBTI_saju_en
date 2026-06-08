@@ -1512,6 +1512,7 @@ Based on the birth chart and MBTI below, write a deeply personal and insightful 
 4. Use vivid metaphors and imagery, but never exaggerate
 5. Each section should be 3-5 sentences
 6. When describing a Five Element with a low or zero score, NEVER use the word "missing". Instead use words like "depleted", "deficient", "yearning for", "hungering for", "starved of", or "an unfulfilled longing for". Frame it as an inner need or growth edge, not an absence.
+7. NEVER use the phrase "ahead" (e.g. "the year ahead", "the road ahead", "lies ahead"). Instead use present-tense or time-specific language like "in 2026", "this year", "during this period", "this season".
 
 [Output Format — respond ONLY with this JSON structure]
 {{
@@ -2242,7 +2243,7 @@ def _daily_fortune_score(ilgan: str, target_date: date):
 _FORTUNE_MESSAGES = {
     'total': {
         (85, 100): ['Your best day yet! Go for it ✨', 'Everything flows in your favor today 🌟', 'Lucky energy is hiding in every corner today 🍀'],
-        (70, 85): ['A good day ahead 😊', 'Positive energy surrounds you today 🌈', 'Small blessings will find you today ☘️'],
+        (70, 85): ['Good energy is with you today 😊', 'Positive energy surrounds you today 🌈', 'Small blessings will find you today ☘️'],
         (50, 70): ['A steady, peaceful day 🌿', 'Nothing dramatic — just keep going 📚', 'A calm day for focused work 🍃'],
         (30, 50): ['Tread carefully today 🤔', 'Save big decisions for tomorrow 💭', 'Recharge your batteries today 🔋'],
         (0, 30): ['Rest is your best strategy today 🛌', 'Take a step back and regroup 🧘', 'Focus inward — the world can wait 🌙'],
@@ -2256,7 +2257,7 @@ _FORTUNE_MESSAGES = {
     },
     'money': {
         (85, 100): ['Financial luck is wide open today! 💰', 'Great timing for investments and deals 📈'],
-        (70, 85): ['Surprise income might appear 🎁', 'A financially stable day ahead 💵'],
+        (70, 85): ['Surprise income might appear 🎁', 'Financial energy is steady today 💵'],
         (50, 70): ['Stick to your budget today 📊', 'Small purchases OK, big ones — think twice 🛒'],
         (30, 50): ['Watch your spending! Impulse buys calling 🚫', 'Unexpected expenses possible today 😥'],
         (0, 30): ['Best not to spend today 🔒', 'Use today for financial review instead 📝'],
