@@ -1629,12 +1629,9 @@ VALID_PRODUCTS = {"premium", "additional", "compatibility", "yearly", "constella
 
 def _verify_paypal_capture(order_id: str, expected_product: str) -> None:
     """Verify that a PayPal order was captured and matches the expected product."""
-    if order_id not in _captured_orders:
-        raise HTTPException(status_code=400, detail="Payment not verified. Complete payment first.")
-    # product tag is embedded as <product>:<order_id> in the set
     key = f"{expected_product}:{order_id}"
     if key not in _captured_orders:
-        raise HTTPException(status_code=400, detail="Payment product mismatch")
+        raise HTTPException(status_code=400, detail="Payment not verified. Complete payment first.")
 
 
 @app.post("/create-paypal-order")
