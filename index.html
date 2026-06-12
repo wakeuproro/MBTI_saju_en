@@ -1087,7 +1087,29 @@
                      || (ua.includes('iPhone') && !ua.includes('Safari'))
                      || (ua.includes('Android') && ua.includes('wv'));  // Android WebView flag
         if (isInApp) {
-            const currentUrl = window.location.href;
+            const destUrl = 'https://mindwiredai.com/destiny-decoder-free-birth-chart-x-mbti-reading/';
+            function _openInBrowser() {
+                try { window.top.location.href = destUrl; return; } catch(e) {}
+                try { window.location.href = destUrl; } catch(e) {}
+            }
+            function _copyLink(btn) {
+                var url = destUrl;
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(url).then(function() {
+                        btn.textContent = '✅ Copied!';
+                        setTimeout(function(){ btn.textContent = '📋 Copy Link'; }, 2000);
+                    }).catch(function() { _fallbackCopy(url, btn); });
+                } else { _fallbackCopy(url, btn); }
+            }
+            function _fallbackCopy(url, btn) {
+                var el = document.createElement('textarea');
+                el.value = url; el.style.position = 'fixed'; el.style.opacity = '0';
+                document.body.appendChild(el); el.focus(); el.select();
+                try { document.execCommand('copy'); btn.textContent = '✅ Copied!'; setTimeout(function(){ btn.textContent = '📋 Copy Link'; }, 2000); } catch(e) {}
+                document.body.removeChild(el);
+            }
+            window._openInBrowser = _openInBrowser;
+            window._copyLink = _copyLink;
             document.body.innerHTML = `
                 <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#f5f0ff,#ede7f6);padding:32px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
                     <div style="font-size:3.5rem;margin-bottom:12px;">🌐</div>
@@ -1102,10 +1124,18 @@
                             → Select <strong>"Open in Browser"</strong>
                         </p>
                     </div>
-                    <a href="${currentUrl}" target="_blank" rel="noopener"
-                       style="display:inline-block;padding:16px 32px;background:linear-gradient(135deg,#7B1FA2,#9C27B0);color:#fff;text-decoration:none;border-radius:16px;font-size:1rem;font-weight:900;box-shadow:0 4px 20px rgba(123,31,162,0.35);margin-bottom:12px;">
+                    <button onclick="window._openInBrowser()"
+                       style="display:inline-block;padding:16px 32px;background:linear-gradient(135deg,#7B1FA2,#9C27B0);color:#fff;border:none;border-radius:16px;font-size:1rem;font-weight:900;box-shadow:0 4px 20px rgba(123,31,162,0.35);margin-bottom:16px;cursor:pointer;-webkit-tap-highlight-color:transparent;">
                         🔮 Open in Browser →
-                    </a>
+                    </button>
+                    <div style="background:#fff;border:1.5px solid #E1BEE7;border-radius:12px;padding:14px 16px;max-width:300px;width:100%;margin-bottom:8px;">
+                        <p style="color:#888;font-size:0.75rem;margin-bottom:6px;">Or copy &amp; paste in Safari / Chrome:</p>
+                        <div style="background:#f8f0ff;border-radius:8px;padding:8px 10px;font-size:0.7rem;color:#4A148C;word-break:break-all;text-align:left;margin-bottom:8px;">mindwiredai.com/destiny-decoder-free-birth-chart-x-mbti-reading/</div>
+                        <button onclick="window._copyLink(this)"
+                           style="width:100%;padding:10px;background:#7B1FA2;color:#fff;border:none;border-radius:10px;font-size:0.88rem;font-weight:700;cursor:pointer;">
+                            📋 Copy Link
+                        </button>
+                    </div>
                     <p style="color:#aaa;font-size:0.72rem;margin-top:8px;">Free · No sign-up · Secure PayPal</p>
                 </div>`;
             return;
