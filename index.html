@@ -1079,34 +1079,16 @@
     const API_URL = window.location.origin;
 
     // ── iframe auto-resize (notify parent of content height) ──
-    // Fire on EVERY height change so the parent iframe never stays too short
-    // (else newly-revealed content sits below the iframe → mobile scroll gets stuck).
-    var _lastResizeH = 0;
     function notifyResize() {
-        if (window.parent === window) return;
-        var h = Math.max(
-            document.body.scrollHeight,
-            document.documentElement.scrollHeight,
-            document.body.offsetHeight
-        );
-        if (h && h !== _lastResizeH) {
-            _lastResizeH = h;
+        var h = document.body.scrollHeight;
+        if (window.parent !== window) {
             window.parent.postMessage({type: 'resize', height: h}, '*');
         }
     }
+    // Notify on load and whenever DOM changes
     window.addEventListener('load', notifyResize);
-    window.addEventListener('resize', notifyResize);
-    // After accordion / animation transitions settle
-    document.addEventListener('transitionend', notifyResize, true);
-    // ResizeObserver catches CSS-driven height changes (accordion open/close, results render)
-    if (window.ResizeObserver) {
-        try { new ResizeObserver(notifyResize).observe(document.body); } catch(e) {}
-    }
-    // MutationObserver now also watches class/style (accordion toggles)
     var _resizeObserver = new MutationObserver(notifyResize);
-    _resizeObserver.observe(document.body, {childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style']});
-    // Safety net for late layout / momentum
-    setInterval(notifyResize, 700);
+    _resizeObserver.observe(document.body, {childList: true, subtree: true, attributes: false});
 
     // ── In-App Browser (KakaoTalk / Instagram / Line etc.) Detection ──
     // PayPal is blocked in WebView / in-app browsers. Show "Open in Browser" notice.
