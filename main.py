@@ -4,6 +4,9 @@ import uuid
 import base64
 import httpx
 import time
+import asyncio
+import hashlib
+from cryptography.fernet import Fernet
 from datetime import date
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
@@ -383,6 +386,67 @@ gemini_model = None
 if GOOGLE_API_KEY:
     genai.configure(api_key=GOOGLE_API_KEY)
     gemini_model = genai.GenerativeModel('gemini-2.5-flash')
+
+# ─────────────────────────────────────────────
+# 🔗 Full-result sharing via encrypted token (no infra · stateless)
+# Encrypts input + Mystic's summary into a URL token. Birth data stays private,
+# recipient side recomputes. Stable default secret so links survive redeploys.
+# ─────────────────────────────────────────────
+SHARE_SECRET = os.getenv("SHARE_SECRET", "saju-mbti-en-roro-share-key-v1")
+_share_fernet = Fernet(base64.urlsafe_b64encode(hashlib.sha256(SHARE_SECRET.encode()).digest()))
+
+def encrypt_share(payload: dict) -> str:
+    return _share_fernet.encrypt(json.dumps(payload, ensure_ascii=False).encode()).decode()
+
+def decrypt_share(token: str) -> dict:
+    return json.loads(_share_fernet.decrypt(token.encode()).decode())
+
+# ── ✨ Free-result top AI personalized summary (Mystic, Gemini) ──
+# Mascot 'Mystic' (a perceptive black cat) speaks. Personalization is the point.
+OHENG_EN = {'wood': 'Wood', 'fire': 'Fire', 'earth': 'Earth', 'metal': 'Metal', 'water': 'Water'}
+AI_SUMMARY_PROMPT = """You are 'Mystic', a perceptive black cat and master reader of Eastern Four Pillars (Saju) astrology.
+Read this person's chart and MBTI, and give them a personal one-liner from Mystic.
+
+[This person]
+- Name: {display}
+- Day Master (core energy): {ilgan_name} ({ilgan_oheng} energy)
+- Five Elements: Wood {wood}, Fire {fire}, Earth {earth}, Metal {metal}, Water {water}
+- Strongest: {strongest} / Weakest (lacking): {weakest}
+- MBTI: {mbti}
+
+[Rules — personalization is everything, keep it short and striking]
+- Exactly 2 sentences. Each sentence short and punchy (no rambling, no filler).
+- Address {display} directly; make it feel so specific they think "how did it know?".
+- Sentence 1: pin down the unique tension/charm created by their strongest energy ({strongest}), weakest ({weakest}), and {mbti}.
+- Sentence 2: one warm line on what to nurture so they shine more.
+- No generic horoscope platitudes. If it could apply to anyone, it failed.
+- Warm, natural English. No cat puns, no emoji, no quotes, no markdown — sentences only."""
+
+
+async def _generate_ai_summary(name, ilgan_name, ilgan_oheng, mbti, oheng, strongest, weakest):
+    """Personalized 2-sentence summary for the free result top. Template fallback on failure."""
+    display = name if (name and name != 'You') else 'You'
+    s = OHENG_EN.get(strongest, strongest)
+    w = OHENG_EN.get(weakest, weakest)
+    if gemini_model:
+        try:
+            prompt = AI_SUMMARY_PROMPT.format(
+                display=display, ilgan_name=ilgan_name,
+                ilgan_oheng=OHENG_EN.get(ilgan_oheng, ilgan_oheng),
+                wood=oheng['wood'], fire=oheng['fire'], earth=oheng['earth'],
+                metal=oheng['metal'], water=oheng['water'],
+                strongest=s, weakest=w, mbti=mbti,
+            )
+            resp = await asyncio.to_thread(gemini_model.generate_content, prompt)
+            text = (getattr(resp, 'text', '') or '').strip().strip('"').strip()
+            if text:
+                return {"text": text, "ai": True}
+        except Exception:
+            pass
+    who = display if display != 'You' else 'You'
+    fallback = (f"{who} carry the {ilgan_name} Day Master, with {s} energy running strong. "
+                f"Paired with your {mbti} nature it's magnetic — and the more {w} energy you nurture, the steadier you become.")
+    return {"text": fallback, "ai": False}
 
 # ─────────────────────────────────────────────
 # Payment (PayPal Orders API v2)
@@ -1268,7 +1332,7 @@ async def get_report_analysis(birth_date: str, birth_time: str, mbti: str, lang:
                               gender: str = 'F',
                               apply_dst: bool = False, apply_solar_time: bool = False,
                               birth_city: str = '',
-                              name: str = ''):
+                              name: str = '', skip_ai: bool = False):
     solar_date, lunar_original = resolve_birth_date(birth_date, calendar_type, is_leap_month)
     raw_y, raw_m, raw_d = map(int, birth_date.split('-'))
     year, month, day = map(int, solar_date.split('-'))
@@ -1372,6 +1436,14 @@ async def get_report_analysis(birth_date: str, birth_time: str, mbti: str, lang:
     result_sections = ANALYSIS_DATA.get("result_sections", []) if ANALYSIS_DATA else []
     payment_config = ANALYSIS_DATA.get("payment_config", {}) if ANALYSIS_DATA else {}
 
+    # ✨ Mystic's personalized one-liner (English results; skipped on shared view)
+    ai_summary = None
+    if lang == 'en' and not skip_ai:
+        ai_summary = await _generate_ai_summary(
+            name, ilgan_name, CHEONGAN_OHENG[ilgan], mbti,
+            oheng, oheng_adv.get('strongest', ''), weakest_oheng
+        )
+
     return {
         'pillars': {
             'year': {'gan': year_p[0], 'ji': year_p[1], 'label': f'{year_p[0]} {year_p[1]}'},
@@ -1403,7 +1475,8 @@ async def get_report_analysis(birth_date: str, birth_time: str, mbti: str, lang:
         'combo_detail': combo_detail,
         'fortune': fortune,
         'result_sections': result_sections,
-        'payment_config': payment_config
+        'payment_config': payment_config,
+        'ai_summary': ai_summary,
     }
 
 class ReportInput(BaseModel):
@@ -1489,6 +1562,59 @@ async def get_report(input_data: ReportInput):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# ═══════════════════════════════════════════════
+# 🔗 Full-result sharing (encrypted token · no infra)
+# ═══════════════════════════════════════════════
+
+class CreateShareInput(BaseModel):
+    birth_date: str
+    birth_time: str
+    mbti: str
+    lang: str = 'en'
+    name: str = 'You'
+    gender: str = 'F'
+    time_unknown: bool = False
+    calendar_type: str = 'solar'
+    is_leap_month: bool = False
+    ai_summary: str = ''
+
+class GetShareInput(BaseModel):
+    token: str
+
+@app.post("/create-share")
+async def create_share(data: CreateShareInput):
+    """Package the current result into an encrypted token for the share URL."""
+    payload = {
+        "bd": data.birth_date, "bt": data.birth_time, "mbti": data.mbti,
+        "name": data.name, "g": data.gender, "tu": data.time_unknown,
+        "cal": data.calendar_type, "leap": data.is_leap_month,
+        "ai": (data.ai_summary or "")[:700],
+    }
+    return {"token": encrypt_share(payload)}
+
+@app.post("/get-share")
+async def get_share(data: GetShareInput):
+    """Decrypt token → recompute full result (Mystic summary injected from token, no Gemini re-call)."""
+    try:
+        p = decrypt_share(data.token)
+    except Exception:
+        raise HTTPException(status_code=400, detail="This share link is invalid or expired.")
+    report = await get_report_analysis(
+        p["bd"], p["bt"], p["mbti"], lang='en',
+        calendar_type=p.get("cal", "solar"), is_leap_month=p.get("leap", False),
+        gender=p.get("g", "F"), name=p.get("name", "You"),
+        skip_ai=True,
+    )
+    if p.get("ai"):
+        report["ai_summary"] = {"text": p["ai"], "ai": True}
+    report["_shared"] = {
+        "name": p.get("name", "You"),
+        "gender": p.get("g", "F"),
+        "time_unknown": p.get("tu", False),
+    }
+    return report
+
 
 # ═══════════════════════════════════════════════
 # Premium LLM Analysis

@@ -650,6 +650,9 @@
 
     <!-- INTRO SCREEN -->
     <div id="intro-screen" class="screen active">
+        <!-- 🎁 Welcome banner for friends arriving via a share link (0-click onboarding) -->
+        <div id="welcome-onboard" style="display:none;"></div>
+
         <!-- Daily fortune (shown on return visits) -->
         <div id="daily-fortune-area" style="display:none;"></div>
 
@@ -761,6 +764,9 @@
             <div class="pillar-grid" id="pillar-grid"></div>
         </div>
 
+        <!-- ✨ Mystic's personalized one-liner -->
+        <div id="ai-summary-area"></div>
+
         <!-- Oheng Chart Section -->
         <div class="accordion-section open fade-in" style="animation-delay:0.1s">
             <div class="accordion-header" onclick="toggleAccordion(this)">
@@ -794,6 +800,9 @@
             </div>
         </div>
 
+        <!-- Owner-only controls (hidden in shared result view) -->
+        <div id="owner-only-block">
+
         <!-- Premium Teaser (locked) -->
         <div id="premium-teaser-area"></div>
 
@@ -825,6 +834,7 @@
         </div>
 
         <!-- Share -->
+        <div style="text-align:center; font-size:0.78rem; color:#7B1FA2; font-weight:700; margin-bottom:8px;">🔗 Shares a link that opens your full reading</div>
         <div class="share-container">
             <button class="share-btn share-native" onclick="shareNative()">📤 Share</button>
             <button class="share-btn copy" onclick="copyLink()">🔗 Copy Link</button>
@@ -847,6 +857,7 @@
 
         <!-- Retry -->
         <button class="retry-btn" onclick="goHome()">🔄 New Reading</button>
+        </div><!-- /owner-only-block -->
 
         <!-- Footer -->
         <div style="margin-top:24px; padding-top:16px; border-top:1px dashed #E1BEE7; text-align:center; font-size:0.72rem; color:#8D6E63; line-height:1.7;">
@@ -1575,6 +1586,114 @@
         return `${baseUrl}${window.location.pathname}`;
     }
 
+    // Append sender name (from) / referral (ref) for 0-click onboarding landing
+    function withOnboardingParams(url, refCode) {
+        try {
+            const u = new URL(url, window.location.origin);
+            const fromName = (typeof userInfo !== 'undefined' && userInfo && userInfo.name && userInfo.name !== 'You') ? userInfo.name : '';
+            if (fromName) u.searchParams.set('from', fromName);
+            if (refCode) u.searchParams.set('ref', refCode);
+            return u.toString();
+        } catch(_) { return url; }
+    }
+
+    // 🔗 Build a full-result share URL (encrypted token) — recipient sees the whole reading
+    async function getShareResultUrl() {
+        try {
+            const input = collectAnalysisInput();
+            const aiText = (reportData && reportData.ai_summary && reportData.ai_summary.text) || '';
+            const res = await fetch(`${API_URL}/create-share`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ ...input, ai_summary: aiText })
+            });
+            const data = await res.json();
+            if (!res.ok || !data.token) throw new Error('share token fail');
+            const u = new URL(window.location.origin + window.location.pathname);
+            u.searchParams.set('r', data.token);
+            const fromName = (input.name && input.name !== 'You') ? input.name : '';
+            if (fromName) u.searchParams.set('from', fromName);
+            return u.toString();
+        } catch (e) { console.error('share url fail', e); return null; }
+    }
+
+    // Friend opened a share link (?r=token): render the full result + "see mine too" CTA
+    async function checkSharedResult() {
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get('r');
+        if (!token) return;
+        document.getElementById("loading").classList.add("active");
+        try {
+            const res = await fetch(`${API_URL}/get-share`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ token })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || '');
+            reportData = data;
+            const sh = data._shared || {};
+            userInfo = { name: sh.name || 'You', gender: sh.gender || 'F', timeUnknown: !!sh.time_unknown };
+            renderReport();
+            document.getElementById("intro-screen").classList.remove("active");
+            document.getElementById("report-screen").classList.add("active");
+            enterSharedMode(sh.name);
+            window.scrollTo(0, 0);
+        } catch (e) {
+            console.error('shared view fail', e);
+            showCatError("Couldn't open this shared reading.<br>Try getting your own — it's free!");
+        } finally {
+            document.getElementById("loading").classList.remove("active");
+        }
+    }
+    document.addEventListener('DOMContentLoaded', checkSharedResult);
+
+    // Shared-view mode: hide owner-only controls, show "see mine too" CTA
+    function enterSharedMode(name) {
+        const who = (name && name !== 'You') ? `${name}'s` : "someone's";
+        const owner = document.getElementById('owner-only-block');
+        if (owner) owner.style.display = 'none';
+        const fcta = document.getElementById('floating-cta');
+        if (fcta) fcta.style.display = 'none';
+
+        const reportScreen = document.getElementById('report-screen');
+        const topBanner = document.createElement('div');
+        topBanner.className = 'fade-in';
+        topBanner.style.cssText = 'background:linear-gradient(135deg,#4A148C,#7B1FA2); color:#fff; border-radius:14px; padding:12px 16px; margin-bottom:14px; text-align:center; font-size:0.9rem; font-weight:800;';
+        topBanner.textContent = `✨ ${who} Saju reading`;
+        reportScreen.insertBefore(topBanner, reportScreen.firstChild);
+        reportScreen.style.paddingBottom = '92px';
+
+        const cta = document.createElement('div');
+        cta.id = 'shared-cta';
+        cta.style.cssText = 'position:fixed; left:0; right:0; bottom:0; z-index:999; padding:12px 16px calc(12px + env(safe-area-inset-bottom)); background:linear-gradient(to top, var(--bg-card) 70%, transparent); display:flex; justify-content:center;';
+        cta.innerHTML = `<button id="shared-cta-btn" style="width:100%; max-width:448px; padding:16px; background:linear-gradient(135deg,#7B1FA2,#9C27B0); color:#fff; border:none; border-radius:16px; font-size:1.05rem; font-weight:900; cursor:pointer; box-shadow:0 6px 20px rgba(123,31,162,0.35);">🔮 Get my own free reading →</button>`;
+        document.body.appendChild(cta);
+        document.getElementById('shared-cta-btn').addEventListener('click', function() { startMyOwn(name); });
+    }
+
+    function startMyOwn(name) {
+        const u = new URL(window.location.origin + window.location.pathname);
+        if (name && name !== 'You') u.searchParams.set('from', name);
+        window.location.href = u.toString();
+    }
+
+    // 🎁 Welcome banner for friends arriving via a share link
+    function showWelcomeOnboard(fromName) {
+        const el = document.getElementById('welcome-onboard');
+        if (!el) return;
+        const headline = fromName
+            ? `🎁 ${fromName} sent you a free reading!`
+            : `🎁 A friend sent you a free reading!`;
+        el.innerHTML = `
+            <div class="fade-in" style="display:flex; gap:12px; align-items:center; background:linear-gradient(135deg,#7B1FA2,#9C27B0); color:#fff; border-radius:16px; padding:14px 16px; margin-bottom:16px; box-shadow:0 6px 18px rgba(123,31,162,0.25);">
+                <img src="/assets/result.png" alt="Mystic" width="48" height="48" style="flex-shrink:0; width:48px; height:48px; object-fit:contain; background:rgba(255,255,255,0.18); border-radius:50%; padding:3px;">
+                <div>
+                    <div style="font-size:0.95rem; font-weight:900; line-height:1.4;">${headline}</div>
+                    <div style="font-size:0.8rem; opacity:0.92; margin-top:3px;">Just enter your birth date and Mystic will read you 🐾</div>
+                </div>
+            </div>`;
+        el.style.display = 'block';
+    }
+
     // Initial theme (saved → system → light default)
     (function initTheme() {
         const saved = localStorage.getItem('theme');
@@ -1829,6 +1948,23 @@
             ${calChip}
             ${timeChip ? `<span class="info-chip" style="background:#F3E5F5;color:#4A148C;">${timeChip}</span>` : ''}
         `;
+
+        // ✨ Mystic's personalized one-liner (top hook)
+        const aiArea = document.getElementById('ai-summary-area');
+        if (r.ai_summary && r.ai_summary.text) {
+            const callName = (userInfo.name && userInfo.name !== 'You') ? userInfo.name : 'you';
+            aiArea.innerHTML = `
+                <div class="fade-in" style="position:relative; background:linear-gradient(135deg,#4A148C,#7B1FA2); color:#fff; border-radius:18px; padding:18px 18px 20px; margin-bottom:14px; box-shadow:0 6px 20px rgba(74,20,140,0.25);">
+                    <div style="display:inline-block; background:rgba(255,255,255,0.2); padding:4px 12px; border-radius:20px; font-size:0.72rem; font-weight:800; letter-spacing:0.3px; margin-bottom:12px;">🔮 Mystic read ${callName}</div>
+                    <div style="display:flex; gap:12px; align-items:flex-start;">
+                        <img src="/assets/result.png" alt="Mystic" width="56" height="56" style="flex-shrink:0; width:56px; height:56px; object-fit:contain; background:rgba(255,255,255,0.18); border-radius:50%; padding:4px;">
+                        <div style="font-size:1rem; line-height:1.6; font-weight:600;">${r.ai_summary.text}</div>
+                    </div>
+                </div>`;
+            aiArea.style.display = 'block';
+        } else {
+            aiArea.style.display = 'none';
+        }
 
         // Pillars
         const pillarLabels = ['Hour','Day','Month','Year'];
@@ -2418,14 +2554,15 @@
         }
         try {
             const config = await getAppConfig();
-            const shareUrl = getCanonicalShareUrl(config);
-            const shareText = `✨ Saju × MBTI Destiny Reading ✨\n${reportData.ilgan.title} | ${reportData.mbti}\nDiscover your destiny too!\n${shareUrl}`;
+            // Full-result link (recipient sees the whole reading); fallback to home
+            const shareUrl = (await getShareResultUrl()) || withOnboardingParams(getCanonicalShareUrl(config));
+            const shareText = `✨ Saju × MBTI Destiny Reading ✨\n${reportData.ilgan.title} | ${reportData.mbti}\nSee my full reading — and discover yours!\n${shareUrl}`;
 
             if (navigator.share) {
                 try {
                     await navigator.share({
                         title: 'Saju × MBTI Destiny Reading',
-                        text: `${reportData.ilgan.title} | ${reportData.mbti} — Discover your destiny!`,
+                        text: `${reportData.ilgan.title} | ${reportData.mbti} — See my full reading, then discover yours!`,
                         url: shareUrl
                     });
                     return;
@@ -2458,7 +2595,7 @@
 
 
     async function copyLink() {
-        const url = window.location.href;
+        const url = (await getShareResultUrl()) || withOnboardingParams(window.location.origin + window.location.pathname);
         let copied = false;
         try {
             if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -3248,6 +3385,10 @@
     (function checkReferral() {
         const params = new URLSearchParams(window.location.search);
         const refCode = params.get('ref');
+        const fromName = params.get('from');   // sender name (auto-decoded)
+        if (refCode || fromName) {
+            showWelcomeOnboard(fromName);
+        }
         if (refCode) {
             fetch(`${API_URL}/use-referral`, {
                 method: "POST",
@@ -3276,7 +3417,7 @@
             const data = await res.json();
             if (!data.code) throw new Error('No code in response');
             refCode = data.code;
-            link = `${window.location.origin}?ref=${refCode}`;
+            link = withOnboardingParams(window.location.origin + window.location.pathname, refCode);
             localStorage.setItem('myReferralCode', refCode);
             localStorage.removeItem('freeUsed');
             freeUsed = false;
