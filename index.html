@@ -1707,6 +1707,12 @@
     function toggleAccordion(header) {
         const section = header.parentElement;
         section.classList.toggle('open');
+        // Keep parent iframe height in sync after the reveal animation (no observer/interval → no loop)
+        if (typeof notifyResize === 'function') {
+            notifyResize();
+            setTimeout(notifyResize, 250);
+            setTimeout(notifyResize, 500);
+        }
     }
 
     // 🐱 Error modal
